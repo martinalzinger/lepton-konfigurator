@@ -22,14 +22,14 @@ I18N_RAW=jload("i18n_ersatzteile.json")
 SP_RAW=jload("spareparts.json")
 LANGS=["de","en","pl","fr"]
 
-# ---- model-viewer (offline gebündelt) ----
-MV=open(os.path.join(HERE,"modelviewer.min.js"),encoding="utf8").read()
-MV=MV.replace("</script>","<\\/script>")
+# ---- 3D-Viewer: three.js liegt als vendor/*.js (offline, bei Bedarf geladen) ----
+# (kein model-viewer mehr; der interaktive Explorer nutzt three.js direkt)
 
 # ---- Modelle als EXTERNE Dateien (Nachladen bei Bedarf) ----
 # 3D-Modelle werden NICHT in die HTML eingebettet, sondern als models/*.glb ausgelagert
 # und erst beim Klick auf "3D ansehen" geladen (offline via Service-Worker gecacht).
-MODELS_DIR=os.path.normpath(os.path.join(HERE,"..","models"))
+OUTDIR=os.path.normpath(os.path.join(HERE,"..","ersatzteile"))   # eigenständiger Ordner /ersatzteile/
+MODELS_DIR=os.path.join(OUTDIR,"models")
 os.makedirs(MODELS_DIR,exist_ok=True)
 MODELS={}   # key -> relative URL "models/datei.glb"
 SEV_IMG={}  # key -> data-URI (kleine Vorschaubilder bleiben eingebettet)
@@ -186,6 +186,9 @@ TPL=r'''<!DOCTYPE html>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Alzinger · Ersatzteilkatalog Lepton 5100</title>
 <meta name="theme-color" content="#c00000">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Ersatzteile">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -291,18 +294,48 @@ body{font-family:var(--sans);background:var(--paper);color:var(--ink);line-heigh
 .btn.s{background:#fff;border:1px solid var(--line-strong);color:var(--ink)}.btn.s:hover{border-color:var(--ink)}
 .btn.t{background:none;color:var(--muted);padding:6px}.btn.t:hover{color:var(--red)}
 .btn[disabled]{opacity:.45;cursor:not-allowed}
-/* 3D modal */
-.mvmodal{position:fixed;inset:0;background:rgba(16,17,19,.72);z-index:97;display:none;align-items:center;justify-content:center;padding:20px}
+/* 3D explorer modal */
+.mvmodal{position:fixed;inset:0;background:rgba(16,17,19,.74);z-index:97;display:none;align-items:center;justify-content:center;padding:16px}
 .mvmodal.open{display:flex}
-.mvbox{background:#fff;border-radius:14px;width:min(720px,96vw);max-height:92vh;overflow:hidden;position:relative;display:flex;flex-direction:column}
-.mvbox .mvtop{display:flex;justify-content:space-between;align-items:flex-start;padding:16px 18px 10px}
+.mvbox{background:#fff;border-radius:14px;width:min(1000px,97vw);max-height:94vh;overflow:hidden;position:relative;display:flex;flex-direction:column}
+.mvbox .mvtop{display:flex;justify-content:space-between;align-items:flex-start;padding:14px 18px 10px;border-bottom:1px solid var(--line)}
 .mvbox .mvname{font-weight:700;font-size:17px}
 .mvbox .mvart{font-family:var(--mono);font-size:11px;color:var(--faint);margin-top:2px}
 .mvbox .mvx{background:var(--field);border:0;width:34px;height:34px;border-radius:50%;font-size:20px;cursor:pointer;color:var(--ink);flex-shrink:0}
 .mvbox .mvx:hover{background:var(--line)}
-model-viewer{width:100%;height:min(56vh,440px);background:linear-gradient(180deg,#fbfbf9,#eceae4);--poster-color:transparent}
-.mvno{padding:50px 20px;text-align:center;color:var(--faint);font-size:14px}
-.mvhint{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);text-align:center;padding:10px 0 16px}
+.mvsplit{display:flex;min-height:0;flex:1}
+.mvstage{position:relative;flex:1.5;min-width:0;background:linear-gradient(180deg,#fbfbf9,#e7e5df);display:flex;flex-direction:column}
+#tcanvas{width:100%;height:100%;display:block;touch-action:none;cursor:grab}
+#tcanvas:active{cursor:grabbing}
+.mvload{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
+.mvload .spin{width:34px;height:34px;border:3px solid var(--line-strong);border-top-color:var(--red);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.mvno{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;color:var(--faint);font-size:14px;padding:30px}
+.mvtools{position:absolute;top:10px;left:10px;display:flex;gap:6px}
+.mvtools button{background:rgba(255,255,255,.9);border:1px solid var(--line-strong);border-radius:7px;padding:7px 10px;font-family:var(--mono);font-size:10.5px;font-weight:600;color:var(--ink);cursor:pointer}
+.mvtools button:hover{border-color:var(--ink)}
+.mvhint{position:absolute;bottom:8px;left:0;right:0;font-family:var(--mono);font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);text-align:center;pointer-events:none}
+.mvparts{flex:1;max-width:360px;min-width:240px;display:flex;flex-direction:column;border-left:1px solid var(--line);background:#fff}
+.mvph{display:flex;align-items:center;gap:8px;padding:12px 14px 8px;font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--slate);font-weight:600}
+.mvph .cnt{background:var(--ink);color:#fff;border-radius:10px;padding:1px 8px;font-size:11px}
+.psearch{margin:0 14px 8px;font-family:var(--sans);font-size:13px;border:1px solid var(--line-strong);background:var(--field);border-radius:8px;padding:8px 11px;outline:none}
+.psearch:focus{border-color:var(--red);box-shadow:0 0 0 3px var(--red-soft)}
+.mvlist{flex:1;overflow:auto;padding:0 8px 10px}
+.prow{display:flex;align-items:center;gap:8px;padding:8px 8px;border-radius:8px;cursor:pointer;border:1px solid transparent}
+.prow:hover{background:var(--field)}
+.prow.active{background:var(--red-soft);border-color:var(--red)}
+.prow.hidden .pmid{opacity:.4}
+.prow .eye{background:none;border:0;cursor:pointer;color:var(--muted);flex-shrink:0;padding:2px;display:inline-flex}
+.prow .eye svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.7}
+.prow.hidden .eye{color:var(--faint)}
+.prow .pmid{flex:1;min-width:0}
+.prow .pml{font-size:12.5px;font-weight:600;line-height:1.25;word-break:break-word}
+.prow .pma{font-family:var(--mono);font-size:10px;color:var(--faint)}
+.prow .qbadge{font-family:var(--mono);font-size:10px;color:var(--slate);background:var(--field);border:1px solid var(--line);border-radius:5px;padding:1px 5px;flex-shrink:0}
+.prow .pcartbtn{background:var(--red);border:0;color:#fff;border-radius:7px;width:30px;height:30px;cursor:pointer;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center}
+.prow .pcartbtn:hover{background:var(--red2)}
+.prow .pcartbtn svg{width:16px;height:16px;stroke:#fff;fill:none;stroke-width:1.8}
+@media (max-width:760px){.mvsplit{flex-direction:column}.mvstage{min-height:46vh}.mvparts{max-width:none;border-left:0;border-top:1px solid var(--line);max-height:34vh}}
 /* Toast */
 #toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:12px 20px;border-radius:30px;font-size:13px;font-weight:600;opacity:0;pointer-events:none;transition:.25s;z-index:99;box-shadow:0 10px 30px rgba(0,0,0,.25)}
 #toast.show{opacity:1;transform:translateX(-50%)}
@@ -332,11 +365,11 @@ model-viewer{width:100%;height:min(56vh,440px);background:linear-gradient(180deg
   .dfo{margin-top:22px;padding-top:10px;border-top:1px solid #e4e2db;font-size:10px;color:#5e6166}
 }
 </style>
+<script type="importmap">{"imports":{"three":"./vendor/three.module.min.js"}}</script>
 </head>
 <body>
 <header class="topbar">
   <div class="topbar-in"><div class="tb-row">
-    <a class="tb-back" href="index.html">‹ <span data-i18n="nav_back">Konfigurator</span></a>
     <div class="tb-logo"><img id="tbLogo" alt="Alzinger"></div>
     <div class="tb-right">
       <div class="langsel" id="langsel">
@@ -392,14 +425,27 @@ model-viewer{width:100%;height:min(56vh,440px);background:linear-gradient(180deg
 <div class="mvmodal" id="mvModal">
   <div class="mvbox">
     <div class="mvtop"><div><div class="mvname" id="mvName"></div><div class="mvart" id="mvArt"></div></div><button class="mvx" id="mvClose" aria-label="close">×</button></div>
-    <model-viewer id="mv" camera-controls auto-rotate auto-rotate-delay="0" rotation-per-second="22deg" shadow-intensity="1" exposure="1.05" interaction-prompt="none" touch-action="pan-y" loading="eager" reveal="auto"></model-viewer>
-    <div class="mvno" id="mvNo" style="display:none"></div>
-    <div class="mvhint" data-i18n="viewer_hint"></div>
+    <div class="mvsplit">
+      <div class="mvstage">
+        <canvas id="tcanvas"></canvas>
+        <div class="mvload" id="mvLoad"><div class="spin"></div></div>
+        <div class="mvno" id="mvNo" style="display:none"></div>
+        <div class="mvtools">
+          <button id="mvReset" data-i18n="view_reset">Ansicht</button>
+          <button id="mvShowAll" data-i18n="show_all">Alle einblenden</button>
+        </div>
+        <div class="mvhint" data-i18n="viewer_hint"></div>
+      </div>
+      <aside class="mvparts">
+        <div class="mvph"><span data-i18n="parts_title">Einzelteile</span><span class="cnt" id="partCount">0</span></div>
+        <input id="partSearch" class="psearch" data-i18n-ph="parts_search" type="search">
+        <div class="mvlist" id="partList"></div>
+      </aside>
+    </div>
   </div>
 </div>
 <div id="toast"></div>
 <div id="doc"></div>
-<script type="module">%%MV%%</script>
 <script>
 const IMG=%%IMG%%; const MODELS=%%MODELS%%; const CAT=%%CAT%%; const I18N=%%I18N%%;
 const MAIL="%%MAIL%%"; const LOGO_L="%%LOGOL%%"; const LOGO_D="%%LOGOD%%";
@@ -433,6 +479,12 @@ const ICONS={
  function pDesc(p){return (lang!=="de"&&p["desc_"+lang])?p["desc_"+lang]:(p.desc||"");}
  // index parts by id
  var byId={}; CAT.forEach(function(c){c.items.forEach(function(p){byId[p.id]=p;});});
+ // Registry für aus 3D-Baugruppen einzeln entnommene Bauteile (im Warenkorb)
+ var SUBKEY="amb_lepton_subparts";
+ function loadSub(){try{return JSON.parse(localStorage.getItem(SUBKEY)||"{}")||{};}catch(e){return {};}}
+ function saveSub(){try{localStorage.setItem(SUBKEY,JSON.stringify(subReg));}catch(e){}}
+ var subReg=loadSub();
+ function item(id){return byId[id]||subReg[id]||null;}
  function thumbHTML(p,small){
   if(p.img&&IMG[p.img])return '<img src="'+IMG[p.img]+'" alt="">';
   var ic=ICONS[p.modelKind]||ICONS._default;
@@ -479,15 +531,16 @@ const ICONS={
  }
  // ---- Cart ----
  function addToCart(id){cart[id]=(cart[id]||0)+1;saveCart();updateBadge();renderCatalog();renderCart();toast(t("toast_added"));}
- function setQty(id,q){q=Math.max(0,q|0);if(q===0)delete cart[id];else cart[id]=q;saveCart();updateBadge();renderCatalog();renderCart();}
+ function addSub(art,name){var id="sub:"+art;subReg[id]={art:art,name:name,price:0};saveSub();cart[id]=(cart[id]||0)+1;saveCart();updateBadge();renderCart();toast(t("toast_added"));}
+ function setQty(id,q){q=Math.max(0,q|0);if(q===0){delete cart[id];if(subReg[id]){delete subReg[id];saveSub();}}else cart[id]=q;saveCart();updateBadge();renderCatalog();renderCart();}
  function renderCart(){
-  var ids=Object.keys(cart).filter(function(id){return byId[id];});
+  var ids=Object.keys(cart).filter(function(id){return item(id);});
   var empty=document.getElementById("cartEmpty"),tail=document.getElementById("cartTail"),wrap=document.getElementById("cartItems");
   if(!ids.length){empty.style.display="block";tail.style.display="none";wrap.innerHTML="";document.getElementById("sendMail").disabled=true;document.getElementById("printReq").disabled=true;return;}
   empty.style.display="none";tail.style.display="block";
   document.getElementById("sendMail").disabled=false;document.getElementById("printReq").disabled=false;
   var h="",sub=0,anyPrice=false;
-  ids.forEach(function(id){var p=byId[id],q=cart[id];if(p.price>0){sub+=p.price*q;anyPrice=true;}
+  ids.forEach(function(id){var p=item(id),q=cart[id];if(p.price>0){sub+=p.price*q;anyPrice=true;}
    h+='<div class="citem"><div class="ci-th">'+thumbHTML(p)+'</div><div class="ci-n"><div class="ci-name">'+esc(pName(p))+'</div><div class="ci-art">'+t("art_prefix")+esc(p.art)+'</div><div class="ci-price">'+priceHTML(p)+'</div>'
     +'<button class="ci-rm" data-rm="'+esc(id)+'">'+t("cart_remove")+'</button></div>'
     +'<div class="qty"><button data-dec="'+esc(id)+'">−</button><input data-q="'+esc(id)+'" value="'+q+'" inputmode="numeric"><button data-inc="'+esc(id)+'">+</button></div></div>';
@@ -501,17 +554,96 @@ const ICONS={
  }
  function openCart(){document.getElementById("drawer").classList.add("open");document.getElementById("backdrop").classList.add("open");renderCart();}
  function closeCart(){document.getElementById("drawer").classList.remove("open");document.getElementById("backdrop").classList.remove("open");}
- // ---- 3D ----
- var mv=document.getElementById("mv");
+ // ===== 3D-Explorer (three.js wird BEI BEDARF dynamisch geladen) =====
+ var THREE,GLTFLoader,OrbitControls,loader,hlMat;
+ var renderer,scene,camera,controls,raycaster,curRoot=null,groups=[],activeG=null,fitR=1,vinit=false,viewerActive=false,threeReady=false;
+ function ensureThree(){
+  if(threeReady)return Promise.resolve(true);
+  return Promise.all([import("./vendor/three.module.min.js"),import("./vendor/GLTFLoader.js"),import("./vendor/OrbitControls.js")]).then(function(m){
+   THREE=m[0];GLTFLoader=m[1].GLTFLoader;OrbitControls=m[2].OrbitControls;
+   loader=new GLTFLoader();
+   hlMat=new THREE.MeshStandardMaterial({color:0xff6a4d,emissive:0xc00000,emissiveIntensity:0.55,metalness:0.25,roughness:0.5});
+   threeReady=true;return true;
+  });
+ }
+ function initViewer(){
+  if(vinit)return; vinit=true;
+  var canvas=document.getElementById("tcanvas");
+  renderer=new THREE.WebGLRenderer({canvas:canvas,antialias:true,alpha:true});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+  scene=new THREE.Scene();
+  camera=new THREE.PerspectiveCamera(45,1,0.01,1e7);
+  controls=new OrbitControls(camera,canvas);
+  controls.enableDamping=true;controls.dampingFactor=0.08;controls.autoRotate=true;controls.autoRotateSpeed=1.0;
+  scene.add(new THREE.HemisphereLight(0xffffff,0x555555,1.15));
+  var d1=new THREE.DirectionalLight(0xffffff,1.5);d1.position.set(1,2,1.4);scene.add(d1);
+  var d2=new THREE.DirectionalLight(0xffffff,0.55);d2.position.set(-1.2,-0.4,-1);scene.add(d2);
+  raycaster=new THREE.Raycaster();
+  var dn=null;
+  canvas.addEventListener("pointerdown",function(e){dn={x:e.clientX,y:e.clientY,t:Date.now()};});
+  canvas.addEventListener("pointerup",function(e){if(!dn)return;if(Math.hypot(e.clientX-dn.x,e.clientY-dn.y)<5&&Date.now()-dn.t<500)pickAt(e);dn=null;});
+  window.addEventListener("resize",resizeViewer);
+  (function loop(){requestAnimationFrame(loop);if(viewerActive&&renderer){controls.update();renderer.render(scene,camera);}})();
+ }
+ function resizeViewer(){if(!renderer)return;var c=renderer.domElement,w=c.clientWidth||1,h=c.clientHeight||1;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();}
+ function clearModel(){if(curRoot){scene.remove(curRoot);curRoot.traverse(function(o){if(o.isMesh&&o.geometry&&o.geometry.dispose)o.geometry.dispose();});curRoot=null;}groups=[];activeG=null;}
+ function nodeName(o){var n=o;while(n){if(n.name)return n.name;n=n.parent;}return "";}
+ // Instanz-/Versions-Suffixe entfernen -> Artikelnummer (z.B. 248027_24 -> 248027)
+ function normPart(s){var n=String(s||"");n=n.replace(/_-_\d{4}.*$/,"");n=n.replace(/_oa_\d+$/i,"");n=n.replace(/_v?\d+(\.\d+)+$/i,"");n=n.replace(/_\d+$/,"");n=n.replace(/_oa$/i,"");return n.trim()||String(s||"");}
+ function cleanLabel(s){return String(s||"").replace(/_/g," ").replace(/\s+/g," ").trim()||"Bauteil";}
+ function buildGroups(root){
+  var map={},order=[];
+  root.traverse(function(o){if(o.isMesh){var key=normPart(nodeName(o)||"(unbenannt)");var g=map[key];if(!g){g={raw:key,label:cleanLabel(key),meshes:[],visible:true};map[key]=g;order.push(g);}g.meshes.push(o);o.userData._g=g;}});
+  order.sort(function(a,b){return b.meshes.length-a.meshes.length||a.label.localeCompare(b.label);});
+  groups=order;
+ }
+ function frameModel(){var box=new THREE.Box3().setFromObject(curRoot);var c=box.getCenter(new THREE.Vector3()),size=box.getSize(new THREE.Vector3());var r=Math.max(size.x,size.y,size.z)||1;fitR=r;curRoot.position.sub(c);controls.target.set(0,0,0);var d=r*1.9;camera.position.set(d*0.7,d*0.55,d*0.9);camera.near=r/200;camera.far=r*200;camera.updateProjectionMatrix();controls.update();}
+ function resetView(){if(!curRoot)return;controls.target.set(0,0,0);var d=fitR*1.9;camera.position.set(d*0.7,d*0.55,d*0.9);controls.autoRotate=true;controls.update();}
+ function setHighlight(g,on){g.meshes.forEach(function(m){if(on){if(m.userData._om===undefined)m.userData._om=m.material;m.material=hlMat;}else if(m.userData._om!==undefined){m.material=m.userData._om;m.userData._om=undefined;}});}
+ function selectGroup(g,scroll){if(activeG===g)return;if(activeG)setHighlight(activeG,false);activeG=g;if(g)setHighlight(g,true);controls.autoRotate=false;document.querySelectorAll(".prow").forEach(function(r){r.classList.toggle("active",r.__g===g);});if(scroll&&g){var rows=[].slice.call(document.querySelectorAll(".prow"));for(var i=0;i<rows.length;i++){if(rows[i].__g===g){rows[i].scrollIntoView({block:"nearest"});break;}}}}
+ function toggleGroup(g){g.visible=!g.visible;g.meshes.forEach(function(m){m.visible=g.visible;});document.querySelectorAll(".prow").forEach(function(r){if(r.__g===g)r.classList.toggle("hidden",!g.visible);});}
+ function showAllParts(){groups.forEach(function(g){g.visible=true;g.meshes.forEach(function(m){m.visible=true;});});document.querySelectorAll(".prow").forEach(function(r){r.classList.remove("hidden");});}
+ function pickAt(e){if(!curRoot)return;var c=renderer.domElement,r=c.getBoundingClientRect();var p=new THREE.Vector2(((e.clientX-r.left)/r.width)*2-1,-((e.clientY-r.top)/r.height)*2+1);raycaster.setFromCamera(p,camera);var hits=raycaster.intersectObject(curRoot,true);for(var i=0;i<hits.length;i++){var o=hits[i].object;if(o.visible&&o.userData&&o.userData._g){selectGroup(o.userData._g,true);return;}}}
+ var EYE_ON='<svg viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>';
+ var EYE_OFF='<svg viewBox="0 0 24 24"><path d="M3 3l18 18M10 5.2A8.6 8.6 0 0112 5c6.5 0 10 7 10 7a18 18 0 01-3.2 4M6.5 6.6C3.6 8.2 2 12 2 12s3.5 7 10 7c1.4 0 2.7-.3 3.8-.7M9.9 9.9a3 3 0 004.2 4.2"/></svg>';
+ var CART_S='<svg viewBox="0 0 24 24"><path d="M3 4h2l2 11h10l2-8H6"/><circle cx="9" cy="20" r="1.3"/><circle cx="17" cy="20" r="1.3"/></svg>';
+ function renderPartList(q){
+  var list=document.getElementById("partList"),html="";
+  groups.forEach(function(g,idx){
+   if(q){if((g.raw+" "+g.label).toLowerCase().indexOf(q)<0)return;}
+   html+='<div class="prow'+(g===activeG?' active':'')+(g.visible?'':' hidden')+'" data-i="'+idx+'">'
+    +'<button class="eye" data-eye="'+idx+'" title="'+esc(t("tip_toggle"))+'">'+(g.visible?EYE_ON:EYE_OFF)+'</button>'
+    +'<div class="pmid" data-sel="'+idx+'"><div class="pml">'+esc(g.label)+'</div><div class="pma">'+esc(g.raw)+'</div></div>'
+    +(g.meshes.length>1?'<span class="qbadge">×'+g.meshes.length+'</span>':'')
+    +'<button class="pcartbtn" data-pcart="'+idx+'" title="'+esc(t("btn_add"))+'">'+CART_S+'</button></div>';
+  });
+  list.innerHTML=html||'<div style="padding:20px;text-align:center;color:var(--faint);font-size:12px">'+esc(t("no_results"))+'</div>';
+  document.getElementById("partCount").textContent=groups.length;
+  list.querySelectorAll(".prow").forEach(function(r){r.__g=groups[+r.getAttribute("data-i")];});
+  list.querySelectorAll("[data-sel]").forEach(function(el){el.addEventListener("click",function(){selectGroup(groups[+el.getAttribute("data-sel")],false);});});
+  list.querySelectorAll("[data-eye]").forEach(function(b){b.addEventListener("click",function(e){e.stopPropagation();toggleGroup(groups[+b.getAttribute("data-eye")]);});});
+  list.querySelectorAll("[data-pcart]").forEach(function(b){b.addEventListener("click",function(e){e.stopPropagation();var g=groups[+b.getAttribute("data-pcart")];addSub(g.raw,g.label);});});
+ }
+ function showNo(msg){document.getElementById("mvLoad").style.display="none";var no=document.getElementById("mvNo");no.style.display="flex";no.textContent=msg||t("no_3d");}
  function open3D(id){
   var p=byId[id];document.getElementById("mvName").textContent=pName(p);document.getElementById("mvArt").textContent=t("art_prefix")+p.art;
-  var ok=p.model&&MODELS[p.model];
-  document.getElementById("mvNo").style.display=ok?"none":"block";mv.style.display=ok?"block":"none";
-  if(ok){mv.setAttribute("src",MODELS[p.model]);mv.setAttribute("alt",pName(p));}
-  else document.getElementById("mvNo").textContent=t("no_3d");
-  document.getElementById("mvModal").classList.add("open");
+  document.getElementById("mvModal").classList.add("open");viewerActive=true;
+  document.getElementById("mvNo").style.display="none";
+  document.getElementById("partList").innerHTML="";document.getElementById("partCount").textContent="0";
+  var ps=document.getElementById("partSearch");if(ps)ps.value="";
+  document.getElementById("mvLoad").style.display="flex";
+  var url=p.model&&MODELS[p.model];
+  if(!url){showNo();return;}
+  ensureThree().then(function(){
+   initViewer();setTimeout(resizeViewer,30);clearModel();
+   loader.load(url,function(gltf){
+    curRoot=gltf.scene||(gltf.scenes&&gltf.scenes[0]);scene.add(curRoot);
+    buildGroups(curRoot);frameModel();resizeViewer();renderPartList("");
+    document.getElementById("mvLoad").style.display="none";
+   },undefined,function(){showNo();});
+  }).catch(function(){showNo(t("three_fail"));});
  }
- function close3D(){document.getElementById("mvModal").classList.remove("open");mv.removeAttribute("src");}
+ function close3D(){document.getElementById("mvModal").classList.remove("open");viewerActive=false;if(controls)controls.autoRotate=true;}
  // ---- toast ----
  var toTimer;function toast(m){var el=document.getElementById("toast");el.textContent=m;el.classList.add("show");clearTimeout(toTimer);toTimer=setTimeout(function(){el.classList.remove("show");},1600);}
  // ---- fields persist ----
@@ -520,7 +652,7 @@ const ICONS={
  function saveFields(){try{var o={};FLDS.forEach(function(id){var e=document.getElementById(id);if(e)o[id]=e.value;});localStorage.setItem(FKEY,JSON.stringify(o));}catch(e){}}
  function fv(id){var e=document.getElementById(id);return e?(e.value||"").trim():"";}
  // ---- request lines (shared by mail + print) ----
- function lines(){return Object.keys(cart).filter(function(id){return byId[id];}).map(function(id){return {p:byId[id],q:cart[id]};});}
+ function lines(){return Object.keys(cart).filter(function(id){return item(id);}).map(function(id){return {p:item(id),q:cart[id]};});}
  function subtotal(){var s=0;lines().forEach(function(l){if(l.p.price>0)s+=l.p.price*l.q;});return s;}
  // ---- send mail ----
  function sendMail(){
@@ -574,9 +706,11 @@ const ICONS={
   document.getElementById("cartBtn").addEventListener("click",openCart);
   document.getElementById("cartClose").addEventListener("click",closeCart);
   document.getElementById("backdrop").addEventListener("click",closeCart);
-  mv.addEventListener("error",function(){document.getElementById("mvNo").style.display="block";document.getElementById("mvNo").textContent=t("no_3d");mv.style.display="none";});
   document.getElementById("mvClose").addEventListener("click",close3D);
   document.getElementById("mvModal").addEventListener("click",function(e){if(e.target.id==="mvModal")close3D();});
+  document.getElementById("mvReset").addEventListener("click",resetView);
+  document.getElementById("mvShowAll").addEventListener("click",showAllParts);
+  document.getElementById("partSearch").addEventListener("input",function(e){renderPartList((e.target.value||"").toLowerCase());});
   document.getElementById("sendMail").addEventListener("click",sendMail);
   document.getElementById("printReq").addEventListener("click",printReq);
   document.getElementById("clearCart").addEventListener("click",function(){cart={};saveCart();updateBadge();renderCatalog();renderCart();});
@@ -585,6 +719,8 @@ const ICONS={
  }
  init();
 })();
+</script>
+<script>
 if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){});});}
 </script>
 </body>
@@ -600,13 +736,15 @@ out=out.replace("%%IMG%%",json.dumps(IMG))
 out=out.replace("%%MODELS%%",json.dumps(MODELS))
 out=out.replace("%%CAT%%",json.dumps(CAT,ensure_ascii=False))
 out=out.replace("%%I18N%%",json.dumps(I18N,ensure_ascii=False))
-out=out.replace("%%MV%%",MV)   # zuletzt (großer Block)
 
-for tok in ["%%RED%%","%%RED2%%","%%HERO%%","%%LOGOL%%","%%LOGOD%%","%%MAIL%%","%%IMG%%","%%MODELS%%","%%CAT%%","%%I18N%%","%%MV%%"]:
+for tok in ["%%RED%%","%%RED2%%","%%HERO%%","%%LOGOL%%","%%LOGOD%%","%%MAIL%%","%%IMG%%","%%MODELS%%","%%CAT%%","%%I18N%%"]:
     assert tok not in out, "Token übrig: "+tok
-for need in ['id="cartBtn"','id="mv"','customElements','renderCatalog','data-lang="pl"','model-viewer']:
+for need in ['id="cartBtn"','id="tcanvas"','id="partList"','renderCatalog','data-lang="pl"','ensureThree','importmap','./vendor/GLTFLoader.js']:
     assert need in out, "fehlt: "+need
+# vendor/three.js muss vorhanden sein (Laufzeit-Abhängigkeit der 3D-Ansicht)
+for vf in ["three.module.min.js","GLTFLoader.js","OrbitControls.js","BufferGeometryUtils.js"]:
+    assert os.path.exists(os.path.join(OUTDIR,"vendor",vf)), "vendor fehlt: ersatzteile/vendor/"+vf
 
-p=os.path.join(HERE,"..","ersatzteile.html")
+p=os.path.join(OUTDIR,"index.html")
 open(p,"w",encoding="utf8").write(out)
-print("ersatzteile.html erzeugt – bytes",len(out.encode("utf8")))
+print("ersatzteile/index.html erzeugt – bytes",len(out.encode("utf8")))

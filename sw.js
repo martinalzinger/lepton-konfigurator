@@ -1,5 +1,7 @@
-const CACHE="lepton-v4";
-const ASSETS=["./","./index.html","./ersatzteile.html","./manifest.webmanifest","./icon-192.png","./icon-512.png"];
+// Service-Worker des Konfigurators (index.html). Die Ersatzteilseite ist davon
+// vollständig getrennt und hat ihren eigenen SW unter /ersatzteile/sw.js.
+const CACHE="lepton-v7";
+const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png"];
 
 self.addEventListener("install",e=>{
   // Einzeln cachen, damit ein einzelner Fehler nicht das ganze Precaching verhindert
@@ -11,9 +13,10 @@ self.addEventListener("install",e=>{
 });
 
 self.addEventListener("activate",e=>{
+  // NUR eigene (lepton-) Caches aufräumen – der Ersatzteil-SW (ersatzteile-) bleibt unberührt
   e.waitUntil(
     caches.keys()
-      .then(k=>Promise.all(k.filter(x=>x!==CACHE).map(x=>caches.delete(x))))
+      .then(k=>Promise.all(k.filter(x=>x.startsWith("lepton-")&&x!==CACHE).map(x=>caches.delete(x))))
       .then(()=>self.clients.claim())
   );
 });
@@ -23,18 +26,17 @@ self.addEventListener("fetch",e=>{
   if(req.method!=="GET")return;
   const isHTML=req.mode==="navigate"||(req.headers.get("accept")||"").includes("text/html");
   if(isHTML){
-    // Online: frische Seite holen und unter ihrer EIGENEN URL cachen.
-    // Offline: die passende Seite liefern (ersatzteile.html bleibt ersatzteile.html),
-    // erst danach auf index.html zurückfallen.
+    // Online: frische Seite holen und in den Cache legen.
+    // Offline: direkt die gespeicherte index.html liefern (robust gegen Vary/URL-Mismatch).
     e.respondWith(
       fetch(req).then(resp=>{
         const cp=resp.clone();
-        caches.open(CACHE).then(c=>{c.put(req,cp).catch(()=>{});}).catch(()=>{});
+        caches.open(CACHE).then(c=>c.put("./index.html",cp)).catch(()=>{});
         return resp;
       }).catch(()=>
-        caches.match(req,{ignoreSearch:true})
-          .then(r=>r||caches.match("./index.html",{ignoreSearch:true}))
+        caches.match("./index.html",{ignoreSearch:true})
           .then(r=>r||caches.match("./",{ignoreSearch:true}))
+          .then(r=>r||caches.match(req,{ignoreSearch:true,ignoreVary:true}))
       )
     );
     return;
