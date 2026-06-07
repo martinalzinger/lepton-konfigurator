@@ -85,27 +85,33 @@ Umschalter oben rechts in der roten Leiste. Alle Texte liegen in `build/i18n.jso
   (z. B. Browser-Druck nach PDF) – Layout `#doc` ist bereits druckoptimiert.
 - *App-Icon neu*: aus dem Logo erzeugen und `icon-192/512.png` ersetzen.
 
-## Ersatzteilkatalog (eigene Seite `ersatzteile.html`)
-**Unabhängig** vom Konfigurator: eigene Datei/URL (`…/ersatzteile.html`), kein
-Bezug zu Angebot/Kaufvertrag/Gebraucht. 3D-Ansicht je Bauteil, **Warenkorb**,
-Versand als **Druck-/PDF-Anfrage** oder **mailto** an `martin@alzinger-maschinenbau.de`.
+## Ersatzteilkatalog (komplett eigenständiger Ordner `ersatzteile/`)
+**Vollständig getrennt** vom Konfigurator: eigener Ordner/URL (`…/ersatzteile/`),
+**eigener Service-Worker** (`ersatzteile/sw.js`, Scope `/ersatzteile/`, Cache-
+Namespace `ersatzteile-`), **eigenes Manifest/Icons** – teilt **keine Datei** mit
+dem Konfigurator. Kein Bezug zu Angebot/Kaufvertrag/Gebraucht. 3D-Ansicht je
+Bauteil, **Warenkorb**, Versand als **Druck-/PDF-Anfrage** oder **mailto** an
+`martin@alzinger-maschinenbau.de`.
 
-**Wichtig – 3D-Modelle ausgelagert:** Die GLBs werden **nicht** in `ersatzteile.html`
-eingebettet, sondern als `models/*.glb` daneben geschrieben und im Browser **bei
-Bedarf nachgeladen** (Klick auf „3D ansehen"; Service-Worker cacht sie offline).
-So bleibt die HTML klein (~1 MB), auch bei großen Baugruppen. `models/` (inkl. der
-Platzhalter `proc-*.glb`) wird vom Build erzeugt und ist eingecheckt.
+**Wichtig – 3D-Modelle ausgelagert:** Die GLBs werden **nicht** in die HTML
+eingebettet, sondern als `ersatzteile/models/*.glb` daneben geschrieben und im
+Browser **bei Bedarf nachgeladen** (Klick auf „3D ansehen"; der eigene Service-
+Worker cacht sie offline). So bleibt die HTML klein (~0,2 MB), auch bei großen
+Baugruppen. `ersatzteile/models/` (inkl. Platzhalter `proc-*.glb`) und
+`ersatzteile/vendor/` werden vom Build erzeugt/gepflegt und sind eingecheckt.
 
 Quelle/Build:
-- `build/build_ersatzteile.py` – Template (`TPL`) + Generator → schreibt `ersatzteile.html`
-  und `models/*.glb`. Aufruf: `python3 build/build_ersatzteile.py`.
+- `build/build_ersatzteile.py` – Template (`TPL`) + Generator → schreibt
+  `ersatzteile/index.html` und `ersatzteile/models/*.glb`.
+  Aufruf: `python3 build/build_ersatzteile.py`.
 - `build/spareparts.json` – Ersatzteile (Kategorien, Art.-Nr., Preise, `model`/`img`).
 - `build/i18n_ersatzteile.json` – UI-Texte der Seite als `key:{de,en,pl,fr}`.
 - `build/glbgen.py` – erzeugt 3D-**Platzhaltermodelle** (GLB), Schlüssel z. B.
   `scheibe|welle|lager|ritzel|trommel|keilriemen|abstreifer|gehaeuse`.
-- `vendor/*.js` – three.js (Core + GLTFLoader + OrbitControls + BufferGeometryUtils),
-  offline; per `<script type="importmap">` als `three` eingebunden. Treibt den
-  **interaktiven 3D-Explorer** (Bauteile picken, ein-/ausblenden, einzeln bestellen).
+- `ersatzteile/vendor/*.js` – three.js (Core + GLTFLoader + OrbitControls +
+  BufferGeometryUtils), offline; `three` per `<script type="importmap">`, die Loader
+  werden **dynamisch bei Bedarf** importiert. Treibt den **interaktiven 3D-Explorer**
+  (Bauteile picken, ein-/ausblenden, einzeln bestellen).
 - `build/assets_spareparts.b64.json` – optionale eingebettete Vorschaubilder.
 
 **3D-Explorer:** Beim Klick auf „3D ansehen" lädt der Viewer das GLB nach und
@@ -115,18 +121,19 @@ sich anklicken (im Modell oder in der Liste), per Auge-Symbol ein-/ausblenden un
 einzeln in den Warenkorb legen (Registry `amb_lepton_subparts`).
 
 Eigene CAD-Daten → `build/models_cad/` ablegen (lokal; per `.gitignore` nicht
-eingecheckt), dann neu bauen. Ergebnis landet als `models/<safe>.glb`:
+eingecheckt), dann neu bauen. Ergebnis landet als `ersatzteile/models/<safe>.glb`:
 - `.step`/`.stp` → nach GLB konvertiert (via `cascadio`/OpenCASCADE; `pip install cascadio`,
   Tessellierung `tol_linear=0.5`). Art.-Nr./Bezeichnung aus `PRODUCT(...)` bzw. Dateiname.
-- `.glb`/`.gltf` → nach `models/` kopiert.
+- `.glb`/`.gltf` → nach `ersatzteile/models/` kopiert.
 - `.sev` (Solid Edge) → nur eingebettetes **Vorschaubild** (kein 3D möglich;
   für echtes 3D in Solid Edge als STEP/glTF exportieren).
-Im `spareparts.json` per `"model":"<safe>.glb"` referenzieren (Dateiname in `models/`);
-nicht referenzierte Modelle landen automatisch unter „Aus CAD importiert".
+Im `spareparts.json` per `"model":"<safe>.glb"` referenzieren (Dateiname in
+`ersatzteile/models/`); nicht referenzierte Modelle landen automatisch unter
+„Aus CAD importiert".
 
 `spareparts.json` ändern → **immer** `python3 build/build_ersatzteile.py` neu bauen.
 
 ## Deploy
-GitHub Pages aus dem Branch `main` (Ordner `/root`). `index.html` und
-`ersatzteile.html` liegen im Wurzelverzeichnis, daher ist kein Build-Schritt auf
-dem Server nötig.
+GitHub Pages aus dem Branch `main` (Ordner `/root`). Konfigurator = `index.html`
+im Wurzelverzeichnis; Ersatzteilkatalog = Ordner `ersatzteile/` (eigene URL
+`…/ersatzteile/`). Kein Build-Schritt auf dem Server nötig.
