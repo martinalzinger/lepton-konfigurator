@@ -41,7 +41,7 @@ body{font-family:var(--sans);background:var(--paper);color:var(--ink);line-heigh
 .hero-in{max-width:1120px;margin:0 auto;width:100%;padding:42px 20px 40px}
 .hero .kick{font-family:var(--mono);font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:#ff9d8c;font-weight:500}
 .hero h1{font-size:clamp(28px,6vw,46px);font-weight:800;letter-spacing:-.02em;line-height:1.04;margin-top:12px}
-.hero .hsub{font-size:14px;color:#d6d4cf;margin-top:8px}
+.hero .hsub{font-family:var(--mono);font-size:12.5px;letter-spacing:.16em;text-transform:uppercase;color:#e7e5e0;margin-top:14px;font-weight:500}
 .hero .cta{display:inline-flex;align-items:center;gap:10px;margin-top:20px;background:var(--red);color:#fff;border:0;border-radius:8px;padding:13px 20px;font-family:var(--mono);font-size:12px;letter-spacing:.06em;text-transform:uppercase;font-weight:600;cursor:pointer}
 .hero .cta:hover{background:var(--red2)}
 .wrap{max-width:1120px;margin:0 auto;padding:30px 20px 150px}
@@ -157,6 +157,7 @@ body{font-family:var(--sans);background:var(--paper);color:var(--ink);line-heigh
 .sig2 .sigbox b{color:var(--ink)}
 #doc .dfoot{display:flex;height:6px}#doc .dfoot span{flex:1}
 body.mode-gebraucht .pcard .pprice,body.mode-gebraucht .basis .p{display:none}
+body.mode-gebraucht .hero .hsub{display:none}
 @media (max-width:680px){#doc .pad{padding:26px 22px}.machine .specs{columns:1}.terms,.sig2{grid-template-columns:1fr}.gdata{grid-template-columns:1fr}.dmeta{text-align:left}}
 @media print{@page{margin:13mm}body{background:#fff}body *{visibility:hidden}#doc,#doc *{visibility:visible}#doc{position:absolute;left:0;top:0;width:100%;max-width:none;border:0;box-shadow:none;border-radius:0}#doc .pad{padding:0}.noprint{display:none!important}.machine,.lines .grp,.lines .ln,.totals .row.gross,.sign,.sig2,.vp .party{break-inside:avoid}}
 </style>
@@ -185,6 +186,7 @@ body.mode-gebraucht .pcard .pprice,body.mode-gebraucht .basis .p{display:none}
 <section class="hero noprint">
   <div class="hero-in">
     <h1 id="heroTitle">Angebot erstellen</h1>
+    <div class="hsub">Mobile Sternsiebanlage LEPTON 5100 · Serie 2026</div>
     <button class="cta" onclick="document.getElementById('main').scrollIntoView({behavior:'smooth'})">Zur Konfiguration ↓</button>
   </div>
 </section>
