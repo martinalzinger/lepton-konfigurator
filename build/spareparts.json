@@ -6,7 +6,7 @@
       "h_en": "Assemblies",
       "teile": [
         { "id": "GKB-1", "art": "GKB-1", "name": "Grobkornband 1", "name_en": "Coarse-grain conveyor 1", "desc": "Komplette Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar", "desc_en": "Complete assembly – pick and order all individual parts in 3D", "price": 0, "model": "gkb1_lang.glb" },
-        { "id": "ABSAUGUNG-SD2", "art": "ABS-SD2", "name": "Absaugung SD2", "name_en": "Suction SD2", "desc": "Komplette Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar", "desc_en": "Complete assembly – pick and order all individual parts in 3D", "price": 0, "model": "absaugung-sd2.glb" }
+        { "id": "ABSAUGUNG-SD2", "art": "ABS-SD2", "name": "Absaugung SD2", "name_en": "Suction SD2", "desc": "Komplette Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar", "desc_en": "Complete assembly – pick and order all individual parts in 3D", "price": 0, "model": "absaugung-sd2.glb", "img": "absaugung_sd2" }
       ]
     },
     {
