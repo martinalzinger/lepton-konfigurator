@@ -234,37 +234,7 @@
         "name": "36 mm",
         "desc": "Siebteilung SD 1",
         "price": 27486,
-        "img": null,
-        "specs": [
-          [
-            "Siebdeckneigung stufenlos einstellbar von 3° bis 38°",
-            ""
-          ],
-          [
-            "vier unabhängige Elektromotoren mit Lastregelung bei schwierigem Material",
-            ""
-          ],
-          [
-            "alle Antriebe reversierbar",
-            ""
-          ],
-          [
-            "19 Siebwalzen Teilung 36–70 mm",
-            ""
-          ],
-          [
-            "Siebscheiben einzeln wechselbar aus verschleißfestem Hardox",
-            ""
-          ],
-          [
-            "stufenlose Drehzahleinstellung",
-            ""
-          ],
-          [
-            "Hardfacing an zwei Spitzen der Siebscheiben",
-            ""
-          ]
-        ]
+        "img": null
       },
       {
         "id": "5001176",
@@ -298,6 +268,36 @@
         "price": 19307,
         "img": null
       }
+    ],
+    "cspecs": [
+      [
+        "Siebdeckneigung stufenlos einstellbar von 3° bis 38°",
+        ""
+      ],
+      [
+        "vier unabhängige Elektromotoren mit Lastregelung bei schwierigem Material",
+        ""
+      ],
+      [
+        "alle Antriebe reversierbar",
+        ""
+      ],
+      [
+        "19 Siebwalzen Teilung 36–70 mm",
+        ""
+      ],
+      [
+        "Siebscheiben einzeln wechselbar aus verschleißfestem Hardox",
+        ""
+      ],
+      [
+        "stufenlose Drehzahleinstellung",
+        ""
+      ],
+      [
+        "Hardfacing an zwei Spitzen der Siebscheiben",
+        ""
+      ]
     ]
   },
   {
