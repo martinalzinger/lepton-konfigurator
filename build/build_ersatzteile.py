@@ -28,7 +28,8 @@ LANGS=["de","en","pl","fr"]
 # ---- Modelle als EXTERNE Dateien (Nachladen bei Bedarf) ----
 # 3D-Modelle werden NICHT in die HTML eingebettet, sondern als models/*.glb ausgelagert
 # und erst beim Klick auf "3D ansehen" geladen (offline via Service-Worker gecacht).
-MODELS_DIR=os.path.normpath(os.path.join(HERE,"..","models"))
+OUTDIR=os.path.normpath(os.path.join(HERE,"..","ersatzteile"))   # eigenständiger Ordner /ersatzteile/
+MODELS_DIR=os.path.join(OUTDIR,"models")
 os.makedirs(MODELS_DIR,exist_ok=True)
 MODELS={}   # key -> relative URL "models/datei.glb"
 SEV_IMG={}  # key -> data-URI (kleine Vorschaubilder bleiben eingebettet)
@@ -188,7 +189,7 @@ TPL=r'''<!DOCTYPE html>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Ersatzteile">
-<link rel="manifest" href="ersatzteile.webmanifest">
+<link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -742,8 +743,8 @@ for need in ['id="cartBtn"','id="tcanvas"','id="partList"','renderCatalog','data
     assert need in out, "fehlt: "+need
 # vendor/three.js muss vorhanden sein (Laufzeit-Abhängigkeit der 3D-Ansicht)
 for vf in ["three.module.min.js","GLTFLoader.js","OrbitControls.js","BufferGeometryUtils.js"]:
-    assert os.path.exists(os.path.join(HERE,"..","vendor",vf)), "vendor fehlt: "+vf
+    assert os.path.exists(os.path.join(OUTDIR,"vendor",vf)), "vendor fehlt: ersatzteile/vendor/"+vf
 
-p=os.path.join(HERE,"..","ersatzteile.html")
+p=os.path.join(OUTDIR,"index.html")
 open(p,"w",encoding="utf8").write(out)
-print("ersatzteile.html erzeugt – bytes",len(out.encode("utf8")))
+print("ersatzteile/index.html erzeugt – bytes",len(out.encode("utf8")))

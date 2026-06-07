@@ -3,7 +3,7 @@
   "short_name": "Ersatzteile",
   "description": "Eigenständiger Ersatzteilkatalog mit 3D-Ansicht für die mobile Sternsiebanlage Lepton 5100.",
   "lang": "de",
-  "start_url": "ersatzteile.html",
+  "start_url": ".",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
