@@ -1434,6 +1434,18 @@
     "pl": "Pakiet oświetlenia LED",
     "fr": "Pack d'éclairage LED"
    }
+  },
+  "sd1band_std": {
+   "name": {
+    "en": "Screen deck 1 standard variant",
+    "pl": "Pokład sitowy 1 wariant standardowy",
+    "fr": "Pont de criblage 1 variante standard"
+   },
+   "desc": {
+    "en": "Standard equipment",
+    "pl": "Wyposażenie seryjne",
+    "fr": "Équipement de série"
+   }
   }
  }
 }

@@ -319,7 +319,7 @@ var lang="de";
  function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
  function v(id){var e=document.getElementById(id);return e?(e.value||"").trim():"";}
  function imgDiv(o){return (o.img&&IMG[o.img])?'<div class="pimg" style="background-image:url('+IMG[o.img]+')"></div>':'';}
- function cardInner(o){return '<div class="ck"></div>'+imgDiv(o)+'<div class="pbody"><div class="pname">'+esc(optName(o))+'</div><div class="pdesc">'+esc(optDesc(o))+'</div><div class="pfoot"><span class="part">'+t("art_prefix")+o.art+'</span><span class="pprice">'+(o.price===0?t("incl_short"):money(o.price))+'</span></div></div>';}
+ function cardInner(o){return '<div class="ck"></div>'+imgDiv(o)+'<div class="pbody"><div class="pname">'+esc(optName(o))+'</div><div class="pdesc">'+esc(optDesc(o))+'</div><div class="pfoot"><span class="part">'+(o.art?t("art_prefix")+esc(o.art):'')+'</span><span class="pprice">'+(o.price===0?t("incl_short"):money(o.price))+'</span></div></div>';}
  function buildCatalog(){
   var html="";
   CATS.forEach(function(c){
@@ -394,7 +394,7 @@ var lang="de";
   var lh='<div class="lines"><div class="grp dark">'+esc(grpLabel)+'</div>';
   sel.forEach(function(g){lh+='<div class="grp">'+esc(g.grp)+'</div>';
    g.items.forEach(function(it){var th=(it.img&&IMG[it.img])?'<i class="th" style="background-image:url('+IMG[it.img]+')"></i>':'';
-    lh+='<div class="ln"><span class="lt">'+th+'<span class="n">'+esc(it.name)+' <span class="a">('+it.art+')</span></span></span>'+(showPrices===false?'':'<span class="p">'+(it.price===0?t("incl_long"):money(it.price))+'</span>')+'</div>';});});
+    lh+='<div class="ln"><span class="lt">'+th+'<span class="n">'+esc(it.name)+(it.art?' <span class="a">('+it.art+')</span>':'')+'</span></span>'+(showPrices===false?'':'<span class="p">'+(it.price===0?t("incl_long"):money(it.price))+'</span>')+'</div>';});});
   if(!sel.length)lh+='<div style="font-size:12px;color:#9a9aa0;padding:8px 0">'+t("no_options")+'</div>';
   return lh+'</div>';
  }

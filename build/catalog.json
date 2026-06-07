@@ -244,6 +244,14 @@
     "h": "Siebdeck 1 Band",
     "opts": [
       {
+        "id": "sd1band_std",
+        "art": "",
+        "name": "Siebdeck 1 Standardvariante",
+        "desc": "Serienausstattung",
+        "price": 0,
+        "img": "image_sd1std"
+      },
+      {
         "id": "5001203",
         "art": "5001203",
         "name": "Siebdeck 1 Band längs",
