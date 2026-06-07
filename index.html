@@ -143,7 +143,7 @@ body{font-family:var(--sans);background:var(--paper);color:var(--ink);line-heigh
 .lines .grp.dark{color:var(--ink);border-color:var(--ink)}
 .lines .ln{display:flex;justify-content:space-between;gap:14px;padding:6px 0;font-size:12.5px;border-bottom:1px dotted var(--line);align-items:center}
 .lines .lt{display:flex;align-items:center;gap:11px;min-width:0}
-.lines .th{width:60px;height:42px;border-radius:4px;background-size:contain;background-repeat:no-repeat;background-position:center;background-color:#fff;flex-shrink:0;border:1px solid var(--line)}
+.lines .th{width:60px;height:42px;border-radius:4px;object-fit:contain;background:#fff;flex-shrink:0;border:1px solid var(--line)}
 .lines .n .a{font-family:var(--mono);font-size:9.5px;color:var(--faint)}
 .lines .p{font-family:var(--mono);font-weight:500;white-space:nowrap}
 .totals{margin-top:18px;border-top:2px solid var(--ink);padding-top:12px}
@@ -165,7 +165,7 @@ body{font-family:var(--sans);background:var(--paper);color:var(--ink);line-heigh
 body.mode-gebraucht .pcard .pprice,body.mode-gebraucht .basis .p{display:none}
 body.mode-gebraucht .hero .hsub{display:none}
 @media (max-width:680px){#doc .pad{padding:26px 22px}.machine .specs{columns:1}.terms,.sig2{grid-template-columns:1fr}.gdata{grid-template-columns:1fr}.dmeta{text-align:left}}
-@media print{@page{margin:13mm}body{background:#fff}body *{visibility:hidden}#doc,#doc *{visibility:visible}#doc{position:absolute;left:0;top:0;width:100%;max-width:none;border:0;box-shadow:none;border-radius:0}#doc .pad{padding:0}.noprint{display:none!important}.machine,.lines .grp,.lines .ln,.totals .row.gross,.sign,.sig2,.vp .party{break-inside:avoid}}
+@media print{@page{margin:13mm}body{background:#fff}body *{visibility:hidden}#doc,#doc *{visibility:visible;-webkit-print-color-adjust:exact;print-color-adjust:exact}#doc{position:absolute;left:0;top:0;width:100%;max-width:none;border:0;box-shadow:none;border-radius:0}#doc .pad{padding:0}.noprint{display:none!important}.machine,.lines .grp,.lines .ln,.totals .row.gross,.sign,.sig2,.vp .party{break-inside:avoid}}
 </style>
 </head>
 <body>
@@ -386,7 +386,7 @@ var lang="de";
  function linesHTML(sel,grpLabel,showPrices){
   var lh='<div class="lines"><div class="grp dark">'+esc(grpLabel)+'</div>';
   sel.forEach(function(g){lh+='<div class="grp">'+esc(g.grp)+'</div>';
-   g.items.forEach(function(it){var th=(it.img&&IMG[it.img])?'<i class="th" style="background-image:url('+IMG[it.img]+')"></i>':'';
+   g.items.forEach(function(it){var th=(it.img&&IMG[it.img])?'<img class="th" src="'+IMG[it.img]+'" alt="">':'';
     lh+='<div class="ln"><span class="lt">'+th+'<span class="n">'+esc(it.name)+(it.art?' <span class="a">('+it.art+')</span>':'')+'</span></span>'+(showPrices===false?'':'<span class="p">'+(it.price===0?t("incl_long"):money(it.price))+'</span>')+'</div>';});});
   if(!sel.length)lh+='<div style="font-size:12px;color:#9a9aa0;padding:8px 0">'+t("no_options")+'</div>';
   return lh+'</div>';
