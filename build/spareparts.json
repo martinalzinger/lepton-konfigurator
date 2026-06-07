@@ -5,7 +5,8 @@
       "h": "Baugruppen",
       "h_en": "Assemblies",
       "teile": [
-        { "id": "GKB-1", "art": "GKB-1", "name": "Grobkornband 1", "name_en": "Coarse-grain conveyor 1", "desc": "Komplette Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar", "desc_en": "Complete assembly – pick and order all individual parts in 3D", "price": 0, "model": "gkb1_lang.glb" }
+        { "id": "GKB-1", "art": "GKB-1", "name": "Grobkornband 1", "name_en": "Coarse-grain conveyor 1", "desc": "Komplette Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar", "desc_en": "Complete assembly – pick and order all individual parts in 3D", "price": 0, "model": "gkb1_lang.glb" },
+        { "id": "EUROPA-STRASSE", "art": "014952", "name": "Europa Straße", "name_en": "Europa Straße", "desc": "Komplette Maschine in 3D – drehen und zoomen (Gesamtansicht der Anlage)", "desc_en": "Complete machine in 3D – rotate and zoom (overall view)", "price": 0, "model": "europa-strasse.glb" }
       ]
     },
     {
