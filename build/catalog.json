@@ -250,7 +250,14 @@
         "desc": "Serienausstattung",
         "price": 0,
         "img": "image_sd1std",
-        "conf": ["5001203", "5001204"]
+        "conf": ["5001203", "5001204"],
+        "specs": [
+          ["Austragung", "Siebüberlauf nach rechts"],
+          ["Bandlänge", "6160 mm"],
+          ["Bandbreite", "910 mm"],
+          ["Schütthöhe", "2640–4850 mm"],
+          ["Geschwindigkeit", "2 m/s"]
+        ]
       },
       {
         "id": "5001203",

@@ -94,6 +94,11 @@ body{font-family:var(--sans);background:var(--paper);color:var(--ink);line-heigh
 .pcard .pbody{padding:13px 14px 14px;display:flex;flex-direction:column;gap:5px;flex:1}
 .pcard .pname{font-size:13.5px;font-weight:600;line-height:1.3}
 .pcard .pdesc{font-size:11.5px;color:var(--muted);line-height:1.4;flex:1}
+.pcard .pspecs{margin-top:7px;display:flex;flex-direction:column;gap:3px}
+.pcard .pspecs .pr2{display:flex;justify-content:space-between;gap:10px;font-size:11px;line-height:1.3;border-top:1px dotted var(--line);padding-top:3px}
+.pcard .pspecs .pr2:first-child{border-top:0;padding-top:0}
+.pcard .pspecs .pk{color:var(--faint);white-space:nowrap}
+.pcard .pspecs .pv{color:var(--ink);font-family:var(--mono);font-size:10.5px;text-align:right}
 .pcard .pfoot{display:flex;justify-content:space-between;align-items:center;margin-top:4px;gap:8px}
 .pcard .part{font-family:var(--mono);font-size:10px;color:var(--faint)}
 .pcard .pprice{font-family:var(--mono);font-weight:600;font-size:13.5px;color:var(--red);white-space:nowrap}
@@ -359,7 +364,8 @@ var lang="de";
  function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
  function v(id){var e=document.getElementById(id);return e?(e.value||"").trim():"";}
  function imgDiv(o){return (o.img&&IMG[o.img])?'<div class="pimg" style="background-image:url('+IMG[o.img]+')"></div>':'';}
- function cardInner(o){return '<div class="ck"></div>'+imgDiv(o)+'<div class="pbody"><div class="pname">'+esc(optName(o))+'</div><div class="pdesc">'+esc(optDesc(o))+'</div><div class="pfoot"><span class="part">'+(o.art?t("art_prefix")+esc(o.art):'')+'</span><span class="pprice">'+(o.price===0?t("incl_short"):money(o.price))+'</span></div></div>';}
+ function specsHTML(o){var s=o["specs_"+lang]||o.specs;if(!s||!s.length)return '';return '<div class="pspecs">'+s.map(function(r){return '<div class="pr2"><span class="pk">'+esc(r[0])+'</span><span class="pv">'+esc(r[1])+'</span></div>';}).join('')+'</div>';}
+ function cardInner(o){return '<div class="ck"></div>'+imgDiv(o)+'<div class="pbody"><div class="pname">'+esc(optName(o))+'</div><div class="pdesc">'+esc(optDesc(o))+'</div>'+specsHTML(o)+'<div class="pfoot"><span class="part">'+(o.art?t("art_prefix")+esc(o.art):'')+'</span><span class="pprice">'+(o.price===0?t("incl_short"):money(o.price))+'</span></div></div>';}
  function buildCatalog(){
   var html="";
   CATS.forEach(function(c){
