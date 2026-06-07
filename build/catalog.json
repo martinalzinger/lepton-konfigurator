@@ -29,7 +29,17 @@
         "name": "Straßenzulassung mit Hangausgleich",
         "desc": "Tandemachse · 80 km/h · EBS · Luftfederung",
         "price": 12096,
-        "img": "image31"
+        "img": "image31",
+        "ex": "fg"
+      },
+      {
+        "id": "5000380",
+        "art": "5000380",
+        "name": "Raupenlaufwerk mit Hangausgleich",
+        "desc": "Spurbreite 3000 mm · Metallketten",
+        "price": 24877,
+        "img": "image32",
+        "ex": "fg"
       },
       {
         "id": "5001175",
@@ -46,14 +56,6 @@
         "desc": "",
         "price": 2670,
         "img": null
-      },
-      {
-        "id": "5000380",
-        "art": "5000380",
-        "name": "Raupenlaufwerk mit Hangausgleich",
-        "desc": "Spurbreite 3000 mm · Metallketten",
-        "price": 24877,
-        "img": "image32"
       }
     ]
   },
