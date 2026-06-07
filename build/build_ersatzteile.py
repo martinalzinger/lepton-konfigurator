@@ -568,7 +568,7 @@ const ICONS={
  function closeCart(){document.getElementById("drawer").classList.remove("open");document.getElementById("backdrop").classList.remove("open");}
  // ===== 3D-Explorer (three.js wird BEI BEDARF dynamisch geladen) =====
  var THREE,GLTFLoader,OrbitControls,RoomEnvironment,loader,hlMat;
- var renderer,scene,camera,controls,raycaster,curRoot=null,groups=[],activeG=null,fitR=1,vinit=false,viewerActive=false,threeReady=false;
+ var renderer,scene,camera,controls,raycaster,curRoot=null,pivot=null,autoSpin=true,groups=[],activeG=null,fitR=1,vinit=false,viewerActive=false,threeReady=false;
  function ensureThree(){
   if(threeReady)return Promise.resolve(true);
   return Promise.all([import("./vendor/three.module.min.js"),import("./vendor/GLTFLoader.js"),import("./vendor/OrbitControls.js"),import("./vendor/RoomEnvironment.js")]).then(function(m){
@@ -590,7 +590,9 @@ const ICONS={
   scene.environment=pmrem.fromScene(new RoomEnvironment(),0.04).texture;
   camera=new THREE.PerspectiveCamera(45,1,0.01,1e7);
   controls=new OrbitControls(camera,canvas);
-  controls.enableDamping=true;controls.dampingFactor=0.08;controls.autoRotate=true;controls.autoRotateSpeed=1.0;
+  controls.enableDamping=true;controls.dampingFactor=0.08;
+  controls.autoRotate=false;       // Idle-Drehung erfolgt am Modell (pivot), nicht an der Kamera
+  controls.enableRotate=false;     // Kamera-Rotation aus -> freie Modell-Rotation (Pointer-Handler unten)
   controls.rotateSpeed=0.75;          // ruhigeres Drehen
   controls.zoomSpeed=0.9;             // feinerer Zoom
   controls.panSpeed=1.2;              // leichtgängigeres Verschieben
@@ -602,14 +604,32 @@ const ICONS={
   var dl=[[1,2,1.4,1.5],[-1,-0.6,-1,1.5],[-1.5,0.8,1,1.1],[1.5,0.6,-1.2,1.1],[0,-1.6,0.4,0.7]];
   dl.forEach(function(p){var d=new THREE.DirectionalLight(0xffffff,p[3]);d.position.set(p[0],p[1],p[2]);scene.add(d);});
   raycaster=new THREE.Raycaster();
-  var dn=null;
-  canvas.addEventListener("pointerdown",function(e){dn={x:e.clientX,y:e.clientY,t:Date.now()};});
-  canvas.addEventListener("pointerup",function(e){if(!dn)return;if(Math.hypot(e.clientX-dn.x,e.clientY-dn.y)<5&&Date.now()-dn.t<500)pickAt(e);dn=null;});
+  // --- Freie 360°-Rotation des Modells (Pivot, kein Pol-Stopp); Zoom/Pan via OrbitControls ---
+  var dn=null,last=null,drag=false;
+  var vR=new THREE.Vector3(),vU=new THREE.Vector3(),vT=new THREE.Vector3(),qa=new THREE.Quaternion(),qb=new THREE.Quaternion();
+  canvas.addEventListener("pointerdown",function(e){
+   if(e.isPrimary===false){drag=false;last=null;return;}   // zweiter Finger -> OrbitControls pant/zoomt
+   dn={x:e.clientX,y:e.clientY,t:Date.now()};last={x:e.clientX,y:e.clientY};drag=true;
+  });
+  canvas.addEventListener("pointermove",function(e){
+   if(!drag||!last||!pivot||e.isPrimary===false)return;
+   var dx=e.clientX-last.x,dy=e.clientY-last.y;last={x:e.clientX,y:e.clientY};
+   if(!dx&&!dy)return;
+   autoSpin=false;
+   camera.matrixWorld.extractBasis(vR,vU,vT);             // bildschirm-relative Achsen
+   qa.setFromAxisAngle(vU,dx*0.006);qb.setFromAxisAngle(vR,dy*0.006);
+   pivot.quaternion.premultiply(qa).premultiply(qb);
+  });
+  window.addEventListener("pointerup",function(e){
+   if(drag&&dn&&Math.hypot(e.clientX-dn.x,e.clientY-dn.y)<5&&Date.now()-dn.t<500)pickAt(e);
+   drag=false;dn=null;last=null;
+  });
   window.addEventListener("resize",resizeViewer);
-  (function loop(){requestAnimationFrame(loop);if(viewerActive&&renderer){controls.update();renderer.render(scene,camera);}})();
+  var WUP=new THREE.Vector3(0,1,0);
+  (function loop(){requestAnimationFrame(loop);if(viewerActive&&renderer){if(autoSpin&&pivot)pivot.rotateOnWorldAxis(WUP,0.004);controls.update();renderer.render(scene,camera);}})();
  }
  function resizeViewer(){if(!renderer)return;var c=renderer.domElement,w=c.clientWidth||1,h=c.clientHeight||1;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();}
- function clearModel(){if(curRoot){scene.remove(curRoot);curRoot.traverse(function(o){if(o.isMesh&&o.geometry&&o.geometry.dispose)o.geometry.dispose();});curRoot=null;}groups=[];activeG=null;}
+ function clearModel(){if(curRoot){if(curRoot.parent)curRoot.parent.remove(curRoot);curRoot.traverse(function(o){if(o.isMesh&&o.geometry&&o.geometry.dispose)o.geometry.dispose();});curRoot=null;}groups=[];activeG=null;}
  function nodeName(o){var n=o;while(n){if(n.name)return n.name;n=n.parent;}return "";}
  // Instanz-/Versions-Suffixe entfernen -> Artikelnummer (z.B. 248027_24 -> 248027)
  // PDM-Export (Solid Edge/STEP): nach führender Artikelnummer gruppieren
@@ -626,10 +646,16 @@ const ICONS={
   order.sort(function(a,b){return b.count-a.count||a.label.localeCompare(b.label);});
   groups=order;
  }
- function frameModel(){var box=new THREE.Box3().setFromObject(curRoot);var c=box.getCenter(new THREE.Vector3()),size=box.getSize(new THREE.Vector3());var r=Math.max(size.x,size.y,size.z)||1;fitR=r;curRoot.position.sub(c);controls.target.set(0,0,0);var d=r*1.9;camera.position.set(d*0.7,d*0.55,d*0.9);camera.near=r/200;camera.far=r*200;camera.updateProjectionMatrix();controls.minDistance=r*0.05;controls.maxDistance=r*12;controls.update();}
- function resetView(){if(!curRoot)return;controls.target.set(0,0,0);var d=fitR*1.9;camera.position.set(d*0.7,d*0.55,d*0.9);controls.autoRotate=true;controls.update();}
+ function frameModel(){
+  if(!pivot){pivot=new THREE.Group();scene.add(pivot);}
+  if(curRoot.parent!==pivot){if(curRoot.parent)curRoot.parent.remove(curRoot);pivot.add(curRoot);}
+  pivot.quaternion.identity();curRoot.position.set(0,0,0);pivot.updateMatrixWorld(true);
+  var box=new THREE.Box3().setFromObject(curRoot);var c=box.getCenter(new THREE.Vector3()),size=box.getSize(new THREE.Vector3());var r=Math.max(size.x,size.y,size.z)||1;fitR=r;
+  curRoot.position.copy(c).multiplyScalar(-1);          // Modell-Mittelpunkt = Pivot-Ursprung
+  controls.target.set(0,0,0);var d=r*1.9;camera.position.set(d*0.7,d*0.55,d*0.9);camera.near=r/200;camera.far=r*200;camera.updateProjectionMatrix();controls.minDistance=r*0.05;controls.maxDistance=r*12;controls.update();autoSpin=true;}
+ function resetView(){if(!curRoot)return;if(pivot)pivot.quaternion.identity();controls.target.set(0,0,0);var d=fitR*1.9;camera.position.set(d*0.7,d*0.55,d*0.9);autoSpin=true;controls.update();}
  function setHighlight(g,on){g.meshes.forEach(function(m){if(on){if(m.userData._om===undefined)m.userData._om=m.material;m.material=hlMat;}else if(m.userData._om!==undefined){m.material=m.userData._om;m.userData._om=undefined;}});}
- function selectGroup(g,scroll){if(activeG===g)return;if(activeG)setHighlight(activeG,false);activeG=g;if(g)setHighlight(g,true);controls.autoRotate=false;document.querySelectorAll(".prow").forEach(function(r){r.classList.toggle("active",r.__g===g);});if(scroll&&g){var rows=[].slice.call(document.querySelectorAll(".prow"));for(var i=0;i<rows.length;i++){if(rows[i].__g===g){rows[i].scrollIntoView({block:"nearest"});break;}}}}
+ function selectGroup(g,scroll){if(activeG===g)return;if(activeG)setHighlight(activeG,false);activeG=g;if(g)setHighlight(g,true);autoSpin=false;document.querySelectorAll(".prow").forEach(function(r){r.classList.toggle("active",r.__g===g);});if(scroll&&g){var rows=[].slice.call(document.querySelectorAll(".prow"));for(var i=0;i<rows.length;i++){if(rows[i].__g===g){rows[i].scrollIntoView({block:"nearest"});break;}}}}
  function toggleGroup(g){g.visible=!g.visible;g.meshes.forEach(function(m){m.visible=g.visible;});document.querySelectorAll(".prow").forEach(function(r){if(r.__g===g)r.classList.toggle("hidden",!g.visible);});}
  function showAllParts(){groups.forEach(function(g){g.visible=true;g.meshes.forEach(function(m){m.visible=true;});});document.querySelectorAll(".prow").forEach(function(r){r.classList.remove("hidden");});}
  function pickAt(e){if(!curRoot)return;var c=renderer.domElement,r=c.getBoundingClientRect();var p=new THREE.Vector2(((e.clientX-r.left)/r.width)*2-1,-((e.clientY-r.top)/r.height)*2+1);raycaster.setFromCamera(p,camera);var hits=raycaster.intersectObject(curRoot,true);for(var i=0;i<hits.length;i++){var o=hits[i].object;if(o.visible&&o.userData&&o.userData._g){selectGroup(o.userData._g,true);return;}}}
@@ -674,7 +700,7 @@ const ICONS={
    },undefined,function(){showNo();});
   }).catch(function(){showNo(t("three_fail"));});
  }
- function close3D(){document.getElementById("mvModal").classList.remove("open");viewerActive=false;if(controls)controls.autoRotate=true;}
+ function close3D(){document.getElementById("mvModal").classList.remove("open");viewerActive=false;autoSpin=true;}
  // ---- toast ----
  var toTimer;function toast(m){var el=document.getElementById("toast");el.textContent=m;el.classList.add("show");clearTimeout(toTimer);toTimer=setTimeout(function(){el.classList.remove("show");},1600);}
  // ---- fields persist ----
