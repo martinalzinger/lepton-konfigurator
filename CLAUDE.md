@@ -46,6 +46,19 @@ Eine Option sieht so aus:
 - Der Preis der Basismaschine (340.300 €, Art. 5000379) steht direkt in
   `build/build.py` (Konstante `BASE` sowie der Basis-Block im HTML).
 
+## Sprachen (DE/EN/PL/FR)
+Umschalter oben rechts in der roten Leiste. Alle Texte liegen in `build/i18n.json`:
+- `ui` – Oberflächen-/Dokument-/Rechtstexte als `key: {de,en,pl,fr}`.
+  Platzhalter `{n}`, `{doc}`, `{tax}` werden im JS (`tf()`) ersetzt.
+- `spec` – die 10 Zeilen der Maschinen-Grundspezifikation (4 Sprachen).
+- `cat_headers` / `cat_opts` – Katalog-Übersetzungen (Kategorien per Überschrift,
+  Optionen per `id`); build.py mischt sie als `h_en/_pl/_fr` bzw.
+  `name_en…`/`desc_en…` in `CATS`. Fehlt eine Übersetzung → Fallback Deutsch.
+- Im HTML markieren `data-i18n="key"` (Textinhalt) und `data-i18n-ph="key"`
+  (Placeholder) übersetzbare Stellen; `applyLang()` füllt sie.
+**Neue Katalog-Option** braucht daher auch einen Eintrag unter `cat_opts` in
+`i18n.json` (sonst erscheint sie in allen Sprachen deutsch).
+
 ## Wichtige Stellen im Code (build.py → TPL → JavaScript)
 - `compute()` – Summen; im Gebraucht-Modus = manueller Preis (`g_preis`).
 - `renderAngebot() / renderKaufvertrag() / renderGebraucht()` – die drei Dokumente.
