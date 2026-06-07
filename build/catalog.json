@@ -63,6 +63,24 @@
     "h": "Bunker & Vordosierung",
     "opts": [
       {
+        "id": "5001153",
+        "art": "5001153",
+        "name": "Vordosierung große Dosierwalze",
+        "desc": "mit Aufreißfunktion",
+        "price": 8100,
+        "img": "image14",
+        "ex": "vd"
+      },
+      {
+        "id": "5001187",
+        "art": "5001187",
+        "name": "Vorsiebdeck inkl. Hardfacing mit Dosierwalze",
+        "desc": "+1,2 m² Siebfläche",
+        "price": 13750,
+        "img": "image15",
+        "ex": "vd"
+      },
+      {
         "id": "5001152",
         "art": "5001152",
         "name": "Bunkerklappe vorne hydraulisch verstellbar",
@@ -77,22 +95,6 @@
         "desc": "Schaufelzählung · Durchsatzbewertung",
         "price": 1190,
         "img": "image33"
-      },
-      {
-        "id": "5001153",
-        "art": "5001153",
-        "name": "Vordosierung große Dosierwalze",
-        "desc": "mit Aufreißfunktion",
-        "price": 8100,
-        "img": "image14"
-      },
-      {
-        "id": "5001187",
-        "art": "5001187",
-        "name": "Vorsiebdeck inkl. Hardfacing mit Dosierwalze",
-        "desc": "+1,2 m² Siebfläche",
-        "price": 13750,
-        "img": "image15"
       }
     ]
   },
