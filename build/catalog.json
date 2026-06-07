@@ -271,7 +271,8 @@
         "name": "SD 2 Band Längsrichtung",
         "desc": "Mittelfraktion · 1550 mm",
         "price": 10355,
-        "img": "image22"
+        "img": "image22",
+        "conf": ["5001204", "5001205"]
       },
       {
         "id": "5001160",
