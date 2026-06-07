@@ -303,7 +303,7 @@ var lang="de";
 (function(){
  "use strict";
  var optById={}; CATS.forEach(function(c){c.opts.forEach(function(o){optById[o.id]=o;});});
- var state={chosen:{},excl:{sd1:"",sd2:"",fg:"",vd:""},mode:"angebot"};
+ var state={chosen:{},excl:{sd1:"",sd2:"",fg:"",vd:"",gk:""},mode:"angebot"};
  var IDS=["m_nr","m_datum","m_ort","m_verk","m_vtel","m_vmail","k_firma","k_firma2","k_anrede","k_vor","k_nach","k_str","k_plz","k_ort","k_land","k_tel","k_mail","k_ustid","t_tax","t_rabatt","t_liefer","t_termin","t_zahlung","t_gewahr","t_sonder","g_jahr","g_std","g_sn","g_zustand","g_preis"];
  var DEF_FIELDS=[["t_liefer","def_liefer"],["t_zahlung","def_zahlung"],["t_gewahr","def_gewahr"]];
  function t(k){var L=I18N[lang]||I18N.de;return (L&&L[k]!=null)?L[k]:((I18N.de[k]!=null)?I18N.de[k]:k);}
@@ -489,7 +489,7 @@ var lang="de";
   applyMode(state.mode);
  }
  function resetAll(){
-  state.chosen={};state.excl={sd1:"",sd2:"",fg:"",vd:""};
+  state.chosen={};state.excl={sd1:"",sd2:"",fg:"",vd:"",gk:""};
   document.querySelectorAll('.pcard input[type=checkbox]').forEach(function(cb){cb.checked=false;});
   document.querySelectorAll('.pcard').forEach(function(c){c.classList.remove("on");});
   ["t_rabatt","g_jahr","g_std","g_sn","g_zustand","g_preis"].forEach(function(id){var e=document.getElementById(id);if(e)e.value="";});
@@ -499,7 +499,7 @@ var lang="de";
  function loadAll(){try{return JSON.parse(localStorage.getItem(SKEY)||"{}");}catch(e){return {};}}
  function saveAll(o){try{localStorage.setItem(SKEY,JSON.stringify(o));return true;}catch(e){return false;}}
  function gatherState(){var f={};IDS.forEach(function(id){var e=document.getElementById(id);if(e)f[id]=e.value;});return {mode:state.mode,chosen:state.chosen,excl:state.excl,fields:f,ts:Date.now()};}
- function applyState(s){if(!s)return;var f=s.fields||{};IDS.forEach(function(id){var e=document.getElementById(id);if(e&&f[id]!==undefined)e.value=f[id];});state.chosen=s.chosen||{};state.excl=s.excl||{sd1:"",sd2:"",fg:"",vd:""};syncCards();applyMode(s.mode||"angebot");}
+ function applyState(s){if(!s)return;var f=s.fields||{};IDS.forEach(function(id){var e=document.getElementById(id);if(e&&f[id]!==undefined)e.value=f[id];});state.chosen=s.chosen||{};state.excl=s.excl||{sd1:"",sd2:"",fg:"",vd:"",gk:""};syncCards();applyMode(s.mode||"angebot");}
  function suggestName(){var who=[v("k_firma"),v("k_nach")].filter(Boolean).join(" ");return t("pill_"+state.mode)+(who?" "+who:"")+(v("m_nr")?" ("+v("m_nr")+")":"");}
  function refreshSaved(){var sel=document.getElementById("savedList");if(!sel)return;var o=loadAll(),names=Object.keys(o).sort();var cur=sel.value;sel.innerHTML='<option value="">'+(names.length?tf("saved_count",{n:names.length}):t("saved_none"))+'</option>'+names.map(function(n){return '<option value="'+esc(n)+'">'+esc(n)+'</option>';}).join("");if(cur)sel.value=cur;}
  function doSave(){var name=window.prompt(t("prompt_save_name"),suggestName());if(name===null)return;name=name.trim();if(!name)return;var o=loadAll();o[name]=gatherState();if(!saveAll(o)){window.alert(t("alert_save_fail"));return;}refreshSaved();document.getElementById("savedList").value=name;}

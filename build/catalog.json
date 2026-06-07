@@ -344,7 +344,17 @@
         "name": "Grobkornband 1 kurz",
         "desc": "Steine/Störstoffe · 700 mm",
         "price": 8941,
-        "img": "image26"
+        "img": "image26",
+        "ex": "gk"
+      },
+      {
+        "id": "5001163",
+        "art": "5001163",
+        "name": "Grobkornband lang",
+        "desc": "6070 mm",
+        "price": 12361,
+        "img": "image29",
+        "ex": "gk"
       },
       {
         "id": "5001210",
@@ -361,14 +371,6 @@
         "desc": "Steine/Störstoffe · 800 mm",
         "price": 5242,
         "img": "image28"
-      },
-      {
-        "id": "5001163",
-        "art": "5001163",
-        "name": "Grobkornband lang",
-        "desc": "6070 mm",
-        "price": 12361,
-        "img": "image29"
       }
     ]
   },
