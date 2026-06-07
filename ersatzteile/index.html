@@ -402,7 +402,7 @@ const ICONS={
   var canvas=document.getElementById("tcanvas");
   renderer=new THREE.WebGLRenderer({canvas:canvas,antialias:true,alpha:true});
   renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
-  renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.25;
+  renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.5;
   scene=new THREE.Scene();
   // Neutrale Studio-Umgebung -> metallische Teile werden hell & plastisch (statt schwarz)
   var pmrem=new THREE.PMREMGenerator(renderer);
@@ -415,9 +415,11 @@ const ICONS={
   controls.panSpeed=1.2;              // leichtgängigeres Verschieben
   controls.zoomToCursor=true;         // zum Mauszeiger zoomen (statt zur Mitte)
   controls.screenSpacePanning=true;   // intuitives Verschieben in der Bildebene
-  scene.add(new THREE.HemisphereLight(0xffffff,0x6b6b70,1.0));
-  var d1=new THREE.DirectionalLight(0xffffff,2.0);d1.position.set(1,2,1.4);scene.add(d1);
-  var d2=new THREE.DirectionalLight(0xffffff,0.9);d2.position.set(-1.2,-0.4,-1);scene.add(d2);
+  // Rundum-Beleuchtung: gleichmäßig hell von allen Seiten (keine dunkle Seite mehr)
+  scene.add(new THREE.HemisphereLight(0xffffff,0x9a9aa0,1.6));
+  scene.add(new THREE.AmbientLight(0xffffff,0.45));
+  var dl=[[1,2,1.4,1.5],[-1,-0.6,-1,1.5],[-1.5,0.8,1,1.1],[1.5,0.6,-1.2,1.1],[0,-1.6,0.4,0.7]];
+  dl.forEach(function(p){var d=new THREE.DirectionalLight(0xffffff,p[3]);d.position.set(p[0],p[1],p[2]);scene.add(d);});
   raycaster=new THREE.Raycaster();
   var dn=null;
   canvas.addEventListener("pointerdown",function(e){dn={x:e.clientX,y:e.clientY,t:Date.now()};});
@@ -484,6 +486,8 @@ const ICONS={
    initViewer();setTimeout(resizeViewer,30);clearModel();
    loader.load(url,function(gltf){
     curRoot=gltf.scene||(gltf.scenes&&gltf.scenes[0]);scene.add(curRoot);
+    // Umgebungslicht je Material verstärken -> Teile auch im Schatten gut sichtbar
+    curRoot.traverse(function(o){if(o.isMesh&&o.material){(Array.isArray(o.material)?o.material:[o.material]).forEach(function(mt){if("envMapIntensity" in mt){mt.envMapIntensity=1.3;mt.needsUpdate=true;}});}});
     buildGroups(curRoot);frameModel();resizeViewer();renderPartList("");
     document.getElementById("mvLoad").style.display="none";
    },undefined,function(){showNo();});
