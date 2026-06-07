@@ -7,6 +7,7 @@ und **Gebrauchtmaschinen-Angebot** für die mobile Sternsiebanlage Lepton 5100.
 ```
 index.html            ← Konfigurator-App (generiert – nicht direkt bearbeiten)
 ersatzteile.html      ← Ersatzteilkatalog mit 3D-Ansicht (generiert, EIGENE Seite/URL)
+models/               ← 3D-Modelle (.glb), werden bei Bedarf nachgeladen (generiert)
 manifest.webmanifest  ← App-Definition (Name, Icon, Farben)
 sw.js                 ← Service-Worker (Offline, beide Seiten)
 icon-192/512.png      ← App-Symbol
@@ -19,7 +20,7 @@ build/
   i18n_ersatzteile.json    ← Übersetzungen der Ersatzteil-Seite (DE/EN/PL/FR)
   glbgen.py                ← erzeugt 3D-Platzhaltermodelle (GLB)
   modelviewer.min.js       ← 3D-Viewer-Library (offline eingebettet)
-  models_cad/              ← HIER STEP/GLB/SEV-Dateien ablegen (→ 3D im Katalog)
+  models_cad/              ← HIER STEP/GLB/SEV ablegen (→ wird zu models/*.glb; lokal, nicht eingecheckt)
 CLAUDE.md             ← Projektleitfaden für Claude Code
 ```
 
@@ -36,8 +37,15 @@ Für die **STEP→3D-Konvertierung** zusätzlich einmalig: `pip install cascadio
 `…/ersatzteile.html`) und taucht **nicht** in Angebot/Kaufvertrag auf.
 Bauteile lassen sich in 3D drehen, in den **Warenkorb** legen und als
 Anfrage **drucken** oder **per E-Mail** an Alzinger senden.
+
+Die 3D-Modelle sind **nicht** in die HTML eingebettet, sondern liegen als
+`models/*.glb` daneben und werden erst beim Klick auf „3D ansehen" **nachgeladen**
+(der Service-Worker cacht sie offline). Dadurch bleibt `ersatzteile.html` klein
+(~1 MB) – auch bei großen Baugruppen.
+
 Eigene CAD-Daten: Dateien in `build/models_cad/` ablegen (Details siehe
-`build/models_cad/README.md`) und neu bauen.
+`build/models_cad/README.md`) und neu bauen – STEP wird automatisch nach
+`models/*.glb` konvertiert (`pip install cascadio`).
 
 ## Lokal testen
 ```

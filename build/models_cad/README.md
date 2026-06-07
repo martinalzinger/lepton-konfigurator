@@ -2,7 +2,10 @@
 
 Lege hier deine Dateien der Lepton 5100 ab. Beim Build
 (`python3 build/build_ersatzteile.py`) werden sie automatisch verarbeitet
-und in `ersatzteile.html` eingebettet.
+und als `models/<name>.glb` ausgelagert (die Seite lädt sie bei Bedarf nach).
+
+> Dateien in diesem Ordner sind **lokal** (per `.gitignore` nicht eingecheckt) –
+> eingecheckt wird nur das Ergebnis in `models/`.
 
 ## Unterstützte Formate
 | Endung            | Ergebnis                  | Hinweis |

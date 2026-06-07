@@ -2,6 +2,8 @@
 # Baut die eigenständige Seite ./ersatzteile.html (Ersatzteilkatalog mit 3D-Ansicht + Warenkorb).
 # Quelle: spareparts.json, i18n_ersatzteile.json, assets*.b64.json, modelviewer.min.js, glbgen.py,
 #         sowie CAD-Dateien in build/models_cad/ (STEP/STP/GLB/GLTF -> 3D, SEV -> Vorschaubild).
+# 3D-Modelle werden nach ./models/*.glb AUSGELAGERT und im Browser bei Bedarf
+# nachgeladen (Service-Worker cacht sie offline) -> ersatzteile.html bleibt klein.
 # Aufruf:  python3 build/build_ersatzteile.py
 import os, json, base64, re, glob, sys
 HERE=os.path.dirname(os.path.abspath(__file__))
@@ -24,69 +26,50 @@ LANGS=["de","en","pl","fr"]
 MV=open(os.path.join(HERE,"modelviewer.min.js"),encoding="utf8").read()
 MV=MV.replace("</script>","<\\/script>")
 
-# ---- MODELS: GLB-Daten als data-URI ----
-MODELS={}   # key -> data:model/gltf-binary;base64,...
-def glb_uri(b): return "data:model/gltf-binary;base64,"+base64.b64encode(b).decode()
+# ---- Modelle als EXTERNE Dateien (Nachladen bei Bedarf) ----
+# 3D-Modelle werden NICHT in die HTML eingebettet, sondern als models/*.glb ausgelagert
+# und erst beim Klick auf "3D ansehen" geladen (offline via Service-Worker gecacht).
+MODELS_DIR=os.path.normpath(os.path.join(HERE,"..","models"))
+os.makedirs(MODELS_DIR,exist_ok=True)
+MODELS={}   # key -> relative URL "models/datei.glb"
+SEV_IMG={}  # key -> data-URI (kleine Vorschaubilder bleiben eingebettet)
 PROC_KINDS={"scheibe","welle","lager","ritzel","trommel","keilriemen","abstreifer","gehaeuse"}
-def proc_model(kind):
-    k="proc:"+kind
-    if k not in MODELS: MODELS[k]=glb_uri(glbgen.model(kind))
+
+def safe(name): return re.sub(r"[^A-Za-z0-9._-]","_",str(name))
+
+def write_model(fname, data):
+    open(os.path.join(MODELS_DIR,fname),"wb").write(data)
+    return fname
+
+def file_model(fname):
+    k="file:"+fname
+    if k not in MODELS: MODELS[k]="models/"+fname
     return k
 
-# ---- CAD-Import aus build/models_cad/ ----
-def parse_meta(path, base):
-    """Artikelnummer + Bezeichnung aus STEP-PRODUCT bzw. Dateiname."""
+def proc_model(kind):
+    k="proc:"+kind
+    if k not in MODELS:
+        write_model("proc-"+kind+".glb", glbgen.model(kind))
+        MODELS[k]="models/proc-"+kind+".glb"
+    return k
+
+def parse_meta(orig_base, step_path=None):
+    """Artikelnummer + Bezeichnung aus STEP-PRODUCT bzw. Dateiname (Trenner: Space/_/-)."""
     art=name=None
-    if path.lower().endswith((".step",".stp")):
+    if step_path:
         try:
-            txt=open(path,encoding="utf8",errors="ignore").read(200000)
+            txt=open(step_path,encoding="utf8",errors="ignore").read(300000)
             m=re.search(r"PRODUCT\s*\(\s*'([^']*)'\s*,\s*'([^']*)'", txt)
             if m:
-                art=(m.group(1) or "").strip() or None
-                name=(m.group(2) or "").strip() or None
+                a=(m.group(1) or "").strip(); n=(m.group(2) or "").strip()
+                if a: art=a
+                if n and n!=a: name=n
         except Exception: pass
-    fm=re.match(r"^\s*([0-9][0-9A-Za-z._\-/]*)[ _\-]+(.+?)\s*$", base)
-    if not art and fm: art=fm.group(1)
-    if not name and fm: name=fm.group(2)
-    return (art or base), (name or base)
-
-def process_cad():
-    """Verarbeitet models_cad/. Gibt Liste importierter Teile zurück und füllt MODELS/IMG."""
-    imported=[]
-    files=sorted(glob.glob(os.path.join(HERE,"models_cad","*")))
-    for path in files:
-        b=os.path.basename(path); low=b.lower()
-        if low.endswith((".step.glb",".stp.glb")) or b=="README.md":
-            continue  # temporäres Konvertierungs-Artefakt / Doku überspringen
-        stem=os.path.splitext(b)[0]
-        if low.endswith((".step",".stp")):
-            try:
-                import cascadio
-                out=path+".glb"
-                cascadio.step_to_glb(path,out)
-                MODELS[b]=glb_uri(open(out,"rb").read()); os.remove(out)
-                art,name=parse_meta(path,stem)
-                imported.append({"art":art,"name":name,"model":b,"img":None})
-                print("  3D  STEP ->",b)
-            except Exception as e:
-                print("  !! STEP fehlgeschlagen:",b,e)
-        elif low.endswith((".glb",".gltf")):
-            data=open(path,"rb").read()
-            MODELS[b]=glb_uri(data) if low.endswith(".glb") else "data:model/gltf+json;base64,"+base64.b64encode(data).decode()
-            art,name=parse_meta(path,stem)
-            imported.append({"art":art,"name":name,"model":b,"img":None})
-            print("  3D  GLB  ->",b)
-        elif low.endswith(".sev"):
-            uri=sev_preview(path)
-            art,name=parse_meta(path,stem)
-            if uri:
-                IMG["cad:"+b]=uri
-                imported.append({"art":art,"name":name,"model":None,"img":"cad:"+b})
-                print("  2D  SEV  -> Vorschau",b)
-            else:
-                imported.append({"art":art,"name":name,"model":None,"img":None})
-                print("  ?? SEV ohne Vorschau:",b)
-    return imported
+    stem=os.path.splitext(orig_base)[0]
+    fm=re.match(r"^\s*([0-9][0-9A-Za-z.\-/]*)[ _\-]+(.+?)\s*$", stem)
+    if not art: art=fm.group(1) if fm else stem
+    if not name: name=(fm.group(2).replace("_"," ") if fm else stem)
+    return art, name
 
 def sev_preview(path):
     """Extrahiert das eingebettete PNG-Vorschaubild aus einer Solid-Edge .sev-Datei."""
@@ -94,59 +77,106 @@ def sev_preview(path):
         txt=open(path,encoding="utf8",errors="ignore").read()
         m=re.search(r"<SEModelPreview[^>]*>\s*<script[^>]*>(.*?)</script>", txt, re.S)
         if not m: return None
-        raw=base64.b64decode(m.group(1).strip())
+        b64=re.search(r'"([A-Za-z0-9+/=\s]+)"', m.group(1))
+        raw=base64.b64decode(re.sub(r"\s+","",(b64.group(1) if b64 else m.group(1))))
         s=raw.find(b"\x89PNG\r\n\x1a\n"); e=raw.find(b"IEND")
         if s<0 or e<0: return None
         return "data:image/png;base64,"+base64.b64encode(raw[s:e+8]).decode()
     except Exception:
         return None
 
-cad_imported=process_cad()
+CAD=[]   # {art,name,model(servedFilename|None),img(key|None)}
+def process_inputs():
+    """models_cad/ -> models/ : STEP konvertieren, GLB/GLTF kopieren, SEV-Vorschau einbetten."""
+    for path in sorted(glob.glob(os.path.join(HERE,"models_cad","*"))):
+        b=os.path.basename(path); low=b.lower()
+        if b=="README.md" or low.endswith((".step.glb",".stp.glb",".out.glb")): continue
+        stem=os.path.splitext(b)[0]
+        if low.endswith((".step",".stp")):
+            fname=safe(stem)+".glb"; dst=os.path.join(MODELS_DIR,fname)
+            if os.path.exists(dst) and os.path.getmtime(dst)>=os.path.getmtime(path):
+                art,name=parse_meta(b,step_path=path); CAD.append({"art":art,"name":name,"model":fname,"img":None})
+                print("  STEP (aktuell) ->",fname); continue
+            try:
+                import cascadio
+                tmp=path+".out.glb"
+                cascadio.step_to_glb(path,tmp,tol_linear=0.5,tol_angular=0.7)
+                write_model(fname, open(tmp,"rb").read()); os.remove(tmp)
+                art,name=parse_meta(b,step_path=path); CAD.append({"art":art,"name":name,"model":fname,"img":None})
+                print("  STEP ->",fname)
+            except Exception as e:
+                print("  !! STEP fehlgeschlagen:",b,e)
+        elif low.endswith((".glb",".gltf")):
+            fname=safe(stem)+(".glb" if low.endswith(".glb") else ".gltf")
+            write_model(fname, open(path,"rb").read())
+            art,name=parse_meta(b); CAD.append({"art":art,"name":name,"model":fname,"img":None})
+            print("  GLB  ->",fname)
+        elif low.endswith(".sev"):
+            uri=sev_preview(path)
+            art,name=parse_meta(b)
+            if uri:
+                key="sev:"+safe(stem); SEV_IMG[key]=uri
+                CAD.append({"art":art,"name":name,"model":None,"img":key})
+                print("  SEV  -> Vorschau",b)
+            else:
+                CAD.append({"art":art,"name":name,"model":None,"img":None})
+                print("  ?? SEV ohne Vorschau:",b)
+process_inputs()
+
+# bereits vorhandene (committete) models/*.glb ohne Quelle ebenfalls erfassen
+proc_files={"proc-"+k+".glb" for k in PROC_KINDS}
+produced={c["model"] for c in CAD if c["model"]}
+for f in sorted(glob.glob(os.path.join(MODELS_DIR,"*.glb"))+glob.glob(os.path.join(MODELS_DIR,"*.gltf"))):
+    fn=os.path.basename(f)
+    if fn in produced or fn in proc_files: continue
+    art,name=parse_meta(fn)
+    CAD.append({"art":art,"name":name,"model":fn,"img":None})
+
+AVAIL={c["model"] for c in CAD if c["model"]}
 
 # ---- Katalog aufbauen (Kategorien + Auto-Import) ----
-def resolve_model(part):
-    m=part.get("model")
-    if not m: return None
-    if m in PROC_KINDS: return proc_model(m)
-    if m in MODELS: return m
-    return None  # referenzierte Datei (noch) nicht vorhanden
+def resolve_model(m):
+    if not m: return None,None
+    if m in PROC_KINDS: return proc_model(m), m       # (key, modelKind)
+    if m in AVAIL: return file_model(m), None
+    return None,None
 
-CAT=[]
-seen_art=set()
+CAT=[]; seen_art=set(); ref_files=set()
 for cat in SP_RAW["kategorien"]:
     items=[]
     for p in cat["teile"]:
         seen_art.add(p["art"])
-        mk=resolve_model(p)
+        if p.get("model") in AVAIL: ref_files.add(p["model"])
+        mk,kind=resolve_model(p.get("model"))
         items.append({
             "id":p["id"], "art":p["art"],
             "name":p["name"], "name_en":p.get("name_en"),
             "desc":p.get("desc",""), "desc_en":p.get("desc_en"),
             "price":p.get("price",0),
-            "model": mk, "modelKind": p.get("model") if p.get("model") in PROC_KINDS else None,
-            "img": p.get("img")
+            "model": mk, "modelKind": kind, "img": p.get("img")
         })
     CAT.append({"h":cat["h"], "h_en":cat.get("h_en"), "items":items})
 
-auto=[p for p in cad_imported if p["art"] not in seen_art]
+auto=[c for c in CAD if c["art"] not in seen_art and (c["model"] is None or c["model"] not in ref_files)]
 if auto:
     CAT.append({"h":"Aus CAD importiert","h_en":"Imported from CAD","items":[{
-        "id":"cad-"+str(i), "art":p["art"], "name":p["name"], "name_en":None,
+        "id":"cad-"+str(i), "art":c["art"], "name":c["name"], "name_en":None,
         "desc":"", "desc_en":None, "price":0,
-        "model": p["model"] if p["model"] in MODELS else None, "modelKind":None, "img":p["img"]
-    } for i,p in enumerate(auto)]})
+        "model": (file_model(c["model"]) if c["model"] else None), "modelKind":None, "img":c["img"]
+    } for i,c in enumerate(auto)]})
 
 # ---- i18n lang-major ----
 I18N={lg:{k:I18N_RAW[k][lg] for k in I18N_RAW} for lg in LANGS}
 
-# ---- nur tatsächlich referenzierte Bilder einbetten (spart ~1 MB) ----
+# ---- nur tatsächlich referenzierte (eingebettete) Bilder behalten ----
+IMG=dict(SPA); IMG.update(SEV_IMG)
 used_img=set()
 for c in CAT:
     for p in c["items"]:
         if p.get("img"): used_img.add(p["img"])
 IMG={k:IMG[k] for k in used_img if k in IMG}
 
-print("Modelle eingebettet:",len(MODELS)," Bilder:",len(IMG))
+print("Modelle ausgelagert:",len([k for k in MODELS]),"-> models/   eingebettete Bilder:",len(IMG))
 
 # ================= HTML-TEMPLATE =================
 TPL=r'''<!DOCTYPE html>
@@ -362,7 +392,7 @@ model-viewer{width:100%;height:min(56vh,440px);background:linear-gradient(180deg
 <div class="mvmodal" id="mvModal">
   <div class="mvbox">
     <div class="mvtop"><div><div class="mvname" id="mvName"></div><div class="mvart" id="mvArt"></div></div><button class="mvx" id="mvClose" aria-label="close">×</button></div>
-    <model-viewer id="mv" camera-controls auto-rotate auto-rotate-delay="0" rotation-per-second="22deg" shadow-intensity="1" exposure="1.05" interaction-prompt="none" touch-action="pan-y"></model-viewer>
+    <model-viewer id="mv" camera-controls auto-rotate auto-rotate-delay="0" rotation-per-second="22deg" shadow-intensity="1" exposure="1.05" interaction-prompt="none" touch-action="pan-y" loading="eager" reveal="auto"></model-viewer>
     <div class="mvno" id="mvNo" style="display:none"></div>
     <div class="mvhint" data-i18n="viewer_hint"></div>
   </div>
@@ -544,6 +574,7 @@ const ICONS={
   document.getElementById("cartBtn").addEventListener("click",openCart);
   document.getElementById("cartClose").addEventListener("click",closeCart);
   document.getElementById("backdrop").addEventListener("click",closeCart);
+  mv.addEventListener("error",function(){document.getElementById("mvNo").style.display="block";document.getElementById("mvNo").textContent=t("no_3d");mv.style.display="none";});
   document.getElementById("mvClose").addEventListener("click",close3D);
   document.getElementById("mvModal").addEventListener("click",function(e){if(e.target.id==="mvModal")close3D();});
   document.getElementById("sendMail").addEventListener("click",sendMail);

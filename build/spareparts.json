@@ -2,13 +2,6 @@
   "_hinweis": "Ersatzteil-Katalog. 'model' = Schluessel eines GLB (entweder Platzhalter aus glbgen.py: scheibe|welle|lager|ritzel|trommel|keilriemen|abstreifer|gehaeuse  ODER Dateiname einer STEP/GLB-Datei in build/models_step bzw. build/models_glb, z.B. '5100-100.step'). Echte STEP-Dateien werden beim Build automatisch konvertiert; Art.-Nr./Bezeichnung koennen daraus uebernommen werden.",
   "kategorien": [
     {
-      "h": "Vordosierung & Bunker",
-      "h_en": "Pre-dosing & hopper",
-      "teile": [
-        { "id": "5000-BU", "art": "5000-BU", "name": "Aufgabebunker 8 m³", "name_en": "Feed hopper 8 m³", "desc": "Bunker mit Vordosierband (Solid Edge .sev – nur Vorschau)", "desc_en": "Hopper with pre-dosing belt (Solid Edge .sev – preview only)", "price": 0, "model": null, "img": "bunker_preview" }
-      ]
-    },
-    {
       "h": "Sternsieb & Siebwellen",
       "h_en": "Star screen & shafts",
       "teile": [
