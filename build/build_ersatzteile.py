@@ -199,6 +199,18 @@ TPL=r'''<!DOCTYPE html>
 *{box-sizing:border-box;margin:0;padding:0}
 html{-webkit-text-size-adjust:100%}
 body{font-family:var(--sans);background:var(--paper);color:var(--ink);line-height:1.45;font-size:15px;-webkit-font-smoothing:antialiased}
+#gate{position:fixed;inset:0;z-index:1000;background:linear-gradient(160deg,#16181a,#2a2c2f);display:flex;align-items:center;justify-content:center;padding:24px}
+#gate.hidden{display:none}
+#gate .gc{width:100%;max-width:340px;background:#fff;border-radius:16px;padding:30px 26px 26px;box-shadow:0 24px 60px rgba(0,0,0,.4);text-align:center}
+#gate .gl{height:34px;margin:0 auto 16px;display:block}
+#gate .gh{font-size:20px;font-weight:800;letter-spacing:-.01em}
+#gate .gs{font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-top:6px}
+#gate form{margin-top:20px;display:flex;flex-direction:column;gap:10px}
+#gate input{font-family:var(--sans);font-size:15px;border:1px solid var(--line-strong);background:var(--field);border-radius:9px;padding:12px 13px;color:var(--ink);outline:none;width:100%}
+#gate input:focus{border-color:var(--red);box-shadow:0 0 0 3px var(--red-soft);background:#fffdfc}
+#gate button{margin-top:4px;background:var(--red);color:#fff;border:0;border-radius:9px;padding:13px;font-family:var(--mono);font-size:12px;letter-spacing:.06em;text-transform:uppercase;font-weight:600;cursor:pointer}
+#gate button:hover{background:var(--red2)}
+#gate .ge{color:var(--red);font-size:12.5px;min-height:16px;font-weight:600}
 .topbar{position:sticky;top:0;z-index:80;background:var(--red);color:#fff}
 .topbar-in{max-width:1180px;margin:0 auto;padding:12px 20px}
 .tb-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
@@ -375,6 +387,45 @@ body{font-family:var(--sans);background:var(--paper);color:var(--ink);line-heigh
 <script type="importmap">{"imports":{"three":"./vendor/three.module.min.js"}}</script>
 </head>
 <body>
+<div id="gate" class="noprint">
+  <div class="gc">
+    <img class="gl" src="%%LOGOD%%" alt="Alzinger">
+    <div class="gh" id="gateH">Händler-Login</div>
+    <div class="gs" id="gateS">Ersatzteilkatalog Lepton 5100</div>
+    <form id="gateForm" autocomplete="on">
+      <input id="gu" name="username" placeholder="Benutzername" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false">
+      <input id="gp" name="password" type="password" placeholder="Passwort" autocomplete="current-password">
+      <button type="submit" id="gateBtn">Anmelden</button>
+      <div class="ge" id="gerr"></div>
+    </form>
+  </div>
+</div>
+<script>
+(function(){
+ function sha256(ascii){function r(v,a){return (v>>>a)|(v<<(32-a));}var mp=Math.pow,mw=mp(2,32),res="",words=[],bl=ascii.length*8;var hash=sha256.h=sha256.h||[],k=sha256.k=sha256.k||[],pc=k.length,ic={},i,j;for(var c=2;pc<64;c++){if(!ic[c]){for(i=0;i<313;i+=c)ic[i]=c;hash[pc]=(mp(c,.5)*mw)|0;k[pc++]=(mp(c,1/3)*mw)|0;}}ascii+="\x80";while(ascii.length%64-56)ascii+="\x00";for(i=0;i<ascii.length;i++){j=ascii.charCodeAt(i);if(j>>8)return;words[i>>2]|=j<<((3-i)%4)*8;}words[words.length]=((bl/mw)|0);words[words.length]=bl;for(j=0;j<words.length;){var w=words.slice(j,j+=16),oh=hash;hash=hash.slice(0,8);for(i=0;i<64;i++){var w15=w[i-15],w2=w[i-2],a=hash[0],e=hash[4],t1=hash[7]+(r(e,6)^r(e,11)^r(e,25))+((e&hash[5])^((~e)&hash[6]))+k[i]+(w[i]=i<16?w[i]:(w[i-16]+(r(w15,7)^r(w15,18)^(w15>>>3))+w[i-7]+(r(w2,17)^r(w2,19)^(w2>>>10)))|0),t2=(r(a,2)^r(a,13)^r(a,22))+((a&hash[1])^(a&hash[2])^(hash[1]&hash[2]));hash=[(t1+t2)|0].concat(hash);hash[4]=(hash[4]+t1)|0;}for(i=0;i<8;i++)hash[i]=(hash[i]+oh[i])|0;}for(i=0;i<8;i++){for(j=3;j+1;j--){var b=(hash[i]>>(j*8))&255;res+=((b<16)?0:"")+b.toString(16);}}return res;}
+ var HASHES=["f5939f6c9e00e5336ad0f89fc338cc1f33852adeb5912db03eca1004b7ea560b","e1e7cf21dbe88d824482ca87474e7610f60a04a7447b745623c1951312958589","48a0f14ca81a59a4aee853de72c3cb531920352e67a757d15a60682165418d1b"];
+ var AKEY="amb_ersatzteile_auth";
+ var T={de:{h:"Händler-Login",s:"Ersatzteilkatalog Lepton 5100",u:"Benutzername",p:"Passwort",b:"Anmelden",e:"Benutzername oder Passwort falsch."},
+        en:{h:"Dealer login",s:"Spare parts catalogue Lepton 5100",u:"Username",p:"Password",b:"Sign in",e:"Wrong username or password."},
+        pl:{h:"Logowanie dealera",s:"Katalog części Lepton 5100",u:"Nazwa użytkownika",p:"Hasło",b:"Zaloguj się",e:"Błędna nazwa użytkownika lub hasło."},
+        fr:{h:"Connexion revendeur",s:"Catalogue de pièces Lepton 5100",u:"Identifiant",p:"Mot de passe",b:"Se connecter",e:"Identifiant ou mot de passe incorrect."}};
+ var lang="de";
+ try{var sl=localStorage.getItem("amb_lepton_lang");if(sl&&T[sl])lang=sl;else{var n=(navigator.language||"").slice(0,2).toLowerCase();if(T[n])lang=n;}}catch(e){}
+ var tt=T[lang]||T.de;
+ document.getElementById("gateH").textContent=tt.h;document.getElementById("gateS").textContent=tt.s;
+ document.getElementById("gu").placeholder=tt.u;document.getElementById("gp").placeholder=tt.p;document.getElementById("gateBtn").textContent=tt.b;
+ var gate=document.getElementById("gate");
+ function authed(v){return !!v&&HASHES.indexOf(v)>=0;}
+ function pass(){gate.classList.add("hidden");}
+ try{if(authed(localStorage.getItem(AKEY)))pass();}catch(e){}
+ document.getElementById("gateForm").addEventListener("submit",function(ev){ev.preventDefault();
+  var u=(document.getElementById("gu").value||"").trim().toLowerCase(),p=(document.getElementById("gp").value||"");
+  var h=sha256(u+":"+p);
+  if(authed(h)){try{localStorage.setItem(AKEY,h);}catch(_){}document.getElementById("gerr").textContent="";pass();}
+  else{document.getElementById("gerr").textContent=tt.e;var gp=document.getElementById("gp");gp.value="";gp.focus();}
+ });
+})();
+</script>
 <header class="topbar">
   <div class="topbar-in"><div class="tb-row">
     <div class="tb-logo"><img id="tbLogo" alt="Alzinger"></div>
