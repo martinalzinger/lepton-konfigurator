@@ -8,7 +8,37 @@
         "name": "Genset Perkins",
         "desc": "Dieselmotor 58 kW · Generator 60 kVA · Partikelfilter",
         "price": 19800,
-        "img": "image4"
+        "img": "image4",
+        "specs": [
+          [
+            "Genset Perkins 58 kW",
+            ""
+          ],
+          [
+            "Dieselmotor mit Partikelfilter ohne AdBlue",
+            ""
+          ],
+          [
+            "Generator 60 kVA",
+            ""
+          ],
+          [
+            "Dieseltank 200 Liter Volumen",
+            ""
+          ],
+          [
+            "Wendelüfter Cleanfix mit im Display einstellbarem Interval",
+            ""
+          ],
+          [
+            "Erfüllt aktuellste Abgasnorm",
+            ""
+          ],
+          [
+            "Zyklon- Staubabscheider",
+            ""
+          ]
+        ]
       },
       {
         "id": "5000805a",
@@ -30,7 +60,25 @@
         "desc": "Tandemachse · 80 km/h · EBS · Luftfederung",
         "price": 12096,
         "img": "image31",
-        "ex": "fg"
+        "ex": "fg",
+        "specs": [
+          [
+            "Europäische Straßenzulassung 80 km/h",
+            ""
+          ],
+          [
+            "Luftfederung",
+            ""
+          ],
+          [
+            "EBS-Bremssystem",
+            ""
+          ],
+          [
+            "Hydraulischer Hangausgleich",
+            ""
+          ]
+        ]
       },
       {
         "id": "5000380",
@@ -39,7 +87,21 @@
         "desc": "Spurbreite 3000 mm · Metallketten",
         "price": 24877,
         "img": "image32",
-        "ex": "fg"
+        "ex": "fg",
+        "specs": [
+          [
+            "Fahrgeschwindigkeit",
+            "1–3 km/h"
+          ],
+          [
+            "Spurbreite",
+            "3000 mm"
+          ],
+          [
+            "Metallketten mit Gummibelag",
+            ""
+          ]
+        ]
       },
       {
         "id": "5001175",
@@ -69,7 +131,17 @@
         "desc": "mit Aufreißfunktion",
         "price": 8100,
         "img": "image14",
-        "ex": "vd"
+        "ex": "vd",
+        "specs": [
+          [
+            "Dosierwalze mit Neigungsverstellung, sowie einstellbarer Drehzahl und -richtung",
+            ""
+          ],
+          [
+            "Zusätzliche Aufreißfunktion",
+            ""
+          ]
+        ]
       },
       {
         "id": "5001187",
@@ -78,7 +150,25 @@
         "desc": "+1,2 m² Siebfläche",
         "price": 13750,
         "img": "image15",
-        "ex": "vd"
+        "ex": "vd",
+        "specs": [
+          [
+            "Neigung, Drehzahl und Drehrichtung einstellbar",
+            ""
+          ],
+          [
+            "Dosierwalze mit Aufreißfunktion",
+            ""
+          ],
+          [
+            "Zusätzliche Siebfläche von 1,2 m²",
+            ""
+          ],
+          [
+            "Siebschieben Vorsiebdeck mit Hardfacing",
+            ""
+          ]
+        ]
       },
       {
         "id": "5001152",
@@ -86,7 +176,25 @@
         "name": "Bunkerklappe vorne hydraulisch verstellbar",
         "desc": "",
         "price": 1645,
-        "img": "image13"
+        "img": "image13",
+        "specs": [
+          [
+            "Ca 8 m³ Volumen",
+            ""
+          ],
+          [
+            "Dreiseitig befüllbar durch Lader oder Förderbänder",
+            ""
+          ],
+          [
+            "Automatische Lastregelung",
+            ""
+          ],
+          [
+            "Geschwindigkeit stufenlos von 1 bis 8 m/min einstellbar",
+            ""
+          ]
+        ]
       },
       {
         "id": "5000382",
@@ -94,7 +202,25 @@
         "name": "Volumenmessung",
         "desc": "Schaufelzählung · Durchsatzbewertung",
         "price": 1190,
-        "img": "image33"
+        "img": "image33",
+        "specs": [
+          [
+            "Schaufelvolumen am Display eingeben",
+            ""
+          ],
+          [
+            "Messung der Last auf dem Stützfuß",
+            ""
+          ],
+          [
+            "Automatisches Zählen der Schaufelanzahl und resultierende Menge",
+            ""
+          ],
+          [
+            "Beurteilung der Durchsatzleistung",
+            ""
+          ]
+        ]
       }
     ]
   },
@@ -108,7 +234,37 @@
         "name": "36 mm",
         "desc": "Siebteilung SD 1",
         "price": 27486,
-        "img": null
+        "img": null,
+        "specs": [
+          [
+            "Siebdeckneigung stufenlos einstellbar von 3° bis 38°",
+            ""
+          ],
+          [
+            "vier unabhängige Elektromotoren mit Lastregelung bei schwierigem Material",
+            ""
+          ],
+          [
+            "alle Antriebe reversierbar",
+            ""
+          ],
+          [
+            "19 Siebwalzen Teilung 36–70 mm",
+            ""
+          ],
+          [
+            "Siebscheiben einzeln wechselbar aus verschleißfestem Hardox",
+            ""
+          ],
+          [
+            "stufenlose Drehzahleinstellung",
+            ""
+          ],
+          [
+            "Hardfacing an zwei Spitzen der Siebscheiben",
+            ""
+          ]
+        ]
       },
       {
         "id": "5001176",
@@ -153,7 +309,25 @@
         "name": "SD 1 Siebwalzenverstellung elektrohydraulisch",
         "desc": "drei Sektionen · Reinigungsautomatik",
         "price": 7200,
-        "img": "image20"
+        "img": "image20",
+        "specs": [
+          [
+            "Siebwalzenverstellung in drei unhabhänigigen Sektionen",
+            ""
+          ],
+          [
+            "Siebwalzenverstellung hydraulisch",
+            ""
+          ],
+          [
+            "Siebwalzenreinigung Automatik",
+            ""
+          ],
+          [
+            "Korngrößen einstellbar je nach Material",
+            ""
+          ]
+        ]
       },
       {
         "id": "5000384",
@@ -161,7 +335,21 @@
         "name": "Wassersprühanlage SD 1 mit Wasservorfilter",
         "desc": "Staubbindung · Brandschutz",
         "price": 1130,
-        "img": "image30"
+        "img": "image30",
+        "specs": [
+          [
+            "Bindet aktiv Staub",
+            ""
+          ],
+          [
+            "Beugt Brandschäden vor",
+            ""
+          ],
+          [
+            "Möglichkeit zur Einspritzung von mikrobiologischen Wirkstoffen (z.B. in Kompost)",
+            ""
+          ]
+        ]
       },
       {
         "id": "5001214",
@@ -169,7 +357,17 @@
         "name": "Siebdeck 1 Windsichter",
         "desc": "höhen-/drehzahlverstellbar",
         "price": 21500,
-        "img": "image7"
+        "img": "image7",
+        "specs": [
+          [
+            "Drehzahl stufenlos einstellbar",
+            ""
+          ],
+          [
+            "Höhenverstellbar",
+            ""
+          ]
+        ]
       }
     ]
   },
@@ -182,7 +380,41 @@
         "name": "Option Siebdeck 2",
         "desc": "29 Siebwalzen · 4 E-Motoren · reversierbar",
         "price": 33420,
-        "img": "image8"
+        "img": "image8",
+        "specs": [
+          [
+            "Siebdeckneigung stufenlos einstellbar von 2° bis 35°",
+            ""
+          ],
+          [
+            "vier unabhängige Elektromotoren mit Überlastregelung bei schwierigem Material",
+            ""
+          ],
+          [
+            "alle Antriebe reversierbar mit Lastregelung",
+            ""
+          ],
+          [
+            "29 Siebwalzen Teilung 22–43 mm oder je nach Kundenwunsch",
+            ""
+          ],
+          [
+            "Siebscheiben einzeln wechselbar aus verschleißfestem Hardox",
+            ""
+          ],
+          [
+            "stufenlose Drehzahleinstellung",
+            ""
+          ],
+          [
+            "Korngrößen einstellbar je nach Material",
+            ""
+          ],
+          [
+            "Hardfacing an den Spitzen der Siebscheiben",
+            ""
+          ]
+        ]
       },
       {
         "id": "5001157",
@@ -190,7 +422,25 @@
         "name": "SD 2 Siebwalzenverstellung elektrohydraulisch",
         "desc": "drei Sektionen · Reinigungsautomatik",
         "price": 7200,
-        "img": "image20"
+        "img": "image20",
+        "specs": [
+          [
+            "Siebwalzenverstellung in drei unhabhänigigen Sektionen",
+            ""
+          ],
+          [
+            "Siebwalzenverstellung hydraulisch",
+            ""
+          ],
+          [
+            "Siebwalzenreinigung Automatik",
+            ""
+          ],
+          [
+            "Korngrößen einstellbar je nach Material",
+            ""
+          ]
+        ]
       }
     ]
   },
@@ -250,13 +500,31 @@
         "desc": "Serienausstattung",
         "price": 0,
         "img": "image_sd1std",
-        "conf": ["5001203", "5001204"],
+        "conf": [
+          "5001203",
+          "5001204"
+        ],
         "specs": [
-          ["Austragung", "Siebüberlauf nach rechts"],
-          ["Bandlänge", "6160 mm"],
-          ["Bandbreite", "910 mm"],
-          ["Schütthöhe", "2640–4850 mm"],
-          ["Geschwindigkeit", "2 m/s"]
+          [
+            "Austragung",
+            "Siebüberlauf nach rechts"
+          ],
+          [
+            "Bandlänge",
+            "6160 mm"
+          ],
+          [
+            "Bandbreite",
+            "910 mm"
+          ],
+          [
+            "Schütthöhe",
+            "2640–4850 mm"
+          ],
+          [
+            "Geschwindigkeit",
+            "2 m/s"
+          ]
         ]
       },
       {
@@ -266,7 +534,34 @@
         "desc": "Überlauf gerade nach hinten · 1550 mm",
         "price": 1980,
         "img": "image17",
-        "conf": ["5001204", "5001159", "5001160", "5001161"]
+        "conf": [
+          "5001204",
+          "5001159",
+          "5001160",
+          "5001161"
+        ],
+        "specs": [
+          [
+            "Austragung",
+            "Siebüberlauf gerade nach hinten"
+          ],
+          [
+            "Bandlänge",
+            "3860 mm"
+          ],
+          [
+            "Bandbreite",
+            "1550 mm"
+          ],
+          [
+            "Schütthöhe",
+            "2670–6960 mm"
+          ],
+          [
+            "Geschwindigkeit",
+            "1,4 m/s"
+          ]
+        ]
       },
       {
         "id": "5001204",
@@ -288,7 +583,33 @@
         "desc": "Mittelfraktion · 1550 mm",
         "price": 10355,
         "img": "image22",
-        "conf": ["5001204", "5001205", "5001206"]
+        "conf": [
+          "5001204",
+          "5001205",
+          "5001206"
+        ],
+        "specs": [
+          [
+            "Austragung",
+            "Mittelfraktion"
+          ],
+          [
+            "Bandlänge",
+            "3860 mm"
+          ],
+          [
+            "Bandbreite",
+            "1550 mm"
+          ],
+          [
+            "Schütthöhe",
+            "1850–6580 mm"
+          ],
+          [
+            "Geschwindigkeit",
+            "1,4 m/s"
+          ]
+        ]
       },
       {
         "id": "5001160",
@@ -304,7 +625,29 @@
         "name": "SD 2 Band quer",
         "desc": "Mittelfraktion seitlich · 800 mm",
         "price": 8124,
-        "img": "image23"
+        "img": "image23",
+        "specs": [
+          [
+            "Austragung",
+            "Mittelfraktion seitlich Siebdeck 2"
+          ],
+          [
+            "Bandlänge",
+            "5440 mm"
+          ],
+          [
+            "Bandbreite",
+            "800 mm"
+          ],
+          [
+            "Schütthöhe",
+            "1890–4570 mm"
+          ],
+          [
+            "Geschwindigkeit",
+            "1,9 m/s"
+          ]
+        ]
       },
       {
         "id": "5001206",
@@ -341,7 +684,13 @@
         "name": "Feinkornband 3 Drehzahlverstellung",
         "desc": "",
         "price": 1270,
-        "img": "image25"
+        "img": "image25",
+        "specs": [
+          [
+            "mit verstellbarer V2A-Rutsche",
+            ""
+          ]
+        ]
       },
       {
         "id": "5001208",
@@ -363,7 +712,33 @@
         "desc": "Steine/Störstoffe · 700 mm",
         "price": 8941,
         "img": "image26",
-        "ex": "gk"
+        "ex": "gk",
+        "specs": [
+          [
+            "Befördert Grobkorn wie Steine und sphärische Partikel aus der Maschine",
+            ""
+          ],
+          [
+            "Austragung Störstoffe",
+            ""
+          ],
+          [
+            "Bandlänge",
+            "4040 mm"
+          ],
+          [
+            "Bandbreite",
+            "700 mm"
+          ],
+          [
+            "Schütthöhe",
+            "2340 mm"
+          ],
+          [
+            "Geschwindigkeit",
+            "0,7 m/s"
+          ]
+        ]
       },
       {
         "id": "5001163",
@@ -372,7 +747,29 @@
         "desc": "6070 mm",
         "price": 12361,
         "img": "image29",
-        "ex": "gk"
+        "ex": "gk",
+        "specs": [
+          [
+            "Austragung",
+            "Steine / Störstoffe"
+          ],
+          [
+            "Bandlänge",
+            "6070 mm"
+          ],
+          [
+            "Bandbreite",
+            "700 mm"
+          ],
+          [
+            "Schütthöhe",
+            "3224 mm"
+          ],
+          [
+            "Geschwindigkeit",
+            "0,7 m/s"
+          ]
+        ]
       },
       {
         "id": "5001210",
@@ -389,7 +786,29 @@
         "desc": "Steine/Störstoffe · 800 mm",
         "price": 5242,
         "img": "image28",
-        "req": "5001209"
+        "req": "5001209",
+        "specs": [
+          [
+            "Austragung",
+            "Steine / Störstoffe"
+          ],
+          [
+            "Bandlänge",
+            "2350 mm"
+          ],
+          [
+            "Bandbreite",
+            "800 mm"
+          ],
+          [
+            "Schütthöhe",
+            "2520–3950 mm"
+          ],
+          [
+            "Geschwindigkeit",
+            "1,4 m/s"
+          ]
+        ]
       }
     ]
   },
