@@ -173,9 +173,49 @@ body.mode-gebraucht .pcard .pprice,body.mode-gebraucht .basis .p{display:none}
 body.mode-gebraucht .hero .hsub{display:none}
 @media (max-width:680px){#doc .pad{padding:26px 22px}.machine .specs{columns:1}.terms,.sig2{grid-template-columns:1fr}.gdata{grid-template-columns:1fr}.dmeta{text-align:left}}
 @media print{@page{margin:13mm}body{background:#fff}body *{visibility:hidden}#doc,#doc *{visibility:visible;-webkit-print-color-adjust:exact;print-color-adjust:exact}#doc{position:absolute;left:0;top:0;width:100%;max-width:none;border:0;box-shadow:none;border-radius:0}#doc .pad{padding:0}.noprint{display:none!important}.machine,.lines .grp,.lines .ln,.totals .row.gross,.sign,.sig2,.vp .party{break-inside:avoid}}
+#gate{position:fixed;inset:0;z-index:1000;background:linear-gradient(160deg,#16181a,#2a2c2f);display:flex;align-items:center;justify-content:center;padding:24px}
+#gate.hidden{display:none}
+#gate .gc{width:100%;max-width:340px;background:#fff;border-radius:16px;padding:30px 26px 26px;box-shadow:0 24px 60px rgba(0,0,0,.4);text-align:center}
+#gate .gl{height:34px;margin:0 auto 16px;display:block}
+#gate .gh{font-size:20px;font-weight:800;letter-spacing:-.01em}
+#gate .gs{font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-top:6px}
+#gate form{margin-top:20px;display:flex;flex-direction:column;gap:10px}
+#gate input{font-family:var(--sans);font-size:15px;border:1px solid var(--line-strong);background:var(--field);border-radius:9px;padding:12px 13px;color:var(--ink);outline:none;width:100%}
+#gate input:focus{border-color:var(--red);box-shadow:0 0 0 3px var(--red-soft);background:#fffdfc}
+#gate button{margin-top:4px;background:var(--red);color:#fff;border:0;border-radius:9px;padding:13px;font-family:var(--mono);font-size:12px;letter-spacing:.06em;text-transform:uppercase;font-weight:600;cursor:pointer}
+#gate button:hover{background:var(--red2)}
+#gate .ge{color:var(--red);font-size:12.5px;min-height:16px;font-weight:600}
 </style>
 </head>
 <body>
+<div id="gate" class="noprint">
+  <div class="gc">
+    <img class="gl" src="%%LOGOD%%" alt="Alzinger">
+    <div class="gh">Anmeldung</div>
+    <div class="gs">Lepton 5100 Konfigurator</div>
+    <form id="gateForm" autocomplete="on">
+      <input id="gu" name="username" placeholder="Benutzername" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false">
+      <input id="gp" name="password" type="password" placeholder="Passwort" autocomplete="current-password">
+      <button type="submit">Anmelden</button>
+      <div class="ge" id="gerr"></div>
+    </form>
+  </div>
+</div>
+<script>
+(function(){
+ function sha256(ascii){function r(v,a){return (v>>>a)|(v<<(32-a));}var mp=Math.pow,mw=mp(2,32),res="",words=[],bl=ascii.length*8;var hash=sha256.h=sha256.h||[],k=sha256.k=sha256.k||[],pc=k.length,ic={},i,j;for(var c=2;pc<64;c++){if(!ic[c]){for(i=0;i<313;i+=c)ic[i]=c;hash[pc]=(mp(c,.5)*mw)|0;k[pc++]=(mp(c,1/3)*mw)|0;}}ascii+="\x80";while(ascii.length%64-56)ascii+="\x00";for(i=0;i<ascii.length;i++){j=ascii.charCodeAt(i);if(j>>8)return;words[i>>2]|=j<<((3-i)%4)*8;}words[words.length]=((bl/mw)|0);words[words.length]=bl;for(j=0;j<words.length;){var w=words.slice(j,j+=16),oh=hash;hash=hash.slice(0,8);for(i=0;i<64;i++){var w15=w[i-15],w2=w[i-2],a=hash[0],e=hash[4],t1=hash[7]+(r(e,6)^r(e,11)^r(e,25))+((e&hash[5])^((~e)&hash[6]))+k[i]+(w[i]=i<16?w[i]:(w[i-16]+(r(w15,7)^r(w15,18)^(w15>>>3))+w[i-7]+(r(w2,17)^r(w2,19)^(w2>>>10)))|0),t2=(r(a,2)^r(a,13)^r(a,22))+((a&hash[1])^(a&hash[2])^(hash[1]&hash[2]));hash=[(t1+t2)|0].concat(hash);hash[4]=(hash[4]+t1)|0;}for(i=0;i<8;i++)hash[i]=(hash[i]+oh[i])|0;}for(i=0;i<8;i++){for(j=3;j+1;j--){var b=(hash[i]>>(j*8))&255;res+=((b<16)?0:"")+b.toString(16);}}return res;}
+ var HASH="2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324";
+ var AKEY="amb_lepton_auth";
+ var gate=document.getElementById("gate");
+ function pass(){gate.classList.add("hidden");}
+ try{if(localStorage.getItem(AKEY)===HASH)pass();}catch(e){}
+ document.getElementById("gateForm").addEventListener("submit",function(ev){ev.preventDefault();
+  var u=(document.getElementById("gu").value||"").trim().toLowerCase(),p=(document.getElementById("gp").value||"");
+  if(sha256(u+":"+p)===HASH){try{localStorage.setItem(AKEY,HASH);}catch(_){}document.getElementById("gerr").textContent="";pass();}
+  else{document.getElementById("gerr").textContent="Benutzername oder Passwort falsch.";var gp=document.getElementById("gp");gp.value="";gp.focus();}
+ });
+})();
+</script>
 <header class="topbar noprint">
   <div class="topbar-in">
     <div class="tb-logo"><img src="" id="tbLogo" alt="Alzinger"></div>
