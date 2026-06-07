@@ -604,7 +604,9 @@ const ICONS={
  function clearModel(){if(curRoot){scene.remove(curRoot);curRoot.traverse(function(o){if(o.isMesh&&o.geometry&&o.geometry.dispose)o.geometry.dispose();});curRoot=null;}groups=[];activeG=null;}
  function nodeName(o){var n=o;while(n){if(n.name)return n.name;n=n.parent;}return "";}
  // Instanz-/Versions-Suffixe entfernen -> Artikelnummer (z.B. 248027_24 -> 248027)
- function normPart(s){var n=String(s||"");n=n.replace(/_-_\d{4}.*$/,"");n=n.replace(/_oa_\d+$/i,"");n=n.replace(/_v?\d+(\.\d+)+$/i,"");n=n.replace(/_\d{1,3}$/,"");n=n.replace(/_oa$/i,"");return n.trim()||String(s||"");}
+ // PDM-Export (Solid Edge/STEP): nach führender Artikelnummer gruppieren
+ // (z.B. PDM_025419_25421 / PDM_045732_cecd62 -> PDM_025419 bzw. PDM_045732)
+ function normPart(s){var n=String(s||"");var pdm=n.match(/^(PDM_\d+)/i);if(pdm)return pdm[1];n=n.replace(/_-_\d{4}.*$/,"");n=n.replace(/_oa_\d+$/i,"");n=n.replace(/_v?\d+(\.\d+)+$/i,"");n=n.replace(/_\d{1,3}$/,"");n=n.replace(/_oa$/i,"");return n.trim()||String(s||"");}
  function cleanLabel(s){return String(s||"").replace(/_/g," ").replace(/\s+/g," ").trim()||"Bauteil";}
  function buildGroups(root){
   var map={},order=[];
