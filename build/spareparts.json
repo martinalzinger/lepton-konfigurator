@@ -1,0 +1,58 @@
+{
+  "_hinweis": "Ersatzteil-Katalog. 'model' = Schluessel eines GLB (entweder Platzhalter aus glbgen.py: scheibe|welle|lager|ritzel|trommel|keilriemen|abstreifer|gehaeuse  ODER Dateiname einer STEP/GLB-Datei in build/models_step bzw. build/models_glb, z.B. '5100-100.step'). Echte STEP-Dateien werden beim Build automatisch konvertiert; Art.-Nr./Bezeichnung koennen daraus uebernommen werden.",
+  "kategorien": [
+    {
+      "h": "Vordosierung & Bunker",
+      "h_en": "Pre-dosing & hopper",
+      "teile": [
+        { "id": "5000-BU", "art": "5000-BU", "name": "Aufgabebunker 8 m³", "name_en": "Feed hopper 8 m³", "desc": "Bunker mit Vordosierband (Solid Edge .sev – nur Vorschau)", "desc_en": "Hopper with pre-dosing belt (Solid Edge .sev – preview only)", "price": 0, "model": null, "img": "bunker_preview" }
+      ]
+    },
+    {
+      "h": "Sternsieb & Siebwellen",
+      "h_en": "Star screen & shafts",
+      "teile": [
+        { "id": "5100-100", "art": "5100-100", "name": "Sternscheibe Standard", "name_en": "Star disc standard", "desc": "Sternscheibe NBR, 6-zackig, für Siebdeck 1", "desc_en": "Star disc NBR, 6-point, for screen deck 1", "price": 48, "model": "scheibe" },
+        { "id": "5100-101", "art": "5100-101", "name": "Sternscheibe Hardox verstärkt", "name_en": "Star disc Hardox reinforced", "desc": "Verschleißfeste Ausführung für abrasives Material", "desc_en": "Wear-resistant version for abrasive material", "price": 72, "model": "scheibe" },
+        { "id": "5100-110", "art": "5100-110", "name": "Siebwelle komplett", "name_en": "Screen shaft complete", "desc": "Welle mit Scheibenpaket, vormontiert", "desc_en": "Shaft with disc pack, pre-assembled", "price": 340, "model": "welle" },
+        { "id": "5100-115", "art": "5100-115", "name": "Distanzring Welle", "name_en": "Spacer ring shaft", "desc": "Distanzhülse zwischen Sternscheiben", "desc_en": "Spacer sleeve between star discs", "price": 9.5, "model": "lager" }
+      ]
+    },
+    {
+      "h": "Lager & Dichtungen",
+      "h_en": "Bearings & seals",
+      "teile": [
+        { "id": "5100-200", "art": "5100-200", "name": "Wellenlager", "name_en": "Shaft bearing", "desc": "Rillenkugellager, beidseitig gedichtet", "desc_en": "Deep-groove ball bearing, sealed both sides", "price": 64, "model": "lager" },
+        { "id": "5100-205", "art": "5100-205", "name": "Lagergehäuse", "name_en": "Bearing housing", "desc": "Stehlagergehäuse Graguss", "desc_en": "Plummer block housing, cast iron", "price": 88, "model": "gehaeuse" },
+        { "id": "5100-210", "art": "5100-210", "name": "Wellendichtring", "name_en": "Shaft seal", "desc": "Radial-Wellendichtring NBR", "desc_en": "Radial shaft seal NBR", "price": 6.8, "model": "lager" }
+      ]
+    },
+    {
+      "h": "Antrieb",
+      "h_en": "Drive",
+      "teile": [
+        { "id": "5100-300", "art": "5100-300", "name": "Antriebsritzel", "name_en": "Drive sprocket", "desc": "Kettenritzel Z16, gehärtet", "desc_en": "Chain sprocket Z16, hardened", "price": 145, "model": "ritzel" },
+        { "id": "5100-310", "art": "5100-310", "name": "Keilriemen SPB", "name_en": "V-belt SPB", "desc": "Schmalkeilriemen für Hauptantrieb", "desc_en": "Narrow V-belt for main drive", "price": 28, "model": "keilriemen" },
+        { "id": "5100-320", "art": "5100-320", "name": "Getriebemotor", "name_en": "Geared motor", "desc": "Stirnradgetriebemotor 4 kW", "desc_en": "Helical geared motor 4 kW", "price": 1290, "model": "gehaeuse" }
+      ]
+    },
+    {
+      "h": "Förderbänder",
+      "h_en": "Conveyor belts",
+      "teile": [
+        { "id": "5100-400", "art": "5100-400", "name": "Umlenktrommel", "name_en": "Return drum", "desc": "Umlenktrommel Ø159, gummiert", "desc_en": "Return drum Ø159, rubber-coated", "price": 410, "model": "trommel" },
+        { "id": "5100-410", "art": "5100-410", "name": "Gurtabstreifer", "name_en": "Belt scraper", "desc": "Abstreifleiste Polyurethan", "desc_en": "Scraper blade polyurethane", "price": 56, "model": "abstreifer" },
+        { "id": "5100-420", "art": "5100-420", "name": "Förderband 650 mm", "name_en": "Conveyor belt 650 mm", "desc": "Endlosgurt EP400, 3+1, Meterware", "desc_en": "Endless belt EP400, 3+1, per metre", "price": 68, "model": "trommel" }
+      ]
+    },
+    {
+      "h": "Hydraulik & Elektrik",
+      "h_en": "Hydraulics & electrics",
+      "teile": [
+        { "id": "5100-500", "art": "5100-500", "name": "Hydraulikpumpe", "name_en": "Hydraulic pump", "desc": "Zahnradpumpe für Stützen", "desc_en": "Gear pump for supports", "price": 520, "model": "gehaeuse" },
+        { "id": "5100-510", "art": "5100-510", "name": "Steuerung / E-Box", "name_en": "Control unit / e-box", "desc": "Schaltschrank-Steuerung SPS", "desc_en": "PLC control cabinet", "price": 760, "model": "gehaeuse" },
+        { "id": "5100-520", "art": "5100-520", "name": "Not-Aus-Schalter", "name_en": "Emergency-stop switch", "desc": "Reißleinenschalter komplett", "desc_en": "Pull-rope switch, complete", "price": 34, "model": "gehaeuse" }
+      ]
+    }
+  ]
+}
