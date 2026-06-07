@@ -1,0 +1,400 @@
+[
+  {
+    "h": "Antrieb",
+    "opts": [
+      {
+        "id": "5001173",
+        "art": "5001173",
+        "name": "Genset Perkins",
+        "desc": "Dieselmotor 58 kW · Generator 60 kVA · Partikelfilter",
+        "price": 19800,
+        "img": "image4"
+      },
+      {
+        "id": "5000805a",
+        "art": "5000805",
+        "name": "Externe Stromversorgung 400 V 63 A",
+        "desc": "Netzbetrieb statt Diesel",
+        "price": 3040,
+        "img": "image12"
+      }
+    ]
+  },
+  {
+    "h": "Fahrgestell",
+    "opts": [
+      {
+        "id": "5001174",
+        "art": "5001174",
+        "name": "Straßenzulassung mit Hangausgleich",
+        "desc": "Tandemachse · 80 km/h · EBS · Luftfederung",
+        "price": 12096,
+        "img": "image31"
+      },
+      {
+        "id": "5001175",
+        "art": "5001175",
+        "name": "Druckluftkompressor Bremsanlage 24 V",
+        "desc": "",
+        "price": 1420,
+        "img": null
+      },
+      {
+        "id": "5001186",
+        "art": "5001186",
+        "name": "Hydraulikpumpe für Stützen 24 V",
+        "desc": "",
+        "price": 2670,
+        "img": null
+      },
+      {
+        "id": "5000380",
+        "art": "5000380",
+        "name": "Raupenlaufwerk mit Hangausgleich",
+        "desc": "Spurbreite 3000 mm · Metallketten",
+        "price": 24877,
+        "img": "image32"
+      }
+    ]
+  },
+  {
+    "h": "Bunker & Vordosierung",
+    "opts": [
+      {
+        "id": "5001152",
+        "art": "5001152",
+        "name": "Bunkerklappe vorne hydraulisch verstellbar",
+        "desc": "",
+        "price": 1645,
+        "img": "image13"
+      },
+      {
+        "id": "5000382",
+        "art": "5000382",
+        "name": "Volumenmessung",
+        "desc": "Schaufelzählung · Durchsatzbewertung",
+        "price": 1190,
+        "img": "image33"
+      },
+      {
+        "id": "5001153",
+        "art": "5001153",
+        "name": "Vordosierung große Dosierwalze",
+        "desc": "mit Aufreißfunktion",
+        "price": 8100,
+        "img": "image14"
+      },
+      {
+        "id": "5001187",
+        "art": "5001187",
+        "name": "Vorsiebdeck inkl. Hardfacing mit Dosierwalze",
+        "desc": "+1,2 m² Siebfläche",
+        "price": 13750,
+        "img": "image15"
+      }
+    ]
+  },
+  {
+    "h": "Siebdeck 1 – Siebteilung",
+    "ex": "sd1",
+    "opts": [
+      {
+        "id": "5001199",
+        "art": "5001199",
+        "name": "36 mm",
+        "desc": "Siebteilung SD 1",
+        "price": 27486,
+        "img": null
+      },
+      {
+        "id": "5001176",
+        "art": "5001176",
+        "name": "46 mm",
+        "desc": "Siebteilung SD 1",
+        "price": 24236,
+        "img": null
+      },
+      {
+        "id": "5001154",
+        "art": "5001154",
+        "name": "52 mm",
+        "desc": "Siebteilung SD 1",
+        "price": 22610,
+        "img": null
+      },
+      {
+        "id": "5001200",
+        "art": "5001200",
+        "name": "59 mm",
+        "desc": "Siebteilung SD 1",
+        "price": 21418,
+        "img": null
+      },
+      {
+        "id": "5001201",
+        "art": "5001201",
+        "name": "70 mm",
+        "desc": "Siebteilung SD 1",
+        "price": 19307,
+        "img": null
+      }
+    ]
+  },
+  {
+    "h": "Siebdeck 1 – Ausstattung",
+    "opts": [
+      {
+        "id": "5001155",
+        "art": "5001155",
+        "name": "SD 1 Siebwalzenverstellung elektrohydraulisch",
+        "desc": "drei Sektionen · Reinigungsautomatik",
+        "price": 7200,
+        "img": "image20"
+      },
+      {
+        "id": "5000384",
+        "art": "5000384",
+        "name": "Wassersprühanlage SD 1 mit Wasservorfilter",
+        "desc": "Staubbindung · Brandschutz",
+        "price": 1130,
+        "img": "image30"
+      },
+      {
+        "id": "5001214",
+        "art": "5001214",
+        "name": "Siebdeck 1 Windsichter",
+        "desc": "höhen-/drehzahlverstellbar",
+        "price": 21500,
+        "img": "image7"
+      }
+    ]
+  },
+  {
+    "h": "Siebdeck 2",
+    "opts": [
+      {
+        "id": "5001156",
+        "art": "5001156",
+        "name": "Option Siebdeck 2",
+        "desc": "29 Siebwalzen · 4 E-Motoren · reversierbar",
+        "price": 33420,
+        "img": "image8"
+      },
+      {
+        "id": "5001157",
+        "art": "5001157",
+        "name": "SD 2 Siebwalzenverstellung elektrohydraulisch",
+        "desc": "drei Sektionen · Reinigungsautomatik",
+        "price": 7200,
+        "img": "image20"
+      }
+    ]
+  },
+  {
+    "h": "Siebdeck 2 – Siebteilung",
+    "ex": "sd2",
+    "opts": [
+      {
+        "id": "5001177",
+        "art": "5001177",
+        "name": "22 mm",
+        "desc": "Siebteilung SD 2",
+        "price": 18674,
+        "img": null
+      },
+      {
+        "id": "5001311",
+        "art": "5001311",
+        "name": "23 mm",
+        "desc": "Siebteilung SD 2",
+        "price": 18287.5,
+        "img": null
+      },
+      {
+        "id": "5001185",
+        "art": "5001185",
+        "name": "24 mm",
+        "desc": "Siebteilung SD 2",
+        "price": 17901,
+        "img": null
+      },
+      {
+        "id": "5001158",
+        "art": "5001158",
+        "name": "28 mm",
+        "desc": "Siebteilung SD 2",
+        "price": 16543,
+        "img": null
+      },
+      {
+        "id": "5000805b",
+        "art": "5000805",
+        "name": "43 mm",
+        "desc": "Siebteilung SD 2",
+        "price": 14542,
+        "img": null
+      }
+    ]
+  },
+  {
+    "h": "Siebdeck 1 Band",
+    "opts": [
+      {
+        "id": "5001203",
+        "art": "5001203",
+        "name": "Siebdeck 1 Band längs",
+        "desc": "Überlauf gerade nach hinten · 1550 mm",
+        "price": 1980,
+        "img": "image17"
+      },
+      {
+        "id": "5001204",
+        "art": "5001204",
+        "name": "Siebdeck 1 Band geneigt rechte Seite",
+        "desc": "nur bei reiner SD-1-Maschine",
+        "price": 2630,
+        "img": "image21"
+      }
+    ]
+  },
+  {
+    "h": "Siebdeck 2 Band",
+    "opts": [
+      {
+        "id": "5001159",
+        "art": "5001159",
+        "name": "SD 2 Band Längsrichtung",
+        "desc": "Mittelfraktion · 1550 mm",
+        "price": 10355,
+        "img": "image22"
+      },
+      {
+        "id": "5001160",
+        "art": "5001160",
+        "name": "SD 2 Band längs: Magnetbandrolle Neodym",
+        "desc": "Eisenabscheidung",
+        "price": 19620,
+        "img": "image22"
+      },
+      {
+        "id": "5001205",
+        "art": "5001205",
+        "name": "SD 2 Band quer",
+        "desc": "Mittelfraktion seitlich · 800 mm",
+        "price": 8124,
+        "img": "image23"
+      },
+      {
+        "id": "5001206",
+        "art": "5001206",
+        "name": "SD 2 Band quer: Magnetbandrolle Neodym",
+        "desc": "Eisenabscheidung",
+        "price": 13820,
+        "img": "image23"
+      },
+      {
+        "id": "5001161",
+        "art": "5001161",
+        "name": "Absaugung SD 2 Band Mittelfraktion",
+        "desc": "Druck-/Sauggebläse",
+        "price": 12664,
+        "img": "image24"
+      }
+    ]
+  },
+  {
+    "h": "Feinkornband 3",
+    "opts": [
+      {
+        "id": "5001162",
+        "art": "5001162",
+        "name": "Feinkornband 3 Magnetbandrolle Neodym",
+        "desc": "Eisenabscheidung",
+        "price": 13930,
+        "img": "image25"
+      },
+      {
+        "id": "5001207",
+        "art": "5001207",
+        "name": "Feinkornband 3 Drehzahlverstellung",
+        "desc": "",
+        "price": 1270,
+        "img": "image25"
+      },
+      {
+        "id": "5001208",
+        "art": "5001208",
+        "name": "Feinkornband 3 Aufbauwand",
+        "desc": "",
+        "price": 1220,
+        "img": "image25"
+      }
+    ]
+  },
+  {
+    "h": "Grobkornband",
+    "opts": [
+      {
+        "id": "5001209",
+        "art": "5001209",
+        "name": "Grobkornband 1 kurz",
+        "desc": "Steine/Störstoffe · 700 mm",
+        "price": 8941,
+        "img": "image26"
+      },
+      {
+        "id": "5001210",
+        "art": "5001210",
+        "name": "Abstreifer Grobkornband 1",
+        "desc": "",
+        "price": 1420,
+        "img": "image27"
+      },
+      {
+        "id": "5001211",
+        "art": "5001211",
+        "name": "Grobkornband 2",
+        "desc": "Steine/Störstoffe · 800 mm",
+        "price": 5242,
+        "img": "image28"
+      },
+      {
+        "id": "5001163",
+        "art": "5001163",
+        "name": "Grobkornband lang",
+        "desc": "6070 mm",
+        "price": 12361,
+        "img": "image29"
+      }
+    ]
+  },
+  {
+    "h": "Zusatzausstattung",
+    "opts": [
+      {
+        "id": "5000387",
+        "art": "5000387",
+        "name": "Fernbedienung für alle wichtigen Einstellungen",
+        "desc": "",
+        "price": 5090,
+        "img": "image9"
+      },
+      {
+        "id": "5001028",
+        "art": "5001028",
+        "name": "LeptonLink – 12 Monate kostenfrei",
+        "desc": "Telemetrie / Fernzugriff",
+        "price": 0,
+        "img": "image11"
+      },
+      {
+        "id": "5000558",
+        "art": "5000558",
+        "name": "Lichtpaket LED",
+        "desc": "",
+        "price": 1410,
+        "img": null
+      }
+    ]
+  }
+]
