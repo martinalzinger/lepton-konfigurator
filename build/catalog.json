@@ -38,6 +38,96 @@
             "Zyklon- Staubabscheider",
             ""
           ]
+        ],
+        "specs_en": [
+          [
+            "Perkins genset 58 kW",
+            ""
+          ],
+          [
+            "Diesel engine with particulate filter, without AdBlue",
+            ""
+          ],
+          [
+            "Generator 60 kVA",
+            ""
+          ],
+          [
+            "Diesel tank, 200 litre capacity",
+            ""
+          ],
+          [
+            "Cleanfix reversible fan with interval adjustable on the display",
+            ""
+          ],
+          [
+            "Meets the latest emission standard",
+            ""
+          ],
+          [
+            "Cyclone dust separator",
+            ""
+          ]
+        ],
+        "specs_pl": [
+          [
+            "Agregat Perkins 58 kW",
+            ""
+          ],
+          [
+            "Silnik diesla z filtrem cząstek stałych, bez AdBlue",
+            ""
+          ],
+          [
+            "Generator 60 kVA",
+            ""
+          ],
+          [
+            "Zbiornik paliwa o pojemności 200 litrów",
+            ""
+          ],
+          [
+            "Wentylator rewersyjny Cleanfix z interwałem ustawianym na wyświetlaczu",
+            ""
+          ],
+          [
+            "Spełnia najnowszą normę emisji spalin",
+            ""
+          ],
+          [
+            "Cyklonowy separator pyłu",
+            ""
+          ]
+        ],
+        "specs_fr": [
+          [
+            "Groupe électrogène Perkins 58 kW",
+            ""
+          ],
+          [
+            "Moteur diesel avec filtre à particules, sans AdBlue",
+            ""
+          ],
+          [
+            "Générateur 60 kVA",
+            ""
+          ],
+          [
+            "Réservoir diesel de 200 litres",
+            ""
+          ],
+          [
+            "Ventilateur réversible Cleanfix avec intervalle réglable à l'écran",
+            ""
+          ],
+          [
+            "Conforme à la dernière norme antipollution",
+            ""
+          ],
+          [
+            "Séparateur de poussière à cyclone",
+            ""
+          ]
         ]
       },
       {
@@ -78,6 +168,60 @@
             "Hydraulischer Hangausgleich",
             ""
           ]
+        ],
+        "specs_en": [
+          [
+            "European road approval 80 km/h",
+            ""
+          ],
+          [
+            "Air suspension",
+            ""
+          ],
+          [
+            "EBS braking system",
+            ""
+          ],
+          [
+            "Hydraulic slope compensation",
+            ""
+          ]
+        ],
+        "specs_pl": [
+          [
+            "Europejskie dopuszczenie do ruchu drogowego 80 km/h",
+            ""
+          ],
+          [
+            "Zawieszenie pneumatyczne",
+            ""
+          ],
+          [
+            "Układ hamulcowy EBS",
+            ""
+          ],
+          [
+            "Hydrauliczna kompensacja pochyłości",
+            ""
+          ]
+        ],
+        "specs_fr": [
+          [
+            "Homologation routière européenne 80 km/h",
+            ""
+          ],
+          [
+            "Suspension pneumatique",
+            ""
+          ],
+          [
+            "Système de freinage EBS",
+            ""
+          ],
+          [
+            "Compensation de pente hydraulique",
+            ""
+          ]
         ]
       },
       {
@@ -99,6 +243,48 @@
           ],
           [
             "Metallketten mit Gummibelag",
+            ""
+          ]
+        ],
+        "specs_en": [
+          [
+            "Travel speed",
+            "1–3 km/h"
+          ],
+          [
+            "Track width",
+            "3000 mm"
+          ],
+          [
+            "Metal tracks with rubber pads",
+            ""
+          ]
+        ],
+        "specs_pl": [
+          [
+            "Prędkość jazdy",
+            "1–3 km/h"
+          ],
+          [
+            "Szerokość toru",
+            "3000 mm"
+          ],
+          [
+            "Gąsienice metalowe z nakładkami gumowymi",
+            ""
+          ]
+        ],
+        "specs_fr": [
+          [
+            "Vitesse de déplacement",
+            "1–3 km/h"
+          ],
+          [
+            "Largeur de voie",
+            "3000 mm"
+          ],
+          [
+            "Chenilles métalliques avec patins en caoutchouc",
             ""
           ]
         ]
@@ -141,6 +327,36 @@
             "Zusätzliche Aufreißfunktion",
             ""
           ]
+        ],
+        "specs_en": [
+          [
+            "Dosing roller with tilt adjustment and adjustable speed and direction",
+            ""
+          ],
+          [
+            "Additional tear-open function",
+            ""
+          ]
+        ],
+        "specs_pl": [
+          [
+            "Walec dozujący z regulacją pochylenia oraz regulowaną prędkością i kierunkiem obrotów",
+            ""
+          ],
+          [
+            "Dodatkowa funkcja rozrywania",
+            ""
+          ]
+        ],
+        "specs_fr": [
+          [
+            "Rouleau doseur avec réglage d'inclinaison ainsi que vitesse et sens réglables",
+            ""
+          ],
+          [
+            "Fonction d'éventration supplémentaire",
+            ""
+          ]
         ]
       },
       {
@@ -166,6 +382,60 @@
           ],
           [
             "Siebschieben Vorsiebdeck mit Hardfacing",
+            ""
+          ]
+        ],
+        "specs_en": [
+          [
+            "Tilt, speed and direction adjustable",
+            ""
+          ],
+          [
+            "Dosing roller with tear-open function",
+            ""
+          ],
+          [
+            "Additional screening area of 1.2 m²",
+            ""
+          ],
+          [
+            "Pre-screen deck screen discs with hardfacing",
+            ""
+          ]
+        ],
+        "specs_pl": [
+          [
+            "Regulacja pochylenia, prędkości i kierunku obrotów",
+            ""
+          ],
+          [
+            "Walec dozujący z funkcją rozrywania",
+            ""
+          ],
+          [
+            "Dodatkowa powierzchnia sita 1,2 m²",
+            ""
+          ],
+          [
+            "Tarcze sitowe pokładu wstępnego z napawaniem",
+            ""
+          ]
+        ],
+        "specs_fr": [
+          [
+            "Inclinaison, vitesse et sens réglables",
+            ""
+          ],
+          [
+            "Rouleau doseur avec fonction d'éventration",
+            ""
+          ],
+          [
+            "Surface de criblage supplémentaire de 1,2 m²",
+            ""
+          ],
+          [
+            "Disques de criblage du pont de pré-criblage avec rechargement dur",
             ""
           ]
         ]
@@ -194,6 +464,60 @@
             "Geschwindigkeit stufenlos von 1 bis 8 m/min einstellbar",
             ""
           ]
+        ],
+        "specs_en": [
+          [
+            "Approx. 8 m³ capacity",
+            ""
+          ],
+          [
+            "Loadable from three sides by loader or conveyors",
+            ""
+          ],
+          [
+            "Automatic load control",
+            ""
+          ],
+          [
+            "Speed infinitely adjustable from 1 to 8 m/min",
+            ""
+          ]
+        ],
+        "specs_pl": [
+          [
+            "Ok. 8 m³ pojemności",
+            ""
+          ],
+          [
+            "Załadunek z trzech stron ładowarką lub przenośnikami",
+            ""
+          ],
+          [
+            "Automatyczna regulacja obciążenia",
+            ""
+          ],
+          [
+            "Prędkość regulowana bezstopniowo od 1 do 8 m/min",
+            ""
+          ]
+        ],
+        "specs_fr": [
+          [
+            "Env. 8 m³ de capacité",
+            ""
+          ],
+          [
+            "Chargement sur trois côtés par chargeur ou convoyeurs",
+            ""
+          ],
+          [
+            "Régulation de charge automatique",
+            ""
+          ],
+          [
+            "Vitesse réglable en continu de 1 à 8 m/min",
+            ""
+          ]
         ]
       },
       {
@@ -218,6 +542,60 @@
           ],
           [
             "Beurteilung der Durchsatzleistung",
+            ""
+          ]
+        ],
+        "specs_en": [
+          [
+            "Enter bucket volume on the display",
+            ""
+          ],
+          [
+            "Load measurement on the support foot",
+            ""
+          ],
+          [
+            "Automatic counting of bucket loads and resulting quantity",
+            ""
+          ],
+          [
+            "Assessment of throughput",
+            ""
+          ]
+        ],
+        "specs_pl": [
+          [
+            "Wprowadzanie objętości łyżki na wyświetlaczu",
+            ""
+          ],
+          [
+            "Pomiar obciążenia na stopie podporowej",
+            ""
+          ],
+          [
+            "Automatyczne liczenie łyżek i wynikowej ilości",
+            ""
+          ],
+          [
+            "Ocena wydajności przerobu",
+            ""
+          ]
+        ],
+        "specs_fr": [
+          [
+            "Saisie du volume du godet à l'écran",
+            ""
+          ],
+          [
+            "Mesure de la charge sur le pied d'appui",
+            ""
+          ],
+          [
+            "Comptage automatique des godets et quantité résultante",
+            ""
+          ],
+          [
+            "Évaluation du débit",
             ""
           ]
         ]
@@ -298,6 +676,96 @@
         "Hardfacing an zwei Spitzen der Siebscheiben",
         ""
       ]
+    ],
+    "cspecs_en": [
+      [
+        "Screen deck inclination infinitely adjustable from 3° to 38°",
+        ""
+      ],
+      [
+        "four independent electric motors with load control for difficult material",
+        ""
+      ],
+      [
+        "all drives reversible",
+        ""
+      ],
+      [
+        "19 screen shafts, spacing 36–70 mm",
+        ""
+      ],
+      [
+        "Screen discs individually replaceable, made of wear-resistant Hardox",
+        ""
+      ],
+      [
+        "infinitely variable speed adjustment",
+        ""
+      ],
+      [
+        "Hardfacing on two tips of the screen discs",
+        ""
+      ]
+    ],
+    "cspecs_pl": [
+      [
+        "Bezstopniowa regulacja nachylenia pokładu sitowego od 3° do 38°",
+        ""
+      ],
+      [
+        "cztery niezależne silniki elektryczne z regulacją obciążenia przy trudnym materiale",
+        ""
+      ],
+      [
+        "wszystkie napędy rewersyjne",
+        ""
+      ],
+      [
+        "19 walców sitowych, podział 36–70 mm",
+        ""
+      ],
+      [
+        "Tarcze sitowe wymieniane pojedynczo, z odpornego na ścieranie Hardox",
+        ""
+      ],
+      [
+        "bezstopniowa regulacja prędkości obrotowej",
+        ""
+      ],
+      [
+        "Napawanie na dwóch czubkach tarcz sitowych",
+        ""
+      ]
+    ],
+    "cspecs_fr": [
+      [
+        "Inclinaison du pont de criblage réglable en continu de 3° à 38°",
+        ""
+      ],
+      [
+        "quatre moteurs électriques indépendants avec régulation de charge pour matériaux difficiles",
+        ""
+      ],
+      [
+        "tous les entraînements réversibles",
+        ""
+      ],
+      [
+        "19 rouleaux de criblage, espacement 36–70 mm",
+        ""
+      ],
+      [
+        "Disques de criblage remplaçables individuellement, en Hardox résistant à l'usure",
+        ""
+      ],
+      [
+        "réglage progressif de la vitesse",
+        ""
+      ],
+      [
+        "Rechargement dur sur deux pointes des disques de criblage",
+        ""
+      ]
     ]
   },
   {
@@ -327,6 +795,60 @@
             "Korngrößen einstellbar je nach Material",
             ""
           ]
+        ],
+        "specs_en": [
+          [
+            "Screen shaft adjustment in three independent sections",
+            ""
+          ],
+          [
+            "Hydraulic screen shaft adjustment",
+            ""
+          ],
+          [
+            "Automatic screen shaft cleaning",
+            ""
+          ],
+          [
+            "Grain sizes adjustable depending on material",
+            ""
+          ]
+        ],
+        "specs_pl": [
+          [
+            "Regulacja walców sitowych w trzech niezależnych sekcjach",
+            ""
+          ],
+          [
+            "Hydrauliczna regulacja walców sitowych",
+            ""
+          ],
+          [
+            "Automatyczne czyszczenie walców sitowych",
+            ""
+          ],
+          [
+            "Wielkość ziarna regulowana w zależności od materiału",
+            ""
+          ]
+        ],
+        "specs_fr": [
+          [
+            "Réglage des rouleaux de criblage en trois sections indépendantes",
+            ""
+          ],
+          [
+            "Réglage hydraulique des rouleaux de criblage",
+            ""
+          ],
+          [
+            "Nettoyage automatique des rouleaux de criblage",
+            ""
+          ],
+          [
+            "Granulométrie réglable selon le matériau",
+            ""
+          ]
         ]
       },
       {
@@ -349,6 +871,48 @@
             "Möglichkeit zur Einspritzung von mikrobiologischen Wirkstoffen (z.B. in Kompost)",
             ""
           ]
+        ],
+        "specs_en": [
+          [
+            "Actively binds dust",
+            ""
+          ],
+          [
+            "Prevents fire damage",
+            ""
+          ],
+          [
+            "Option to inject microbiological agents (e.g. into compost)",
+            ""
+          ]
+        ],
+        "specs_pl": [
+          [
+            "Aktywnie wiąże pył",
+            ""
+          ],
+          [
+            "Zapobiega szkodom pożarowym",
+            ""
+          ],
+          [
+            "Możliwość wtrysku środków mikrobiologicznych (np. do kompostu)",
+            ""
+          ]
+        ],
+        "specs_fr": [
+          [
+            "Lie activement la poussière",
+            ""
+          ],
+          [
+            "Prévient les dommages dus au feu",
+            ""
+          ],
+          [
+            "Possibilité d'injecter des agents microbiologiques (p. ex. dans le compost)",
+            ""
+          ]
         ]
       },
       {
@@ -365,6 +929,36 @@
           ],
           [
             "Höhenverstellbar",
+            ""
+          ]
+        ],
+        "specs_en": [
+          [
+            "Speed infinitely adjustable",
+            ""
+          ],
+          [
+            "Height adjustable",
+            ""
+          ]
+        ],
+        "specs_pl": [
+          [
+            "Bezstopniowa regulacja prędkości obrotowej",
+            ""
+          ],
+          [
+            "Regulacja wysokości",
+            ""
+          ]
+        ],
+        "specs_fr": [
+          [
+            "Vitesse de rotation réglable en continu",
+            ""
+          ],
+          [
+            "Réglable en hauteur",
             ""
           ]
         ]
@@ -414,6 +1008,108 @@
             "Hardfacing an den Spitzen der Siebscheiben",
             ""
           ]
+        ],
+        "specs_en": [
+          [
+            "Screen deck inclination infinitely adjustable from 2° to 35°",
+            ""
+          ],
+          [
+            "four independent electric motors with overload control for difficult material",
+            ""
+          ],
+          [
+            "all drives reversible with load control",
+            ""
+          ],
+          [
+            "29 screen shafts, spacing 22–43 mm or as per customer request",
+            ""
+          ],
+          [
+            "Screen discs individually replaceable, made of wear-resistant Hardox",
+            ""
+          ],
+          [
+            "infinitely variable speed adjustment",
+            ""
+          ],
+          [
+            "Grain sizes adjustable depending on material",
+            ""
+          ],
+          [
+            "Hardfacing on the tips of the screen discs",
+            ""
+          ]
+        ],
+        "specs_pl": [
+          [
+            "Bezstopniowa regulacja nachylenia pokładu sitowego od 2° do 35°",
+            ""
+          ],
+          [
+            "cztery niezależne silniki elektryczne z regulacją przeciążenia przy trudnym materiale",
+            ""
+          ],
+          [
+            "wszystkie napędy rewersyjne z regulacją obciążenia",
+            ""
+          ],
+          [
+            "29 walców sitowych, podział 22–43 mm lub wg życzenia klienta",
+            ""
+          ],
+          [
+            "Tarcze sitowe wymieniane pojedynczo, z odpornego na ścieranie Hardox",
+            ""
+          ],
+          [
+            "bezstopniowa regulacja prędkości obrotowej",
+            ""
+          ],
+          [
+            "Wielkość ziarna regulowana w zależności od materiału",
+            ""
+          ],
+          [
+            "Napawanie na czubkach tarcz sitowych",
+            ""
+          ]
+        ],
+        "specs_fr": [
+          [
+            "Inclinaison du pont de criblage réglable en continu de 2° à 35°",
+            ""
+          ],
+          [
+            "quatre moteurs électriques indépendants avec régulation de surcharge pour matériaux difficiles",
+            ""
+          ],
+          [
+            "tous les entraînements réversibles avec régulation de charge",
+            ""
+          ],
+          [
+            "29 rouleaux de criblage, espacement 22–43 mm ou selon le souhait du client",
+            ""
+          ],
+          [
+            "Disques de criblage remplaçables individuellement, en Hardox résistant à l'usure",
+            ""
+          ],
+          [
+            "réglage progressif de la vitesse",
+            ""
+          ],
+          [
+            "Granulométrie réglable selon le matériau",
+            ""
+          ],
+          [
+            "Rechargement dur sur les pointes des disques de criblage",
+            ""
+          ]
         ]
       },
       {
@@ -438,6 +1134,60 @@
           ],
           [
             "Korngrößen einstellbar je nach Material",
+            ""
+          ]
+        ],
+        "specs_en": [
+          [
+            "Screen shaft adjustment in three independent sections",
+            ""
+          ],
+          [
+            "Hydraulic screen shaft adjustment",
+            ""
+          ],
+          [
+            "Automatic screen shaft cleaning",
+            ""
+          ],
+          [
+            "Grain sizes adjustable depending on material",
+            ""
+          ]
+        ],
+        "specs_pl": [
+          [
+            "Regulacja walców sitowych w trzech niezależnych sekcjach",
+            ""
+          ],
+          [
+            "Hydrauliczna regulacja walców sitowych",
+            ""
+          ],
+          [
+            "Automatyczne czyszczenie walców sitowych",
+            ""
+          ],
+          [
+            "Wielkość ziarna regulowana w zależności od materiału",
+            ""
+          ]
+        ],
+        "specs_fr": [
+          [
+            "Réglage des rouleaux de criblage en trois sections indépendantes",
+            ""
+          ],
+          [
+            "Réglage hydraulique des rouleaux de criblage",
+            ""
+          ],
+          [
+            "Nettoyage automatique des rouleaux de criblage",
+            ""
+          ],
+          [
+            "Granulométrie réglable selon le matériau",
             ""
           ]
         ]
@@ -525,6 +1275,72 @@
             "Geschwindigkeit",
             "2 m/s"
           ]
+        ],
+        "specs_en": [
+          [
+            "Discharge",
+            "Screen overflow to the right"
+          ],
+          [
+            "Belt length",
+            "6160 mm"
+          ],
+          [
+            "Belt width",
+            "910 mm"
+          ],
+          [
+            "Discharge height",
+            "2640–4850 mm"
+          ],
+          [
+            "Speed",
+            "2 m/s"
+          ]
+        ],
+        "specs_pl": [
+          [
+            "Wyrzut",
+            "Przesyp sita w prawo"
+          ],
+          [
+            "Długość taśmy",
+            "6160 mm"
+          ],
+          [
+            "Szerokość taśmy",
+            "910 mm"
+          ],
+          [
+            "Wysokość zrzutu",
+            "2640–4850 mm"
+          ],
+          [
+            "Prędkość",
+            "2 m/s"
+          ]
+        ],
+        "specs_fr": [
+          [
+            "Évacuation",
+            "Refus de crible vers la droite"
+          ],
+          [
+            "Longueur de bande",
+            "6160 mm"
+          ],
+          [
+            "Largeur de bande",
+            "910 mm"
+          ],
+          [
+            "Hauteur de déchargement",
+            "2640–4850 mm"
+          ],
+          [
+            "Vitesse",
+            "2 m/s"
+          ]
         ]
       },
       {
@@ -559,6 +1375,72 @@
           ],
           [
             "Geschwindigkeit",
+            "1,4 m/s"
+          ]
+        ],
+        "specs_en": [
+          [
+            "Discharge",
+            "Screen overflow straight to the rear"
+          ],
+          [
+            "Belt length",
+            "3860 mm"
+          ],
+          [
+            "Belt width",
+            "1550 mm"
+          ],
+          [
+            "Discharge height",
+            "2670–6960 mm"
+          ],
+          [
+            "Speed",
+            "1.4 m/s"
+          ]
+        ],
+        "specs_pl": [
+          [
+            "Wyrzut",
+            "Przesyp sita prosto do tyłu"
+          ],
+          [
+            "Długość taśmy",
+            "3860 mm"
+          ],
+          [
+            "Szerokość taśmy",
+            "1550 mm"
+          ],
+          [
+            "Wysokość zrzutu",
+            "2670–6960 mm"
+          ],
+          [
+            "Prędkość",
+            "1,4 m/s"
+          ]
+        ],
+        "specs_fr": [
+          [
+            "Évacuation",
+            "Refus de crible droit vers l'arrière"
+          ],
+          [
+            "Longueur de bande",
+            "3860 mm"
+          ],
+          [
+            "Largeur de bande",
+            "1550 mm"
+          ],
+          [
+            "Hauteur de déchargement",
+            "2670–6960 mm"
+          ],
+          [
+            "Vitesse",
             "1,4 m/s"
           ]
         ]
@@ -609,6 +1491,72 @@
             "Geschwindigkeit",
             "1,4 m/s"
           ]
+        ],
+        "specs_en": [
+          [
+            "Discharge",
+            "Middle fraction"
+          ],
+          [
+            "Belt length",
+            "3860 mm"
+          ],
+          [
+            "Belt width",
+            "1550 mm"
+          ],
+          [
+            "Discharge height",
+            "1850–6580 mm"
+          ],
+          [
+            "Speed",
+            "1.4 m/s"
+          ]
+        ],
+        "specs_pl": [
+          [
+            "Wyrzut",
+            "Frakcja środkowa"
+          ],
+          [
+            "Długość taśmy",
+            "3860 mm"
+          ],
+          [
+            "Szerokość taśmy",
+            "1550 mm"
+          ],
+          [
+            "Wysokość zrzutu",
+            "1850–6580 mm"
+          ],
+          [
+            "Prędkość",
+            "1,4 m/s"
+          ]
+        ],
+        "specs_fr": [
+          [
+            "Évacuation",
+            "Fraction médiane"
+          ],
+          [
+            "Longueur de bande",
+            "3860 mm"
+          ],
+          [
+            "Largeur de bande",
+            "1550 mm"
+          ],
+          [
+            "Hauteur de déchargement",
+            "1850–6580 mm"
+          ],
+          [
+            "Vitesse",
+            "1,4 m/s"
+          ]
         ]
       },
       {
@@ -645,6 +1593,72 @@
           ],
           [
             "Geschwindigkeit",
+            "1,9 m/s"
+          ]
+        ],
+        "specs_en": [
+          [
+            "Discharge",
+            "Middle fraction, lateral, screen deck 2"
+          ],
+          [
+            "Belt length",
+            "5440 mm"
+          ],
+          [
+            "Belt width",
+            "800 mm"
+          ],
+          [
+            "Discharge height",
+            "1890–4570 mm"
+          ],
+          [
+            "Speed",
+            "1.9 m/s"
+          ]
+        ],
+        "specs_pl": [
+          [
+            "Wyrzut",
+            "Frakcja środkowa, z boku, pokład sitowy 2"
+          ],
+          [
+            "Długość taśmy",
+            "5440 mm"
+          ],
+          [
+            "Szerokość taśmy",
+            "800 mm"
+          ],
+          [
+            "Wysokość zrzutu",
+            "1890–4570 mm"
+          ],
+          [
+            "Prędkość",
+            "1,9 m/s"
+          ]
+        ],
+        "specs_fr": [
+          [
+            "Évacuation",
+            "Fraction médiane, latérale, pont de criblage 2"
+          ],
+          [
+            "Longueur de bande",
+            "5440 mm"
+          ],
+          [
+            "Largeur de bande",
+            "800 mm"
+          ],
+          [
+            "Hauteur de déchargement",
+            "1890–4570 mm"
+          ],
+          [
+            "Vitesse",
             "1,9 m/s"
           ]
         ]
@@ -688,6 +1702,24 @@
         "specs": [
           [
             "mit verstellbarer V2A-Rutsche",
+            ""
+          ]
+        ],
+        "specs_en": [
+          [
+            "with adjustable stainless-steel (V2A) chute",
+            ""
+          ]
+        ],
+        "specs_pl": [
+          [
+            "z regulowaną zsuwnią ze stali nierdzewnej (V2A)",
+            ""
+          ]
+        ],
+        "specs_fr": [
+          [
+            "avec goulotte réglable en acier inoxydable (V2A)",
             ""
           ]
         ]
@@ -738,6 +1770,84 @@
             "Geschwindigkeit",
             "0,7 m/s"
           ]
+        ],
+        "specs_en": [
+          [
+            "Conveys coarse material such as stones and spherical particles out of the machine",
+            ""
+          ],
+          [
+            "Discharge of contaminants",
+            ""
+          ],
+          [
+            "Belt length",
+            "4040 mm"
+          ],
+          [
+            "Belt width",
+            "700 mm"
+          ],
+          [
+            "Discharge height",
+            "2340 mm"
+          ],
+          [
+            "Speed",
+            "0.7 m/s"
+          ]
+        ],
+        "specs_pl": [
+          [
+            "Transportuje materiał gruby, np. kamienie i cząstki kuliste, poza maszynę",
+            ""
+          ],
+          [
+            "Wyrzut zanieczyszczeń",
+            ""
+          ],
+          [
+            "Długość taśmy",
+            "4040 mm"
+          ],
+          [
+            "Szerokość taśmy",
+            "700 mm"
+          ],
+          [
+            "Wysokość zrzutu",
+            "2340 mm"
+          ],
+          [
+            "Prędkość",
+            "0,7 m/s"
+          ]
+        ],
+        "specs_fr": [
+          [
+            "Évacue les matériaux grossiers comme pierres et particules sphériques hors de la machine",
+            ""
+          ],
+          [
+            "Évacuation des indésirables",
+            ""
+          ],
+          [
+            "Longueur de bande",
+            "4040 mm"
+          ],
+          [
+            "Largeur de bande",
+            "700 mm"
+          ],
+          [
+            "Hauteur de déchargement",
+            "2340 mm"
+          ],
+          [
+            "Vitesse",
+            "0,7 m/s"
+          ]
         ]
       },
       {
@@ -767,6 +1877,72 @@
           ],
           [
             "Geschwindigkeit",
+            "0,7 m/s"
+          ]
+        ],
+        "specs_en": [
+          [
+            "Discharge",
+            "Stones / contaminants"
+          ],
+          [
+            "Belt length",
+            "6070 mm"
+          ],
+          [
+            "Belt width",
+            "700 mm"
+          ],
+          [
+            "Discharge height",
+            "3224 mm"
+          ],
+          [
+            "Speed",
+            "0.7 m/s"
+          ]
+        ],
+        "specs_pl": [
+          [
+            "Wyrzut",
+            "Kamienie / zanieczyszczenia"
+          ],
+          [
+            "Długość taśmy",
+            "6070 mm"
+          ],
+          [
+            "Szerokość taśmy",
+            "700 mm"
+          ],
+          [
+            "Wysokość zrzutu",
+            "3224 mm"
+          ],
+          [
+            "Prędkość",
+            "0,7 m/s"
+          ]
+        ],
+        "specs_fr": [
+          [
+            "Évacuation",
+            "Pierres / indésirables"
+          ],
+          [
+            "Longueur de bande",
+            "6070 mm"
+          ],
+          [
+            "Largeur de bande",
+            "700 mm"
+          ],
+          [
+            "Hauteur de déchargement",
+            "3224 mm"
+          ],
+          [
+            "Vitesse",
             "0,7 m/s"
           ]
         ]
@@ -806,6 +1982,72 @@
           ],
           [
             "Geschwindigkeit",
+            "1,4 m/s"
+          ]
+        ],
+        "specs_en": [
+          [
+            "Discharge",
+            "Stones / contaminants"
+          ],
+          [
+            "Belt length",
+            "2350 mm"
+          ],
+          [
+            "Belt width",
+            "800 mm"
+          ],
+          [
+            "Discharge height",
+            "2520–3950 mm"
+          ],
+          [
+            "Speed",
+            "1.4 m/s"
+          ]
+        ],
+        "specs_pl": [
+          [
+            "Wyrzut",
+            "Kamienie / zanieczyszczenia"
+          ],
+          [
+            "Długość taśmy",
+            "2350 mm"
+          ],
+          [
+            "Szerokość taśmy",
+            "800 mm"
+          ],
+          [
+            "Wysokość zrzutu",
+            "2520–3950 mm"
+          ],
+          [
+            "Prędkość",
+            "1,4 m/s"
+          ]
+        ],
+        "specs_fr": [
+          [
+            "Évacuation",
+            "Pierres / indésirables"
+          ],
+          [
+            "Longueur de bande",
+            "2350 mm"
+          ],
+          [
+            "Largeur de bande",
+            "800 mm"
+          ],
+          [
+            "Hauteur de déchargement",
+            "2520–3950 mm"
+          ],
+          [
+            "Vitesse",
             "1,4 m/s"
           ]
         ]
