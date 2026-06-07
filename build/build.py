@@ -315,7 +315,6 @@ body.mode-gebraucht .hero .hsub{display:none}
         <option value="ig" data-i18n="tax_ig">Steuerfreie innergemeinschaftliche Lieferung (EU, § 4 Abs. 1 Nr. 1 b UStG)</option>
         <option value="mwst" data-i18n="tax_mwst">19 % USt. (Inland Deutschland)</option>
       </select></div>
-      <div class="fld" id="rabattWrap"><label data-i18n="lbl_rabatt">Rabatt (netto, €)</label><input id="t_rabatt" inputmode="decimal" placeholder="0"></div>
       <div class="fld wide" id="gPreisWrap" style="display:none"><label data-i18n="lbl_gpreis">Verkaufspreis Gebrauchtmaschine (netto, €)</label><input id="g_preis" inputmode="decimal" data-i18n-ph="ph_gpreis" placeholder="z. B. 185.000"></div>
       <div class="fld wide"><label data-i18n="lbl_liefer">Lieferbedingung</label><input id="t_liefer"></div>
       <div class="fld"><label data-i18n="lbl_termin">Liefertermin</label><input id="t_termin" data-i18n-ph="ph_termin" placeholder="z. B. KW 40 / 2026"></div>
@@ -529,7 +528,6 @@ var lang="de";
   document.getElementById("modePill").textContent=doc;
   document.getElementById("gebrauchtFields").style.display=(m==="gebraucht")?"grid":"none";
   document.body.classList.toggle("mode-gebraucht",m==="gebraucht");
-  document.getElementById("rabattWrap").style.display=(m==="gebraucht")?"none":"";
   document.getElementById("gPreisWrap").style.display=(m==="gebraucht")?"":"none";
   document.getElementById("h2meta").textContent=t("h2_"+m);
   document.getElementById("lblNr").textContent=(m==="kaufvertrag")?t("lbl_nr_vertrag"):t("lbl_nr_angebot");
