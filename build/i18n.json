@@ -1,0 +1,1439 @@
+{
+ "ui": {
+  "menu_choose": {
+   "de": "Dokument wählen",
+   "en": "Choose document",
+   "pl": "Wybierz dokument",
+   "fr": "Choisir le document"
+  },
+  "mode_angebot": {
+   "de": "Angebot",
+   "en": "Quotation",
+   "pl": "Oferta",
+   "fr": "Devis"
+  },
+  "mode_angebot_sub": {
+   "de": "Unverbindliches Angebot",
+   "en": "Non-binding quotation",
+   "pl": "Oferta niewiążąca",
+   "fr": "Devis sans engagement"
+  },
+  "mode_kaufvertrag": {
+   "de": "Kaufvertrag",
+   "en": "Sales contract",
+   "pl": "Umowa kupna",
+   "fr": "Contrat de vente"
+  },
+  "mode_kaufvertrag_sub": {
+   "de": "Verbindlicher Kaufvertrag",
+   "en": "Binding sales contract",
+   "pl": "Wiążąca umowa kupna",
+   "fr": "Contrat de vente ferme"
+  },
+  "mode_gebraucht": {
+   "de": "Gebrauchtmaschine",
+   "en": "Used machine",
+   "pl": "Maszyna używana",
+   "fr": "Machine d'occasion"
+  },
+  "mode_gebraucht_sub": {
+   "de": "Angebot Gebrauchtmaschine",
+   "en": "Used machine quotation",
+   "pl": "Oferta maszyny używanej",
+   "fr": "Devis machine d'occasion"
+  },
+  "title_angebot": {
+   "de": "Angebot erstellen",
+   "en": "Create quotation",
+   "pl": "Utwórz ofertę",
+   "fr": "Créer un devis"
+  },
+  "title_kaufvertrag": {
+   "de": "Kaufvertrag erstellen",
+   "en": "Create sales contract",
+   "pl": "Utwórz umowę kupna",
+   "fr": "Créer un contrat de vente"
+  },
+  "title_gebraucht": {
+   "de": "Gebrauchtmaschine – Angebot",
+   "en": "Used machine – quotation",
+   "pl": "Maszyna używana – oferta",
+   "fr": "Machine d'occasion – devis"
+  },
+  "pill_angebot": {
+   "de": "Angebot",
+   "en": "Quotation",
+   "pl": "Oferta",
+   "fr": "Devis"
+  },
+  "pill_kaufvertrag": {
+   "de": "Kaufvertrag",
+   "en": "Sales contract",
+   "pl": "Umowa kupna",
+   "fr": "Contrat de vente"
+  },
+  "pill_gebraucht": {
+   "de": "Gebrauchtmaschine",
+   "en": "Used machine",
+   "pl": "Maszyna używana",
+   "fr": "Machine d'occasion"
+  },
+  "hero_sub": {
+   "de": "Mobile Sternsiebanlage LEPTON 5100 · Serie 2026",
+   "en": "Mobile star screen LEPTON 5100 · Series 2026",
+   "pl": "Mobilny przesiewacz gwiazdowy LEPTON 5100 · Seria 2026",
+   "fr": "Crible à étoiles mobile LEPTON 5100 · Série 2026"
+  },
+  "cta": {
+   "de": "Zur Konfiguration ↓",
+   "en": "To configuration ↓",
+   "pl": "Do konfiguracji ↓",
+   "fr": "Vers la configuration ↓"
+  },
+  "active_mode": {
+   "de": "Aktiver Modus:",
+   "en": "Active mode:",
+   "pl": "Aktywny tryb:",
+   "fr": "Mode actif :"
+  },
+  "s1_kick": {
+   "de": "01 · Dokumentdaten",
+   "en": "01 · Document data",
+   "pl": "01 · Dane dokumentu",
+   "fr": "01 · Données du document"
+  },
+  "h2_angebot": {
+   "de": "Angebot & Verkäufer",
+   "en": "Quotation & seller",
+   "pl": "Oferta i sprzedawca",
+   "fr": "Devis et vendeur"
+  },
+  "h2_kaufvertrag": {
+   "de": "Kaufvertrag & Verkäufer",
+   "en": "Sales contract & seller",
+   "pl": "Umowa kupna i sprzedawca",
+   "fr": "Contrat de vente et vendeur"
+  },
+  "h2_gebraucht": {
+   "de": "Gebrauchtmaschine & Verkäufer",
+   "en": "Used machine & seller",
+   "pl": "Maszyna używana i sprzedawca",
+   "fr": "Machine d'occasion et vendeur"
+  },
+  "lbl_nr_angebot": {
+   "de": "Angebotsnummer",
+   "en": "Quotation number",
+   "pl": "Numer oferty",
+   "fr": "Numéro de devis"
+  },
+  "lbl_nr_vertrag": {
+   "de": "Vertragsnummer",
+   "en": "Contract number",
+   "pl": "Numer umowy",
+   "fr": "Numéro de contrat"
+  },
+  "ph_nr": {
+   "de": "z. B. ANG-2026-001",
+   "en": "e.g. QUO-2026-001",
+   "pl": "np. OF-2026-001",
+   "fr": "p. ex. DEV-2026-001"
+  },
+  "lbl_datum": {
+   "de": "Datum",
+   "en": "Date",
+   "pl": "Data",
+   "fr": "Date"
+  },
+  "lbl_ort": {
+   "de": "Ort",
+   "en": "Place",
+   "pl": "Miejscowość",
+   "fr": "Lieu"
+  },
+  "lbl_verk": {
+   "de": "Verkäufer",
+   "en": "Seller",
+   "pl": "Sprzedawca",
+   "fr": "Vendeur"
+  },
+  "ph_verk": {
+   "de": "Name Verkäufer",
+   "en": "Seller name",
+   "pl": "Imię i nazwisko sprzedawcy",
+   "fr": "Nom du vendeur"
+  },
+  "lbl_vtel": {
+   "de": "Telefon Verkäufer",
+   "en": "Seller phone",
+   "pl": "Telefon sprzedawcy",
+   "fr": "Téléphone vendeur"
+  },
+  "lbl_vmail": {
+   "de": "E-Mail Verkäufer",
+   "en": "Seller e-mail",
+   "pl": "E-mail sprzedawcy",
+   "fr": "E-mail vendeur"
+  },
+  "ph_optional": {
+   "de": "optional",
+   "en": "optional",
+   "pl": "opcjonalnie",
+   "fr": "facultatif"
+  },
+  "g_subnote": {
+   "de": "Angaben Gebrauchtmaschine",
+   "en": "Used machine details",
+   "pl": "Dane maszyny używanej",
+   "fr": "Détails machine d'occasion"
+  },
+  "lbl_g_jahr": {
+   "de": "Baujahr",
+   "en": "Year of manufacture",
+   "pl": "Rok produkcji",
+   "fr": "Année de fabrication"
+  },
+  "ph_g_jahr": {
+   "de": "z. B. 2021",
+   "en": "e.g. 2021",
+   "pl": "np. 2021",
+   "fr": "p. ex. 2021"
+  },
+  "lbl_g_std": {
+   "de": "Betriebsstunden",
+   "en": "Operating hours",
+   "pl": "Godziny pracy",
+   "fr": "Heures de service"
+  },
+  "ph_g_std": {
+   "de": "z. B. 1.850 h",
+   "en": "e.g. 1,850 h",
+   "pl": "np. 1 850 h",
+   "fr": "p. ex. 1 850 h"
+  },
+  "lbl_g_sn": {
+   "de": "Maschinen-/Serien-Nr.",
+   "en": "Machine/serial no.",
+   "pl": "Nr maszyny/seryjny",
+   "fr": "N° machine/série"
+  },
+  "lbl_g_zustand": {
+   "de": "Zustand",
+   "en": "Condition",
+   "pl": "Stan",
+   "fr": "État"
+  },
+  "ph_g_zustand": {
+   "de": "z. B. sehr guter, gepflegter Zustand",
+   "en": "e.g. very good, well-maintained condition",
+   "pl": "np. bardzo dobry, zadbany stan",
+   "fr": "p. ex. très bon état, bien entretenu"
+  },
+  "s2_kick": {
+   "de": "02 · Kunde",
+   "en": "02 · Customer",
+   "pl": "02 · Klient",
+   "fr": "02 · Client"
+  },
+  "h2_customer": {
+   "de": "Rechnungsanschrift & Ansprechpartner",
+   "en": "Billing address & contact",
+   "pl": "Adres rozliczeniowy i osoba kontaktowa",
+   "fr": "Adresse de facturation et contact"
+  },
+  "lbl_firma": {
+   "de": "Firmenname",
+   "en": "Company name",
+   "pl": "Nazwa firmy",
+   "fr": "Nom de l'entreprise"
+  },
+  "lbl_firma2": {
+   "de": "Firmenname Zusatz",
+   "en": "Company name addition",
+   "pl": "Nazwa firmy – dodatek",
+   "fr": "Complément nom d'entreprise"
+  },
+  "lbl_anrede": {
+   "de": "Anrede",
+   "en": "Salutation",
+   "pl": "Forma grzecznościowa",
+   "fr": "Civilité"
+  },
+  "opt_herr": {
+   "de": "Herr",
+   "en": "Mr",
+   "pl": "Pan",
+   "fr": "M."
+  },
+  "opt_frau": {
+   "de": "Frau",
+   "en": "Ms",
+   "pl": "Pani",
+   "fr": "Mme"
+  },
+  "lbl_vor": {
+   "de": "Vorname",
+   "en": "First name",
+   "pl": "Imię",
+   "fr": "Prénom"
+  },
+  "lbl_nach": {
+   "de": "Nachname",
+   "en": "Last name",
+   "pl": "Nazwisko",
+   "fr": "Nom"
+  },
+  "lbl_str": {
+   "de": "Straße",
+   "en": "Street",
+   "pl": "Ulica",
+   "fr": "Rue"
+  },
+  "lbl_plz": {
+   "de": "PLZ",
+   "en": "Postal code",
+   "pl": "Kod pocztowy",
+   "fr": "Code postal"
+  },
+  "lbl_land": {
+   "de": "Land",
+   "en": "Country",
+   "pl": "Kraj",
+   "fr": "Pays"
+  },
+  "ph_land": {
+   "de": "z. B. Polen",
+   "en": "e.g. Poland",
+   "pl": "np. Polska",
+   "fr": "p. ex. Pologne"
+  },
+  "lbl_tel": {
+   "de": "Telefon",
+   "en": "Phone",
+   "pl": "Telefon",
+   "fr": "Téléphone"
+  },
+  "lbl_mail": {
+   "de": "E-Mail",
+   "en": "E-mail",
+   "pl": "E-mail",
+   "fr": "E-mail"
+  },
+  "lbl_ustid": {
+   "de": "USt-IdNr.",
+   "en": "VAT ID",
+   "pl": "NIP UE",
+   "fr": "N° TVA"
+  },
+  "s3_kick": {
+   "de": "03 · Konfiguration",
+   "en": "03 · Configuration",
+   "pl": "03 · Konfiguracja",
+   "fr": "03 · Configuration"
+  },
+  "h2_config": {
+   "de": "Maschine & Ausstattung",
+   "en": "Machine & equipment",
+   "pl": "Maszyna i wyposażenie",
+   "fr": "Machine et équipement"
+  },
+  "base_tag": {
+   "de": "Basismaschine · enthalten",
+   "en": "Base machine · included",
+   "pl": "Maszyna podstawowa · w zestawie",
+   "fr": "Machine de base · incluse"
+  },
+  "art_no": {
+   "de": "Art.-Nr.",
+   "en": "Art. no.",
+   "pl": "Nr art.",
+   "fr": "Réf."
+  },
+  "base_desc": {
+   "de": "Mobiler Scheibenseparator · Bunker 8 m³ · Siebdeck 1 (3–38°) · 4 E-Motoren",
+   "en": "Mobile disc separator · hopper 8 m³ · screen deck 1 (3–38°) · 4 electric motors",
+   "pl": "Mobilny separator tarczowy · zasobnik 8 m³ · pokład sitowy 1 (3–38°) · 4 silniki elektryczne",
+   "fr": "Séparateur à disques mobile · trémie 8 m³ · pont de criblage 1 (3–38°) · 4 moteurs électriques"
+  },
+  "s4_kick": {
+   "de": "04 · Konditionen",
+   "en": "04 · Terms",
+   "pl": "04 · Warunki",
+   "fr": "04 · Conditions"
+  },
+  "h2_terms": {
+   "de": "Steuer, Liefer- & Zahlungsbedingungen",
+   "en": "Tax, delivery & payment terms",
+   "pl": "Podatek, warunki dostawy i płatności",
+   "fr": "Taxe, conditions de livraison et de paiement"
+  },
+  "lbl_tax": {
+   "de": "Steuer",
+   "en": "Tax",
+   "pl": "Podatek",
+   "fr": "Taxe"
+  },
+  "tax_ausfuhr": {
+   "de": "Steuerfreie Ausfuhrlieferung (Drittland, § 4 Abs. 1 Nr. 1 a UStG)",
+   "en": "Tax-free export delivery (third country, § 4 (1) no. 1 a UStG)",
+   "pl": "Dostawa eksportowa zwolniona z podatku (kraj trzeci, § 4 ust. 1 nr 1 a UStG)",
+   "fr": "Livraison à l'exportation exonérée (pays tiers, § 4 al. 1 n° 1 a UStG)"
+  },
+  "tax_ig": {
+   "de": "Steuerfreie innergemeinschaftliche Lieferung (EU, § 4 Abs. 1 Nr. 1 b UStG)",
+   "en": "Tax-free intra-Community supply (EU, § 4 (1) no. 1 b UStG)",
+   "pl": "Wewnątrzwspólnotowa dostawa zwolniona z podatku (UE, § 4 ust. 1 nr 1 b UStG)",
+   "fr": "Livraison intracommunautaire exonérée (UE, § 4 al. 1 n° 1 b UStG)"
+  },
+  "tax_mwst": {
+   "de": "19 % USt. (Inland Deutschland)",
+   "en": "19% VAT (domestic Germany)",
+   "pl": "19% VAT (Niemcy, krajowo)",
+   "fr": "19 % TVA (Allemagne, national)"
+  },
+  "lbl_rabatt": {
+   "de": "Rabatt (netto, €)",
+   "en": "Discount (net, €)",
+   "pl": "Rabat (netto, €)",
+   "fr": "Remise (net, €)"
+  },
+  "lbl_gpreis": {
+   "de": "Verkaufspreis Gebrauchtmaschine (netto, €)",
+   "en": "Sales price used machine (net, €)",
+   "pl": "Cena sprzedaży maszyny używanej (netto, €)",
+   "fr": "Prix de vente machine d'occasion (net, €)"
+  },
+  "ph_gpreis": {
+   "de": "z. B. 185.000",
+   "en": "e.g. 185,000",
+   "pl": "np. 185 000",
+   "fr": "p. ex. 185 000"
+  },
+  "lbl_liefer": {
+   "de": "Lieferbedingung",
+   "en": "Delivery term",
+   "pl": "Warunek dostawy",
+   "fr": "Condition de livraison"
+  },
+  "lbl_termin": {
+   "de": "Liefertermin",
+   "en": "Delivery date",
+   "pl": "Termin dostawy",
+   "fr": "Délai de livraison"
+  },
+  "ph_termin": {
+   "de": "z. B. KW 40 / 2026",
+   "en": "e.g. week 40 / 2026",
+   "pl": "np. tydz. 40 / 2026",
+   "fr": "p. ex. sem. 40 / 2026"
+  },
+  "lbl_zahlung": {
+   "de": "Zahlungsbedingungen",
+   "en": "Payment terms",
+   "pl": "Warunki płatności",
+   "fr": "Conditions de paiement"
+  },
+  "lbl_gewahr": {
+   "de": "Gewährleistung",
+   "en": "Warranty",
+   "pl": "Gwarancja",
+   "fr": "Garantie"
+  },
+  "lbl_sonder": {
+   "de": "Sonderabsprachen",
+   "en": "Special agreements",
+   "pl": "Ustalenia szczególne",
+   "fr": "Accords particuliers"
+  },
+  "def_liefer": {
+   "de": "FCA Schierling Germany (Incoterms 2010)",
+   "en": "FCA Schierling Germany (Incoterms 2010)",
+   "pl": "FCA Schierling Germany (Incoterms 2010)",
+   "fr": "FCA Schierling Germany (Incoterms 2010)"
+  },
+  "def_zahlung": {
+   "de": "30% Anzahlung bei Auftragserteilung\nRestbetrag bei Versandbereitschaft\nDie gesamte noch ausstehende Summe ist bei früherer Lieferung vor Auslieferung fällig.",
+   "en": "30% down payment on order\nBalance when ready for dispatch\nThe entire outstanding amount is due before delivery in case of earlier delivery.",
+   "pl": "30% zaliczki przy złożeniu zamówienia\nPozostała kwota przy gotowości do wysyłki\nCała pozostała kwota jest wymagalna przed wydaniem w przypadku wcześniejszej dostawy.",
+   "fr": "Acompte de 30 % à la commande\nSolde à la mise à disposition pour expédition\nLe montant restant total est dû avant la livraison en cas de livraison anticipée."
+  },
+  "def_gewahr": {
+   "de": "1 Jahr ab Auslieferung, nicht auf Verschleißteile\nSchäden, die durch Nichtbeachtung der Betriebsanleitung entstehen, sind von jeder Gewährleistung ausgeschlossen.",
+   "en": "1 year from delivery, not on wear parts\nDamage caused by non-compliance with the operating manual is excluded from any warranty.",
+   "pl": "1 rok od wydania, nie obejmuje części zużywających się\nUszkodzenia powstałe wskutek nieprzestrzegania instrukcji obsługi są wyłączone z gwarancji.",
+   "fr": "1 an à compter de la livraison, hors pièces d'usure\nLes dommages résultant du non-respect de la notice d'utilisation sont exclus de toute garantie."
+  },
+  "savedList_default": {
+   "de": "— Gespeicherte Dokumente —",
+   "en": "— Saved documents —",
+   "pl": "— Zapisane dokumenty —",
+   "fr": "— Documents enregistrés —"
+  },
+  "saved_count": {
+   "de": "— Gespeichert ({n}) —",
+   "en": "— Saved ({n}) —",
+   "pl": "— Zapisane ({n}) —",
+   "fr": "— Enregistrés ({n}) —"
+  },
+  "saved_none": {
+   "de": "— noch nichts gespeichert —",
+   "en": "— nothing saved yet —",
+   "pl": "— nic jeszcze nie zapisano —",
+   "fr": "— rien d'enregistré —"
+  },
+  "btn_load": {
+   "de": "Laden",
+   "en": "Load",
+   "pl": "Wczytaj",
+   "fr": "Charger"
+  },
+  "btn_save": {
+   "de": "Speichern",
+   "en": "Save",
+   "pl": "Zapisz",
+   "fr": "Enregistrer"
+  },
+  "btn_delete": {
+   "de": "Löschen",
+   "en": "Delete",
+   "pl": "Usuń",
+   "fr": "Supprimer"
+  },
+  "pv_title": {
+   "de": "{doc} — Vorschau",
+   "en": "{doc} — Preview",
+   "pl": "{doc} — Podgląd",
+   "fr": "{doc} — Aperçu"
+  },
+  "btn_reset": {
+   "de": "Zurücksetzen",
+   "en": "Reset",
+   "pl": "Resetuj",
+   "fr": "Réinitialiser"
+  },
+  "btn_print_doc": {
+   "de": "{doc} drucken",
+   "en": "Print {doc}",
+   "pl": "Drukuj {doc}",
+   "fr": "Imprimer {doc}"
+  },
+  "bar_options": {
+   "de": "Optionen",
+   "en": "Options",
+   "pl": "Opcje",
+   "fr": "Options"
+  },
+  "bar_net": {
+   "de": "Netto gesamt",
+   "en": "Total net",
+   "pl": "Razem netto",
+   "fr": "Total net"
+  },
+  "bar_brutto": {
+   "de": "Brutto",
+   "en": "Gross",
+   "pl": "Brutto",
+   "fr": "Brut"
+  },
+  "bar_total_net": {
+   "de": "Gesamt netto",
+   "en": "Total net",
+   "pl": "Razem netto",
+   "fr": "Total net"
+  },
+  "bar_total": {
+   "de": "Gesamt",
+   "en": "Total",
+   "pl": "Razem",
+   "fr": "Total"
+  },
+  "btn_print": {
+   "de": "Drucken",
+   "en": "Print",
+   "pl": "Drukuj",
+   "fr": "Imprimer"
+  },
+  "cat_deselect": {
+   "de": "· erneut tippen zum Abwählen",
+   "en": "· tap again to deselect",
+   "pl": "· dotknij ponownie, aby odznaczyć",
+   "fr": "· toucher à nouveau pour désélectionner"
+  },
+  "incl_short": {
+   "de": "inkl.",
+   "en": "incl.",
+   "pl": "w zest.",
+   "fr": "incl."
+  },
+  "incl_long": {
+   "de": "inklusive",
+   "en": "included",
+   "pl": "w zestawie",
+   "fr": "inclus"
+  },
+  "art_prefix": {
+   "de": "Art. ",
+   "en": "Art. ",
+   "pl": "Art. ",
+   "fr": "Réf. "
+  },
+  "taxnote_ausfuhr": {
+   "de": "Bei obiger Lieferung handelt es sich um eine steuerfreie Ausfuhrlieferung gem. § 4 Abs. 1 Nr. 1 a UStG.",
+   "en": "The above delivery is a tax-free export delivery pursuant to § 4 (1) no. 1 a UStG.",
+   "pl": "Powyższa dostawa stanowi dostawę eksportową zwolnioną z podatku zgodnie z § 4 ust. 1 nr 1 a UStG.",
+   "fr": "La livraison ci-dessus est une livraison à l'exportation exonérée conformément au § 4 al. 1 n° 1 a UStG."
+  },
+  "taxnote_ig": {
+   "de": "Steuerfreie innergemeinschaftliche Lieferung gem. § 4 Abs. 1 Nr. 1 b UStG. Die USt-IdNr. des Erwerbers ist anzugeben.",
+   "en": "Tax-free intra-Community supply pursuant to § 4 (1) no. 1 b UStG. The purchaser's VAT ID must be provided.",
+   "pl": "Wewnątrzwspólnotowa dostawa zwolniona z podatku zgodnie z § 4 ust. 1 nr 1 b UStG. Należy podać NIP UE nabywcy.",
+   "fr": "Livraison intracommunautaire exonérée conformément au § 4 al. 1 n° 1 b UStG. Le n° de TVA de l'acquéreur doit être indiqué."
+  },
+  "taxnote_mwst": {
+   "de": "Alle Preise verstehen sich zzgl. der gesetzlichen Umsatzsteuer (19 %).",
+   "en": "All prices are exclusive of statutory VAT (19%).",
+   "pl": "Wszystkie ceny są podane bez ustawowego podatku VAT (19%).",
+   "fr": "Tous les prix s'entendent hors TVA légale (19 %)."
+  },
+  "salut_herr": {
+   "de": "Sehr geehrter Herr {n},",
+   "en": "Dear Mr {n},",
+   "pl": "Szanowny Panie {n},",
+   "fr": "Monsieur {n},"
+  },
+  "salut_frau": {
+   "de": "Sehr geehrte Frau {n},",
+   "en": "Dear Ms {n},",
+   "pl": "Szanowna Pani {n},",
+   "fr": "Madame {n},"
+  },
+  "salut_generic": {
+   "de": "Sehr geehrte Damen und Herren,",
+   "en": "Dear Sir or Madam,",
+   "pl": "Szanowni Państwo,",
+   "fr": "Madame, Monsieur,"
+  },
+  "salut_body": {
+   "de": "wir bedanken uns herzlich für Ihr Interesse an unserem Produkt und unterbreiten Ihnen gerne – freibleibend – das nachfolgende Angebot.",
+   "en": "thank you very much for your interest in our product. We are pleased to submit the following non-binding quotation.",
+   "pl": "dziękujemy serdecznie za zainteresowanie naszym produktem i z przyjemnością przedstawiamy poniższą ofertę – bez zobowiązań.",
+   "fr": "nous vous remercions de l'intérêt porté à notre produit et avons le plaisir de vous soumettre l'offre suivante, sans engagement."
+  },
+  "machine_base": {
+   "de": "Basismaschine Lepton 5100",
+   "en": "Base machine Lepton 5100",
+   "pl": "Maszyna podstawowa Lepton 5100",
+   "fr": "Machine de base Lepton 5100"
+  },
+  "machine_used_label": {
+   "de": "Gebrauchtmaschine",
+   "en": "Used machine",
+   "pl": "Maszyna używana",
+   "fr": "Machine d'occasion"
+  },
+  "no_options": {
+   "de": "Noch keine Optionen gewählt – die Basismaschine ist enthalten.",
+   "en": "No options selected yet – the base machine is included.",
+   "pl": "Nie wybrano jeszcze opcji – maszyna podstawowa jest w zestawie.",
+   "fr": "Aucune option sélectionnée – la machine de base est incluse."
+  },
+  "totals_options": {
+   "de": "Optionen / Ausstattung ({n})",
+   "en": "Options / equipment ({n})",
+   "pl": "Opcje / wyposażenie ({n})",
+   "fr": "Options / équipement ({n})"
+  },
+  "totals_subtotal": {
+   "de": "Zwischensumme netto",
+   "en": "Subtotal net",
+   "pl": "Suma częściowa netto",
+   "fr": "Sous-total net"
+  },
+  "totals_discount": {
+   "de": "abzgl. Rabatt",
+   "en": "less discount",
+   "pl": "minus rabat",
+   "fr": "moins remise"
+  },
+  "totals_vat": {
+   "de": "zzgl. 19 % USt.",
+   "en": "plus 19% VAT",
+   "pl": "plus 19% VAT",
+   "fr": "plus 19 % TVA"
+  },
+  "totals_gross": {
+   "de": "Gesamtbetrag (brutto)",
+   "en": "Total amount (gross)",
+   "pl": "Kwota całkowita (brutto)",
+   "fr": "Montant total (brut)"
+  },
+  "net_angebot": {
+   "de": "Gesamtkaufpreis (netto) inkl. aller gewählten Ausstattungsvarianten",
+   "en": "Total purchase price (net) incl. all selected equipment options",
+   "pl": "Całkowita cena zakupu (netto) wraz ze wszystkimi wybranymi wariantami wyposażenia",
+   "fr": "Prix d'achat total (net) incl. toutes les options d'équipement sélectionnées"
+  },
+  "net_kaufvertrag": {
+   "de": "Kaufpreis (netto)",
+   "en": "Purchase price (net)",
+   "pl": "Cena zakupu (netto)",
+   "fr": "Prix d'achat (net)"
+  },
+  "sell_net": {
+   "de": "Verkaufspreis (netto)",
+   "en": "Sales price (net)",
+   "pl": "Cena sprzedaży (netto)",
+   "fr": "Prix de vente (net)"
+  },
+  "price_manual": {
+   "de": "— Preis manuell eingeben —",
+   "en": "— enter price manually —",
+   "pl": "— wprowadź cenę ręcznie —",
+   "fr": "— saisir le prix manuellement —"
+  },
+  "terms_delivery": {
+   "de": "Lieferbedingungen",
+   "en": "Delivery terms",
+   "pl": "Warunki dostawy",
+   "fr": "Conditions de livraison"
+  },
+  "terms_delivery_date": {
+   "de": "Liefertermin: ",
+   "en": "Delivery date: ",
+   "pl": "Termin dostawy: ",
+   "fr": "Délai de livraison : "
+  },
+  "legal": {
+   "de": "Dieses Dokument ist freibleibend und unverbindlich. {tax} Es gelten die Allgemeinen Geschäftsbedingungen der Alzinger Maschinenbau GmbH, die der Käufer anerkennt. Die AGB sind unter www.alzinger-recyclingtechnik.com einsehbar.",
+   "en": "This document is non-binding and subject to change. {tax} The general terms and conditions of Alzinger Maschinenbau GmbH apply, which the buyer accepts. The GTC are available at www.alzinger-recyclingtechnik.com.",
+   "pl": "Niniejszy dokument jest niewiążący i może ulec zmianie. {tax} Obowiązują Ogólne Warunki Handlowe firmy Alzinger Maschinenbau GmbH, które kupujący akceptuje. OWH są dostępne na stronie www.alzinger-recyclingtechnik.com.",
+   "fr": "Ce document est sans engagement et susceptible de modification. {tax} Les conditions générales de vente d'Alzinger Maschinenbau GmbH s'appliquent et sont acceptées par l'acheteur. Les CGV sont consultables sur www.alzinger-recyclingtechnik.com."
+  },
+  "sign_offer": {
+   "de": "Gerne stehen wir Ihnen für weitere Fragen zur Verfügung.",
+   "en": "We are happy to answer any further questions.",
+   "pl": "Chętnie odpowiemy na wszelkie dalsze pytania.",
+   "fr": "Nous restons à votre disposition pour toute question."
+  },
+  "sign_regards": {
+   "de": "Mit freundlichen Grüßen",
+   "en": "Kind regards",
+   "pl": "Z poważaniem",
+   "fr": "Cordialement"
+  },
+  "sign_phone": {
+   "de": "Telefon: ",
+   "en": "Phone: ",
+   "pl": "Telefon: ",
+   "fr": "Téléphone : "
+  },
+  "sign_email": {
+   "de": "E-Mail: ",
+   "en": "E-mail: ",
+   "pl": "E-mail: ",
+   "fr": "E-mail : "
+  },
+  "sign_seller_line": {
+   "de": "Ort, Datum · Unterschrift Verkäufer",
+   "en": "Place, date · signature seller",
+   "pl": "Miejscowość, data · podpis sprzedawcy",
+   "fr": "Lieu, date · signature vendeur"
+  },
+  "sign_buyer_line": {
+   "de": "Ort, Datum · Unterschrift Käufer",
+   "en": "Place, date · signature buyer",
+   "pl": "Miejscowość, data · podpis kupującego",
+   "fr": "Lieu, date · signature acheteur"
+  },
+  "gdata_title": {
+   "de": "Maschinendaten",
+   "en": "Machine data",
+   "pl": "Dane maszyny",
+   "fr": "Données machine"
+  },
+  "gdata_sn": {
+   "de": "Maschinen-Nr.",
+   "en": "Machine no.",
+   "pl": "Nr maszyny",
+   "fr": "N° machine"
+  },
+  "docnr_angebot": {
+   "de": "Angebot-Nr.",
+   "en": "Quotation no.",
+   "pl": "Nr oferty",
+   "fr": "N° devis"
+  },
+  "docnr_vertrag": {
+   "de": "Vertrag-Nr.",
+   "en": "Contract no.",
+   "pl": "Nr umowy",
+   "fr": "N° contrat"
+  },
+  "addr_to": {
+   "de": "An",
+   "en": "To",
+   "pl": "Do",
+   "fr": "À"
+  },
+  "addr_placeholder": {
+   "de": "— Kundenadresse —",
+   "en": "— customer address —",
+   "pl": "— adres klienta —",
+   "fr": "— adresse du client —"
+  },
+  "attn": {
+   "de": "z. Hd. ",
+   "en": "Attn. ",
+   "pl": "do rąk ",
+   "fr": "à l'att. de "
+  },
+  "doc_angebot_title": {
+   "de": "ANGEBOT",
+   "en": "QUOTATION",
+   "pl": "OFERTA",
+   "fr": "DEVIS"
+  },
+  "doc_vertrag_title": {
+   "de": "KAUFVERTRAG",
+   "en": "SALES CONTRACT",
+   "pl": "UMOWA KUPNA",
+   "fr": "CONTRAT DE VENTE"
+  },
+  "doc_gebraucht_title": {
+   "de": "ANGEBOT – GEBRAUCHTMASCHINE",
+   "en": "QUOTATION – USED MACHINE",
+   "pl": "OFERTA – MASZYNA UŻYWANA",
+   "fr": "DEVIS – MACHINE D'OCCASION"
+  },
+  "opts_selected": {
+   "de": "Ausgewählte Optionen",
+   "en": "Selected options",
+   "pl": "Wybrane opcje",
+   "fr": "Options sélectionnées"
+  },
+  "equipment": {
+   "de": "Ausstattung",
+   "en": "Equipment",
+   "pl": "Wyposażenie",
+   "fr": "Équipement"
+  },
+  "gebraucht_body": {
+   "de": "gerne unterbreiten wir Ihnen – freibleibend – das nachfolgende Angebot über die unten beschriebene <b>Gebrauchtmaschine</b>.",
+   "en": "we are pleased to submit the following non-binding quotation for the <b>used machine</b> described below.",
+   "pl": "z przyjemnością przedstawiamy poniższą ofertę – bez zobowiązań – na opisaną poniżej <b>maszynę używaną</b>.",
+   "fr": "nous avons le plaisir de vous soumettre, sans engagement, l'offre suivante concernant la <b>machine d'occasion</b> décrite ci-dessous."
+  },
+  "kv_partners": {
+   "de": "Vertragspartner",
+   "en": "Contracting parties",
+   "pl": "Strony umowy",
+   "fr": "Parties contractantes"
+  },
+  "kv_repby": {
+   "de": "vertreten durch ",
+   "en": "represented by ",
+   "pl": "reprezentowana przez ",
+   "fr": "représentée par "
+  },
+  "role_seller": {
+   "de": "Verkäufer",
+   "en": "Seller",
+   "pl": "Sprzedawca",
+   "fr": "Vendeur"
+  },
+  "role_buyer": {
+   "de": "Käufer",
+   "en": "Buyer",
+   "pl": "Kupujący",
+   "fr": "Acheteur"
+  },
+  "kv_and": {
+   "de": "und",
+   "en": "and",
+   "pl": "i",
+   "fr": "et"
+  },
+  "buyer_placeholder": {
+   "de": "— Käufer —",
+   "en": "— buyer —",
+   "pl": "— kupujący —",
+   "fr": "— acheteur —"
+  },
+  "kv_intro": {
+   "de": "Die Parteien schließen folgenden Vertrag über den Kauf einer Neumaschine.",
+   "en": "The parties conclude the following contract for the purchase of a new machine.",
+   "pl": "Strony zawierają następującą umowę zakupu nowej maszyny.",
+   "fr": "Les parties concluent le contrat suivant pour l'achat d'une machine neuve."
+  },
+  "kv_subject": {
+   "de": "Gegenstand des Vertrages",
+   "en": "Subject of the contract",
+   "pl": "Przedmiot umowy",
+   "fr": "Objet du contrat"
+  },
+  "kv_subject_text": {
+   "de": "Der Verkäufer verkauft und der Käufer kauft zu den nachfolgenden Bedingungen folgende konfigurierte Neumaschine:",
+   "en": "The seller sells and the buyer buys the following configured new machine under the conditions below:",
+   "pl": "Sprzedawca sprzedaje, a kupujący kupuje na poniższych warunkach następującą skonfigurowaną nową maszynę:",
+   "fr": "Le vendeur vend et l'acheteur achète, aux conditions ci-dessous, la machine neuve configurée suivante :"
+  },
+  "prompt_save_name": {
+   "de": "Name für dieses Dokument:",
+   "en": "Name for this document:",
+   "pl": "Nazwa tego dokumentu:",
+   "fr": "Nom de ce document :"
+  },
+  "alert_save_fail": {
+   "de": "Speichern hier nicht möglich – in der veröffentlichten App (eigene Adresse) funktioniert es dauerhaft.",
+   "en": "Saving is not possible here – it works permanently in the published app (own address).",
+   "pl": "Zapis tutaj nie jest możliwy – w opublikowanej aplikacji (własny adres) działa trwale.",
+   "fr": "L'enregistrement n'est pas possible ici – il fonctionne durablement dans l'application publiée (adresse propre)."
+  },
+  "confirm_delete": {
+   "de": "„{n}“ löschen?",
+   "en": "Delete \"{n}\"?",
+   "pl": "Usunąć „{n}”?",
+   "fr": "Supprimer « {n} » ?"
+  },
+  "lang_label": {
+   "de": "Sprache",
+   "en": "Language",
+   "pl": "Język",
+   "fr": "Langue"
+  }
+ },
+ "spec": [
+  {
+   "de": "Grundrahmen",
+   "en": "Base frame",
+   "pl": "Rama podstawowa",
+   "fr": "Châssis de base"
+  },
+  {
+   "de": "Bunker 8 m³ mit beidseitiger Befüllung",
+   "en": "Hopper 8 m³ with two-side loading",
+   "pl": "Zasobnik 8 m³ z obustronnym załadunkiem",
+   "fr": "Trémie 8 m³ avec chargement bilatéral"
+  },
+  {
+   "de": "Siebdeck 1 mit Neigungsverstellung 3–38°",
+   "en": "Screen deck 1 with inclination adjustment 3–38°",
+   "pl": "Pokład sitowy 1 z regulacją nachylenia 3–38°",
+   "fr": "Pont de criblage 1 avec réglage d'inclinaison 3–38°"
+  },
+  {
+   "de": "Siebdeck 1: 4 Elektromotoren, reversierbar",
+   "en": "Screen deck 1: 4 electric motors, reversible",
+   "pl": "Pokład sitowy 1: 4 silniki elektryczne, rewersyjne",
+   "fr": "Pont de criblage 1 : 4 moteurs électriques, réversibles"
+  },
+  {
+   "de": "Elektrischer Antrieb aller Bänder",
+   "en": "Electric drive of all belts",
+   "pl": "Napęd elektryczny wszystkich taśm",
+   "fr": "Entraînement électrique de toutes les bandes"
+  },
+  {
+   "de": "Siebdeck 1 Band quer: 910 mm, 2 m/s",
+   "en": "Screen deck 1 belt transverse: 910 mm, 2 m/s",
+   "pl": "Pokład sitowy 1 taśma poprzeczna: 910 mm, 2 m/s",
+   "fr": "Pont de criblage 1 bande transversale : 910 mm, 2 m/s"
+  },
+  {
+   "de": "Feinkornband 1: 1550 mm, 1,4 m/s",
+   "en": "Fine grain belt 1: 1550 mm, 1.4 m/s",
+   "pl": "Taśma frakcji drobnej 1: 1550 mm, 1,4 m/s",
+   "fr": "Bande fines 1 : 1550 mm, 1,4 m/s"
+  },
+  {
+   "de": "Feinkornband 2: 800 mm, 1,1 m/s",
+   "en": "Fine grain belt 2: 800 mm, 1.1 m/s",
+   "pl": "Taśma frakcji drobnej 2: 800 mm, 1,1 m/s",
+   "fr": "Bande fines 2 : 800 mm, 1,1 m/s"
+  },
+  {
+   "de": "Feinkornband 3: 800 mm, 1,9 m/s",
+   "en": "Fine grain belt 3: 800 mm, 1.9 m/s",
+   "pl": "Taśma frakcji drobnej 3: 800 mm, 1,9 m/s",
+   "fr": "Bande fines 3 : 800 mm, 1,9 m/s"
+  },
+  {
+   "de": "Ohne Siebwalzen · Bunker ohne Vordosierung",
+   "en": "Without screen rollers · hopper without pre-dosing",
+   "pl": "Bez walców sitowych · zasobnik bez wstępnego dozowania",
+   "fr": "Sans rouleaux de criblage · trémie sans pré-dosage"
+  }
+ ],
+ "cat_headers": {
+  "Antrieb": {
+   "en": "Drive",
+   "pl": "Napęd",
+   "fr": "Entraînement"
+  },
+  "Fahrgestell": {
+   "en": "Chassis",
+   "pl": "Podwozie",
+   "fr": "Châssis"
+  },
+  "Bunker & Vordosierung": {
+   "en": "Hopper & pre-dosing",
+   "pl": "Zasobnik i wstępne dozowanie",
+   "fr": "Trémie et pré-dosage"
+  },
+  "Siebdeck 1 – Siebteilung": {
+   "en": "Screen deck 1 – screen spacing",
+   "pl": "Pokład sitowy 1 – podział sita",
+   "fr": "Pont de criblage 1 – espacement"
+  },
+  "Siebdeck 1 – Ausstattung": {
+   "en": "Screen deck 1 – equipment",
+   "pl": "Pokład sitowy 1 – wyposażenie",
+   "fr": "Pont de criblage 1 – équipement"
+  },
+  "Siebdeck 2": {
+   "en": "Screen deck 2",
+   "pl": "Pokład sitowy 2",
+   "fr": "Pont de criblage 2"
+  },
+  "Siebdeck 2 – Siebteilung": {
+   "en": "Screen deck 2 – screen spacing",
+   "pl": "Pokład sitowy 2 – podział sita",
+   "fr": "Pont de criblage 2 – espacement"
+  },
+  "Siebdeck 1 Band": {
+   "en": "Screen deck 1 belt",
+   "pl": "Taśma pokładu sitowego 1",
+   "fr": "Bande pont de criblage 1"
+  },
+  "Siebdeck 2 Band": {
+   "en": "Screen deck 2 belt",
+   "pl": "Taśma pokładu sitowego 2",
+   "fr": "Bande pont de criblage 2"
+  },
+  "Feinkornband 3": {
+   "en": "Fine grain belt 3",
+   "pl": "Taśma frakcji drobnej 3",
+   "fr": "Bande fines 3"
+  },
+  "Grobkornband": {
+   "en": "Coarse grain belt",
+   "pl": "Taśma frakcji grubej",
+   "fr": "Bande gros grains"
+  },
+  "Zusatzausstattung": {
+   "en": "Additional equipment",
+   "pl": "Wyposażenie dodatkowe",
+   "fr": "Équipement supplémentaire"
+  }
+ },
+ "cat_opts": {
+  "5001173": {
+   "name": {
+    "en": "Genset Perkins",
+    "pl": "Agregat Perkins",
+    "fr": "Groupe électrogène Perkins"
+   },
+   "desc": {
+    "en": "Diesel engine 58 kW · generator 60 kVA · particulate filter",
+    "pl": "Silnik diesla 58 kW · generator 60 kVA · filtr cząstek stałych",
+    "fr": "Moteur diesel 58 kW · générateur 60 kVA · filtre à particules"
+   }
+  },
+  "5000805a": {
+   "name": {
+    "en": "External power supply 400 V 63 A",
+    "pl": "Zewnętrzne zasilanie 400 V 63 A",
+    "fr": "Alimentation externe 400 V 63 A"
+   },
+   "desc": {
+    "en": "Mains operation instead of diesel",
+    "pl": "Praca z sieci zamiast diesla",
+    "fr": "Fonctionnement sur secteur au lieu du diesel"
+   }
+  },
+  "5001174": {
+   "name": {
+    "en": "Road approval with slope compensation",
+    "pl": "Dopuszczenie do ruchu drogowego z kompensacją pochyłości",
+    "fr": "Homologation routière avec compensation de pente"
+   },
+   "desc": {
+    "en": "Tandem axle · 80 km/h · EBS · air suspension",
+    "pl": "Oś tandemowa · 80 km/h · EBS · zawieszenie pneumatyczne",
+    "fr": "Essieu tandem · 80 km/h · EBS · suspension pneumatique"
+   }
+  },
+  "5001175": {
+   "name": {
+    "en": "Compressed-air compressor braking system 24 V",
+    "pl": "Sprężarka powietrza układu hamulcowego 24 V",
+    "fr": "Compresseur d'air système de freinage 24 V"
+   }
+  },
+  "5001186": {
+   "name": {
+    "en": "Hydraulic pump for supports 24 V",
+    "pl": "Pompa hydrauliczna do podpór 24 V",
+    "fr": "Pompe hydraulique pour béquilles 24 V"
+   }
+  },
+  "5000380": {
+   "name": {
+    "en": "Crawler track with slope compensation",
+    "pl": "Podwozie gąsienicowe z kompensacją pochyłości",
+    "fr": "Train de chenilles avec compensation de pente"
+   },
+   "desc": {
+    "en": "Track width 3000 mm · metal tracks",
+    "pl": "Szerokość toru 3000 mm · gąsienice metalowe",
+    "fr": "Largeur de voie 3000 mm · chenilles métalliques"
+   }
+  },
+  "5001152": {
+   "name": {
+    "en": "Front hopper flap hydraulically adjustable",
+    "pl": "Klapa zasobnika z przodu regulowana hydraulicznie",
+    "fr": "Volet de trémie avant réglable hydrauliquement"
+   }
+  },
+  "5000382": {
+   "name": {
+    "en": "Volume measurement",
+    "pl": "Pomiar objętości",
+    "fr": "Mesure du volume"
+   },
+   "desc": {
+    "en": "Bucket counting · throughput assessment",
+    "pl": "Zliczanie łyżek · ocena wydajności",
+    "fr": "Comptage des godets · évaluation du débit"
+   }
+  },
+  "5001153": {
+   "name": {
+    "en": "Pre-dosing large dosing roller",
+    "pl": "Wstępne dozowanie duży walec dozujący",
+    "fr": "Pré-dosage grand rouleau doseur"
+   },
+   "desc": {
+    "en": "with tear-open function",
+    "pl": "z funkcją rozrywania",
+    "fr": "avec fonction d'éventration"
+   }
+  },
+  "5001187": {
+   "name": {
+    "en": "Pre-screen deck incl. hardfacing with dosing roller",
+    "pl": "Pokład wstępnego przesiewania z napawaniem i walcem dozującym",
+    "fr": "Pont de pré-criblage avec rechargement dur et rouleau doseur"
+   },
+   "desc": {
+    "en": "+1.2 m² screening area",
+    "pl": "+1,2 m² powierzchni sita",
+    "fr": "+1,2 m² de surface de criblage"
+   }
+  },
+  "5001199": {
+   "desc": {
+    "en": "Screen spacing SD 1",
+    "pl": "Podział sita SD 1",
+    "fr": "Espacement de criblage SD 1"
+   }
+  },
+  "5001176": {
+   "desc": {
+    "en": "Screen spacing SD 1",
+    "pl": "Podział sita SD 1",
+    "fr": "Espacement de criblage SD 1"
+   }
+  },
+  "5001154": {
+   "desc": {
+    "en": "Screen spacing SD 1",
+    "pl": "Podział sita SD 1",
+    "fr": "Espacement de criblage SD 1"
+   }
+  },
+  "5001200": {
+   "desc": {
+    "en": "Screen spacing SD 1",
+    "pl": "Podział sita SD 1",
+    "fr": "Espacement de criblage SD 1"
+   }
+  },
+  "5001201": {
+   "desc": {
+    "en": "Screen spacing SD 1",
+    "pl": "Podział sita SD 1",
+    "fr": "Espacement de criblage SD 1"
+   }
+  },
+  "5001155": {
+   "name": {
+    "en": "SD 1 screen roller adjustment electrohydraulic",
+    "pl": "SD 1 regulacja walców sitowych elektrohydrauliczna",
+    "fr": "SD 1 réglage électrohydraulique des rouleaux de criblage"
+   },
+   "desc": {
+    "en": "three sections · automatic cleaning",
+    "pl": "trzy sekcje · automatyczne czyszczenie",
+    "fr": "trois sections · nettoyage automatique"
+   }
+  },
+  "5000384": {
+   "name": {
+    "en": "Water spray system SD 1 with water pre-filter",
+    "pl": "Instalacja zraszania wodą SD 1 z filtrem wstępnym wody",
+    "fr": "Système de pulvérisation d'eau SD 1 avec préfiltre à eau"
+   },
+   "desc": {
+    "en": "dust binding · fire protection",
+    "pl": "wiązanie pyłu · ochrona przeciwpożarowa",
+    "fr": "abattage des poussières · protection incendie"
+   }
+  },
+  "5001214": {
+   "name": {
+    "en": "Screen deck 1 air separator",
+    "pl": "Pokład sitowy 1 separator powietrzny",
+    "fr": "Pont de criblage 1 séparateur à air"
+   },
+   "desc": {
+    "en": "height/speed adjustable",
+    "pl": "regulacja wysokości/obrotów",
+    "fr": "réglable en hauteur/vitesse"
+   }
+  },
+  "5001156": {
+   "name": {
+    "en": "Screen deck 2 option",
+    "pl": "Opcja pokład sitowy 2",
+    "fr": "Option pont de criblage 2"
+   },
+   "desc": {
+    "en": "29 screen rollers · 4 electric motors · reversible",
+    "pl": "29 walców sitowych · 4 silniki elektryczne · rewersyjny",
+    "fr": "29 rouleaux de criblage · 4 moteurs électriques · réversible"
+   }
+  },
+  "5001157": {
+   "name": {
+    "en": "SD 2 screen roller adjustment electrohydraulic",
+    "pl": "SD 2 regulacja walców sitowych elektrohydrauliczna",
+    "fr": "SD 2 réglage électrohydraulique des rouleaux de criblage"
+   },
+   "desc": {
+    "en": "three sections · automatic cleaning",
+    "pl": "trzy sekcje · automatyczne czyszczenie",
+    "fr": "trois sections · nettoyage automatique"
+   }
+  },
+  "5001177": {
+   "desc": {
+    "en": "Screen spacing SD 2",
+    "pl": "Podział sita SD 2",
+    "fr": "Espacement de criblage SD 2"
+   }
+  },
+  "5001311": {
+   "desc": {
+    "en": "Screen spacing SD 2",
+    "pl": "Podział sita SD 2",
+    "fr": "Espacement de criblage SD 2"
+   }
+  },
+  "5001185": {
+   "desc": {
+    "en": "Screen spacing SD 2",
+    "pl": "Podział sita SD 2",
+    "fr": "Espacement de criblage SD 2"
+   }
+  },
+  "5001158": {
+   "desc": {
+    "en": "Screen spacing SD 2",
+    "pl": "Podział sita SD 2",
+    "fr": "Espacement de criblage SD 2"
+   }
+  },
+  "5000805b": {
+   "desc": {
+    "en": "Screen spacing SD 2",
+    "pl": "Podział sita SD 2",
+    "fr": "Espacement de criblage SD 2"
+   }
+  },
+  "5001203": {
+   "name": {
+    "en": "Screen deck 1 belt longitudinal",
+    "pl": "Pokład sitowy 1 taśma wzdłużna",
+    "fr": "Pont de criblage 1 bande longitudinale"
+   },
+   "desc": {
+    "en": "overflow straight to rear · 1550 mm",
+    "pl": "przelew prosto do tyłu · 1550 mm",
+    "fr": "débordement droit vers l'arrière · 1550 mm"
+   }
+  },
+  "5001204": {
+   "name": {
+    "en": "Screen deck 1 belt inclined right side",
+    "pl": "Pokład sitowy 1 taśma pochylona prawa strona",
+    "fr": "Pont de criblage 1 bande inclinée côté droit"
+   },
+   "desc": {
+    "en": "only on pure SD-1 machine",
+    "pl": "tylko w maszynie wyłącznie SD-1",
+    "fr": "uniquement sur machine SD-1 pure"
+   }
+  },
+  "5001159": {
+   "name": {
+    "en": "SD 2 belt longitudinal",
+    "pl": "SD 2 taśma wzdłużna",
+    "fr": "SD 2 bande longitudinale"
+   },
+   "desc": {
+    "en": "middle fraction · 1550 mm",
+    "pl": "frakcja środkowa · 1550 mm",
+    "fr": "fraction médiane · 1550 mm"
+   }
+  },
+  "5001160": {
+   "name": {
+    "en": "SD 2 belt longitudinal: neodymium magnetic head pulley",
+    "pl": "SD 2 taśma wzdłużna: bęben magnetyczny neodymowy",
+    "fr": "SD 2 bande longitudinale : tambour magnétique néodyme"
+   },
+   "desc": {
+    "en": "iron separation",
+    "pl": "separacja żelaza",
+    "fr": "séparation du fer"
+   }
+  },
+  "5001205": {
+   "name": {
+    "en": "SD 2 belt transverse",
+    "pl": "SD 2 taśma poprzeczna",
+    "fr": "SD 2 bande transversale"
+   },
+   "desc": {
+    "en": "middle fraction lateral · 800 mm",
+    "pl": "frakcja środkowa z boku · 800 mm",
+    "fr": "fraction médiane latérale · 800 mm"
+   }
+  },
+  "5001206": {
+   "name": {
+    "en": "SD 2 belt transverse: neodymium magnetic head pulley",
+    "pl": "SD 2 taśma poprzeczna: bęben magnetyczny neodymowy",
+    "fr": "SD 2 bande transversale : tambour magnétique néodyme"
+   },
+   "desc": {
+    "en": "iron separation",
+    "pl": "separacja żelaza",
+    "fr": "séparation du fer"
+   }
+  },
+  "5001161": {
+   "name": {
+    "en": "Extraction SD 2 belt middle fraction",
+    "pl": "Odsysanie SD 2 taśma frakcja środkowa",
+    "fr": "Aspiration SD 2 bande fraction médiane"
+   },
+   "desc": {
+    "en": "pressure/suction blower",
+    "pl": "dmuchawa ciśnieniowo-ssąca",
+    "fr": "soufflante pression/aspiration"
+   }
+  },
+  "5001162": {
+   "name": {
+    "en": "Fine grain belt 3 neodymium magnetic head pulley",
+    "pl": "Taśma frakcji drobnej 3 bęben magnetyczny neodymowy",
+    "fr": "Bande fines 3 tambour magnétique néodyme"
+   },
+   "desc": {
+    "en": "iron separation",
+    "pl": "separacja żelaza",
+    "fr": "séparation du fer"
+   }
+  },
+  "5001207": {
+   "name": {
+    "en": "Fine grain belt 3 speed adjustment",
+    "pl": "Taśma frakcji drobnej 3 regulacja obrotów",
+    "fr": "Bande fines 3 réglage de la vitesse"
+   }
+  },
+  "5001208": {
+   "name": {
+    "en": "Fine grain belt 3 side wall",
+    "pl": "Taśma frakcji drobnej 3 ścianka nadstawna",
+    "fr": "Bande fines 3 paroi de rehausse"
+   }
+  },
+  "5001209": {
+   "name": {
+    "en": "Coarse grain belt 1 short",
+    "pl": "Taśma frakcji grubej 1 krótka",
+    "fr": "Bande gros grains 1 courte"
+   },
+   "desc": {
+    "en": "stones/contaminants · 700 mm",
+    "pl": "kamienie/zanieczyszczenia · 700 mm",
+    "fr": "pierres/indésirables · 700 mm"
+   }
+  },
+  "5001210": {
+   "name": {
+    "en": "Scraper coarse grain belt 1",
+    "pl": "Zgarniacz taśmy frakcji grubej 1",
+    "fr": "Racleur bande gros grains 1"
+   }
+  },
+  "5001211": {
+   "name": {
+    "en": "Coarse grain belt 2",
+    "pl": "Taśma frakcji grubej 2",
+    "fr": "Bande gros grains 2"
+   },
+   "desc": {
+    "en": "stones/contaminants · 800 mm",
+    "pl": "kamienie/zanieczyszczenia · 800 mm",
+    "fr": "pierres/indésirables · 800 mm"
+   }
+  },
+  "5001163": {
+   "name": {
+    "en": "Coarse grain belt long",
+    "pl": "Taśma frakcji grubej długa",
+    "fr": "Bande gros grains longue"
+   }
+  },
+  "5000387": {
+   "name": {
+    "en": "Remote control for all important settings",
+    "pl": "Pilot zdalnego sterowania wszystkimi ważnymi ustawieniami",
+    "fr": "Télécommande pour tous les réglages importants"
+   }
+  },
+  "5001028": {
+   "name": {
+    "en": "LeptonLink – 12 months free",
+    "pl": "LeptonLink – 12 miesięcy bezpłatnie",
+    "fr": "LeptonLink – 12 mois gratuits"
+   },
+   "desc": {
+    "en": "telemetry / remote access",
+    "pl": "telemetria / zdalny dostęp",
+    "fr": "télémétrie / accès à distance"
+   }
+  },
+  "5000558": {
+   "name": {
+    "en": "LED light package",
+    "pl": "Pakiet oświetlenia LED",
+    "fr": "Pack d'éclairage LED"
+   }
+  }
+ }
+}
