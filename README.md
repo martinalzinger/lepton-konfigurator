@@ -6,8 +6,9 @@ und **Gebrauchtmaschinen-Angebot** für die mobile Sternsiebanlage Lepton 5100.
 ## Struktur
 ```
 index.html            ← Konfigurator-App (generiert – nicht direkt bearbeiten)
-ersatzteile.html      ← Ersatzteilkatalog mit 3D-Ansicht (generiert, EIGENE Seite/URL)
+ersatzteile.html      ← Ersatzteilkatalog mit 3D-Explorer (generiert, EIGENE Seite/URL)
 models/               ← 3D-Modelle (.glb), werden bei Bedarf nachgeladen (generiert)
+vendor/               ← three.js (3D-Viewer, offline)
 manifest.webmanifest  ← App-Definition (Name, Icon, Farben)
 sw.js                 ← Service-Worker (Offline, beide Seiten)
 icon-192/512.png      ← App-Symbol
@@ -21,6 +22,7 @@ build/
   glbgen.py                ← erzeugt 3D-Platzhaltermodelle (GLB)
   modelviewer.min.js       ← 3D-Viewer-Library (offline eingebettet)
   models_cad/              ← HIER STEP/GLB/SEV ablegen (→ wird zu models/*.glb; lokal, nicht eingecheckt)
+  glbgen.py                ← erzeugt 3D-Platzhaltermodelle
 CLAUDE.md             ← Projektleitfaden für Claude Code
 ```
 
@@ -37,6 +39,10 @@ Für die **STEP→3D-Konvertierung** zusätzlich einmalig: `pip install cascadio
 `…/ersatzteile.html`) und taucht **nicht** in Angebot/Kaufvertrag auf.
 Bauteile lassen sich in 3D drehen, in den **Warenkorb** legen und als
 Anfrage **drucken** oder **per E-Mail** an Alzinger senden.
+
+**3D-Explorer:** Bei Baugruppen kann man in das 3D-Modell hineingehen,
+**einzelne Bauteile anklicken, ein-/ausblenden** und jedes Teil mit seiner
+Artikelnummer **einzeln in den Warenkorb** legen.
 
 Die 3D-Modelle sind **nicht** in die HTML eingebettet, sondern liegen als
 `models/*.glb` daneben und werden erst beim Klick auf „3D ansehen" **nachgeladen**

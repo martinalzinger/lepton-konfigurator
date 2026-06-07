@@ -103,8 +103,16 @@ Quelle/Build:
 - `build/i18n_ersatzteile.json` – UI-Texte der Seite als `key:{de,en,pl,fr}`.
 - `build/glbgen.py` – erzeugt 3D-**Platzhaltermodelle** (GLB), Schlüssel z. B.
   `scheibe|welle|lager|ritzel|trommel|keilriemen|abstreifer|gehaeuse`.
-- `build/modelviewer.min.js` – Google `<model-viewer>` (offline eingebettet via `%%MV%%`).
+- `vendor/*.js` – three.js (Core + GLTFLoader + OrbitControls + BufferGeometryUtils),
+  offline; per `<script type="importmap">` als `three` eingebunden. Treibt den
+  **interaktiven 3D-Explorer** (Bauteile picken, ein-/ausblenden, einzeln bestellen).
 - `build/assets_spareparts.b64.json` – optionale eingebettete Vorschaubilder.
+
+**3D-Explorer:** Beim Klick auf „3D ansehen" lädt der Viewer das GLB nach und
+listet alle **Einzelteile** der Baugruppe (gruppiert nach Artikelnummer, Instanz-
+Suffixe wie `_24`/`_oa_3`/`_v8.00` werden in `normPart()` entfernt). Teile lassen
+sich anklicken (im Modell oder in der Liste), per Auge-Symbol ein-/ausblenden und
+einzeln in den Warenkorb legen (Registry `amb_lepton_subparts`).
 
 Eigene CAD-Daten → `build/models_cad/` ablegen (lokal; per `.gitignore` nicht
 eingecheckt), dann neu bauen. Ergebnis landet als `models/<safe>.glb`:
