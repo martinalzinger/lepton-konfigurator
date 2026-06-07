@@ -370,7 +370,8 @@
         "name": "Grobkornband 2",
         "desc": "Steine/Störstoffe · 800 mm",
         "price": 5242,
-        "img": "image28"
+        "img": "image28",
+        "req": "5001209"
       }
     ]
   },
