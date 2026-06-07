@@ -295,16 +295,16 @@ body{font-family:var(--sans);background:var(--paper);color:var(--ink);line-heigh
 .btn.t{background:none;color:var(--muted);padding:6px}.btn.t:hover{color:var(--red)}
 .btn[disabled]{opacity:.45;cursor:not-allowed}
 /* 3D explorer modal */
-.mvmodal{position:fixed;inset:0;background:rgba(16,17,19,.74);z-index:97;display:none;align-items:center;justify-content:center;padding:16px}
+.mvmodal{position:fixed;inset:0;background:rgba(16,17,19,.74);z-index:97;display:none;align-items:center;justify-content:center;padding:10px}
 .mvmodal.open{display:flex}
-.mvbox{background:#fff;border-radius:14px;width:min(1000px,97vw);max-height:94vh;overflow:hidden;position:relative;display:flex;flex-direction:column}
-.mvbox .mvtop{display:flex;justify-content:space-between;align-items:flex-start;padding:14px 18px 10px;border-bottom:1px solid var(--line)}
+.mvbox{background:#fff;border-radius:14px;width:min(1500px,98vw);height:94vh;max-height:94vh;overflow:hidden;position:relative;display:flex;flex-direction:column}
+.mvbox .mvtop{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line);flex-shrink:0}
 .mvbox .mvname{font-weight:700;font-size:17px}
 .mvbox .mvart{font-family:var(--mono);font-size:11px;color:var(--faint);margin-top:2px}
 .mvbox .mvx{background:var(--field);border:0;width:34px;height:34px;border-radius:50%;font-size:20px;cursor:pointer;color:var(--ink);flex-shrink:0}
 .mvbox .mvx:hover{background:var(--line)}
 .mvsplit{display:flex;min-height:0;flex:1}
-.mvstage{position:relative;flex:1.5;min-width:0;background:linear-gradient(180deg,#fbfbf9,#e7e5df);display:flex;flex-direction:column}
+.mvstage{position:relative;flex:2.2;min-width:0;background:linear-gradient(180deg,#fcfcfb,#e3e1da);display:flex;flex-direction:column}
 #tcanvas{width:100%;height:100%;display:block;touch-action:none;cursor:grab}
 #tcanvas:active{cursor:grabbing}
 .mvload{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
@@ -315,7 +315,7 @@ body{font-family:var(--sans);background:var(--paper);color:var(--ink);line-heigh
 .mvtools button{background:rgba(255,255,255,.9);border:1px solid var(--line-strong);border-radius:7px;padding:7px 10px;font-family:var(--mono);font-size:10.5px;font-weight:600;color:var(--ink);cursor:pointer}
 .mvtools button:hover{border-color:var(--ink)}
 .mvhint{position:absolute;bottom:8px;left:0;right:0;font-family:var(--mono);font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);text-align:center;pointer-events:none}
-.mvparts{flex:1;max-width:360px;min-width:240px;display:flex;flex-direction:column;border-left:1px solid var(--line);background:#fff}
+.mvparts{flex:1;min-height:0;max-width:400px;min-width:260px;display:flex;flex-direction:column;border-left:1px solid var(--line);background:#fff}
 .mvph{display:flex;align-items:center;gap:8px;padding:12px 14px 8px;font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--slate);font-weight:600}
 .mvph .cnt{background:var(--ink);color:#fff;border-radius:10px;padding:1px 8px;font-size:11px}
 .psearch{margin:0 14px 8px;font-family:var(--sans);font-size:13px;border:1px solid var(--line-strong);background:var(--field);border-radius:8px;padding:8px 11px;outline:none}
@@ -335,7 +335,13 @@ body{font-family:var(--sans);background:var(--paper);color:var(--ink);line-heigh
 .prow .pcartbtn{background:var(--red);border:0;color:#fff;border-radius:7px;width:30px;height:30px;cursor:pointer;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center}
 .prow .pcartbtn:hover{background:var(--red2)}
 .prow .pcartbtn svg{width:16px;height:16px;stroke:#fff;fill:none;stroke-width:1.8}
-@media (max-width:760px){.mvsplit{flex-direction:column}.mvstage{min-height:46vh}.mvparts{max-width:none;border-left:0;border-top:1px solid var(--line);max-height:34vh}}
+@media (max-width:760px){
+  .mvmodal{padding:0;align-items:stretch}
+  .mvbox{width:100vw;height:100vh;height:100dvh;max-height:none;border-radius:0}
+  .mvsplit{flex-direction:column;min-height:0}
+  .mvstage{flex:none;height:42vh;height:42dvh}
+  .mvparts{flex:1;min-height:0;max-width:none;border-left:0;border-top:1px solid var(--line)}
+}
 /* Toast */
 #toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:12px 20px;border-radius:30px;font-size:13px;font-weight:600;opacity:0;pointer-events:none;transition:.25s;z-index:99;box-shadow:0 10px 30px rgba(0,0,0,.25)}
 #toast.show{opacity:1;transform:translateX(-50%)}
@@ -555,14 +561,14 @@ const ICONS={
  function openCart(){document.getElementById("drawer").classList.add("open");document.getElementById("backdrop").classList.add("open");renderCart();}
  function closeCart(){document.getElementById("drawer").classList.remove("open");document.getElementById("backdrop").classList.remove("open");}
  // ===== 3D-Explorer (three.js wird BEI BEDARF dynamisch geladen) =====
- var THREE,GLTFLoader,OrbitControls,loader,hlMat;
+ var THREE,GLTFLoader,OrbitControls,RoomEnvironment,loader,hlMat;
  var renderer,scene,camera,controls,raycaster,curRoot=null,groups=[],activeG=null,fitR=1,vinit=false,viewerActive=false,threeReady=false;
  function ensureThree(){
   if(threeReady)return Promise.resolve(true);
-  return Promise.all([import("./vendor/three.module.min.js"),import("./vendor/GLTFLoader.js"),import("./vendor/OrbitControls.js")]).then(function(m){
-   THREE=m[0];GLTFLoader=m[1].GLTFLoader;OrbitControls=m[2].OrbitControls;
+  return Promise.all([import("./vendor/three.module.min.js"),import("./vendor/GLTFLoader.js"),import("./vendor/OrbitControls.js"),import("./vendor/RoomEnvironment.js")]).then(function(m){
+   THREE=m[0];GLTFLoader=m[1].GLTFLoader;OrbitControls=m[2].OrbitControls;RoomEnvironment=m[3].RoomEnvironment;
    loader=new GLTFLoader();
-   hlMat=new THREE.MeshStandardMaterial({color:0xff6a4d,emissive:0xc00000,emissiveIntensity:0.55,metalness:0.25,roughness:0.5});
+   hlMat=new THREE.MeshStandardMaterial({color:0xff6a4d,emissive:0xc00000,emissiveIntensity:0.5,metalness:0.2,roughness:0.45});
    threeReady=true;return true;
   });
  }
@@ -571,13 +577,22 @@ const ICONS={
   var canvas=document.getElementById("tcanvas");
   renderer=new THREE.WebGLRenderer({canvas:canvas,antialias:true,alpha:true});
   renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+  renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.25;
   scene=new THREE.Scene();
+  // Neutrale Studio-Umgebung -> metallische Teile werden hell & plastisch (statt schwarz)
+  var pmrem=new THREE.PMREMGenerator(renderer);
+  scene.environment=pmrem.fromScene(new RoomEnvironment(),0.04).texture;
   camera=new THREE.PerspectiveCamera(45,1,0.01,1e7);
   controls=new OrbitControls(camera,canvas);
   controls.enableDamping=true;controls.dampingFactor=0.08;controls.autoRotate=true;controls.autoRotateSpeed=1.0;
-  scene.add(new THREE.HemisphereLight(0xffffff,0x555555,1.15));
-  var d1=new THREE.DirectionalLight(0xffffff,1.5);d1.position.set(1,2,1.4);scene.add(d1);
-  var d2=new THREE.DirectionalLight(0xffffff,0.55);d2.position.set(-1.2,-0.4,-1);scene.add(d2);
+  controls.rotateSpeed=0.75;          // ruhigeres Drehen
+  controls.zoomSpeed=0.9;             // feinerer Zoom
+  controls.panSpeed=1.2;              // leichtgängigeres Verschieben
+  controls.zoomToCursor=true;         // zum Mauszeiger zoomen (statt zur Mitte)
+  controls.screenSpacePanning=true;   // intuitives Verschieben in der Bildebene
+  scene.add(new THREE.HemisphereLight(0xffffff,0x6b6b70,1.0));
+  var d1=new THREE.DirectionalLight(0xffffff,2.0);d1.position.set(1,2,1.4);scene.add(d1);
+  var d2=new THREE.DirectionalLight(0xffffff,0.9);d2.position.set(-1.2,-0.4,-1);scene.add(d2);
   raycaster=new THREE.Raycaster();
   var dn=null;
   canvas.addEventListener("pointerdown",function(e){dn={x:e.clientX,y:e.clientY,t:Date.now()};});
@@ -589,15 +604,19 @@ const ICONS={
  function clearModel(){if(curRoot){scene.remove(curRoot);curRoot.traverse(function(o){if(o.isMesh&&o.geometry&&o.geometry.dispose)o.geometry.dispose();});curRoot=null;}groups=[];activeG=null;}
  function nodeName(o){var n=o;while(n){if(n.name)return n.name;n=n.parent;}return "";}
  // Instanz-/Versions-Suffixe entfernen -> Artikelnummer (z.B. 248027_24 -> 248027)
- function normPart(s){var n=String(s||"");n=n.replace(/_-_\d{4}.*$/,"");n=n.replace(/_oa_\d+$/i,"");n=n.replace(/_v?\d+(\.\d+)+$/i,"");n=n.replace(/_\d+$/,"");n=n.replace(/_oa$/i,"");return n.trim()||String(s||"");}
+ function normPart(s){var n=String(s||"");n=n.replace(/_-_\d{4}.*$/,"");n=n.replace(/_oa_\d+$/i,"");n=n.replace(/_v?\d+(\.\d+)+$/i,"");n=n.replace(/_\d{1,3}$/,"");n=n.replace(/_oa$/i,"");return n.trim()||String(s||"");}
  function cleanLabel(s){return String(s||"").replace(/_/g," ").replace(/\s+/g," ").trim()||"Bauteil";}
  function buildGroups(root){
   var map={},order=[];
-  root.traverse(function(o){if(o.isMesh){var key=normPart(nodeName(o)||"(unbenannt)");var g=map[key];if(!g){g={raw:key,label:cleanLabel(key),meshes:[],visible:true};map[key]=g;order.push(g);}g.meshes.push(o);o.userData._g=g;}});
-  order.sort(function(a,b){return b.meshes.length-a.meshes.length||a.label.localeCompare(b.label);});
+  root.traverse(function(o){if(o.isMesh){var key=normPart(nodeName(o)||"(unbenannt)");var g=map[key];if(!g){g={raw:key,label:cleanLabel(key),meshes:[],visible:true,count:0};map[key]=g;order.push(g);}g.meshes.push(o);o.userData._g=g;}});
+  // echte Stückzahl = Anzahl Instanz-Wurzeln (Knoten mit Artikelname ohne gleichnamigen Vorfahren),
+  // NICHT die Mesh-Anzahl (ein Bauteil besteht oft aus mehreren Meshes)
+  root.traverse(function(o){if(o.name){var nm=normPart(o.name);var g=map[nm];if(!g)return;var anc=o.parent,isRoot=true;while(anc){if(anc.name&&normPart(anc.name)===nm){isRoot=false;break;}anc=anc.parent;}if(isRoot)g.count++;}});
+  order.forEach(function(g){if(!g.count)g.count=g.meshes.length;});
+  order.sort(function(a,b){return b.count-a.count||a.label.localeCompare(b.label);});
   groups=order;
  }
- function frameModel(){var box=new THREE.Box3().setFromObject(curRoot);var c=box.getCenter(new THREE.Vector3()),size=box.getSize(new THREE.Vector3());var r=Math.max(size.x,size.y,size.z)||1;fitR=r;curRoot.position.sub(c);controls.target.set(0,0,0);var d=r*1.9;camera.position.set(d*0.7,d*0.55,d*0.9);camera.near=r/200;camera.far=r*200;camera.updateProjectionMatrix();controls.update();}
+ function frameModel(){var box=new THREE.Box3().setFromObject(curRoot);var c=box.getCenter(new THREE.Vector3()),size=box.getSize(new THREE.Vector3());var r=Math.max(size.x,size.y,size.z)||1;fitR=r;curRoot.position.sub(c);controls.target.set(0,0,0);var d=r*1.9;camera.position.set(d*0.7,d*0.55,d*0.9);camera.near=r/200;camera.far=r*200;camera.updateProjectionMatrix();controls.minDistance=r*0.05;controls.maxDistance=r*12;controls.update();}
  function resetView(){if(!curRoot)return;controls.target.set(0,0,0);var d=fitR*1.9;camera.position.set(d*0.7,d*0.55,d*0.9);controls.autoRotate=true;controls.update();}
  function setHighlight(g,on){g.meshes.forEach(function(m){if(on){if(m.userData._om===undefined)m.userData._om=m.material;m.material=hlMat;}else if(m.userData._om!==undefined){m.material=m.userData._om;m.userData._om=undefined;}});}
  function selectGroup(g,scroll){if(activeG===g)return;if(activeG)setHighlight(activeG,false);activeG=g;if(g)setHighlight(g,true);controls.autoRotate=false;document.querySelectorAll(".prow").forEach(function(r){r.classList.toggle("active",r.__g===g);});if(scroll&&g){var rows=[].slice.call(document.querySelectorAll(".prow"));for(var i=0;i<rows.length;i++){if(rows[i].__g===g){rows[i].scrollIntoView({block:"nearest"});break;}}}}
@@ -614,7 +633,7 @@ const ICONS={
    html+='<div class="prow'+(g===activeG?' active':'')+(g.visible?'':' hidden')+'" data-i="'+idx+'">'
     +'<button class="eye" data-eye="'+idx+'" title="'+esc(t("tip_toggle"))+'">'+(g.visible?EYE_ON:EYE_OFF)+'</button>'
     +'<div class="pmid" data-sel="'+idx+'"><div class="pml">'+esc(g.label)+'</div><div class="pma">'+esc(g.raw)+'</div></div>'
-    +(g.meshes.length>1?'<span class="qbadge">×'+g.meshes.length+'</span>':'')
+    +(g.count>1?'<span class="qbadge" title="'+esc(t("qty_in_assembly"))+'">×'+g.count+'</span>':'')
     +'<button class="pcartbtn" data-pcart="'+idx+'" title="'+esc(t("btn_add"))+'">'+CART_S+'</button></div>';
   });
   list.innerHTML=html||'<div style="padding:20px;text-align:center;color:var(--faint);font-size:12px">'+esc(t("no_results"))+'</div>';

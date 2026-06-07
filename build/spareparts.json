@@ -2,6 +2,13 @@
   "_hinweis": "Ersatzteil-Katalog. 'model' = Schluessel eines GLB (entweder Platzhalter aus glbgen.py: scheibe|welle|lager|ritzel|trommel|keilriemen|abstreifer|gehaeuse  ODER Dateiname einer STEP/GLB-Datei in build/models_step bzw. build/models_glb, z.B. '5100-100.step'). Echte STEP-Dateien werden beim Build automatisch konvertiert; Art.-Nr./Bezeichnung koennen daraus uebernommen werden.",
   "kategorien": [
     {
+      "h": "Baugruppen",
+      "h_en": "Assemblies",
+      "teile": [
+        { "id": "GKB-1", "art": "GKB-1", "name": "Grobkornband 1", "name_en": "Coarse-grain conveyor 1", "desc": "Komplette Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar", "desc_en": "Complete assembly – pick and order all individual parts in 3D", "price": 0, "model": "gkb1_lang.glb" }
+      ]
+    },
+    {
       "h": "Sternsieb & Siebwellen",
       "h_en": "Star screen & shafts",
       "teile": [
