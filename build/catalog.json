@@ -249,7 +249,8 @@
         "name": "Siebdeck 1 Standardvariante",
         "desc": "Serienausstattung",
         "price": 0,
-        "img": "image_sd1std"
+        "img": "image_sd1std",
+        "conf": ["5001203", "5001204"]
       },
       {
         "id": "5001203",
