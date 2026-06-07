@@ -233,6 +233,7 @@ body{font-family:var(--sans);background:var(--paper);color:var(--ink);line-heigh
 .catblk>.ch{font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--slate);font-weight:600;display:flex;align-items:center;gap:9px;margin:0 2px 12px}
 .catblk>.ch::before{content:"";width:5px;height:15px;background:var(--gold);border-radius:1px}
 .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(232px,1fr));gap:14px}
+.phnote{grid-column:1/-1;border:1px dashed var(--line-strong);border-radius:10px;padding:18px 16px;color:var(--faint);font-size:13px;font-style:italic;background:var(--field)}
 .pcard{background:var(--surface);border:1px solid var(--line);border-radius:13px;overflow:hidden;display:flex;flex-direction:column;transition:.14s}
 .pcard:hover{border-color:var(--line-strong);box-shadow:0 8px 22px rgba(0,0,0,.07)}
 .pcard.incart{border-color:var(--red);box-shadow:0 0 0 2px var(--red-soft)}
@@ -515,7 +516,12 @@ const ICONS={
   CAT.forEach(function(c){
    if(filter&&c.h!==filter)return;
    var items=c.items.filter(matches);
-   if(!items.length)return;
+   if(!items.length){
+    if(query)return;            // bei aktiver Suche leere Kategorien ausblenden
+    any=true;
+    html+='<div class="catblk"><div class="ch">'+esc(catName(c))+'</div><div class="cards"><div class="phnote">'+esc(t("sub_soon"))+'</div></div></div>';
+    return;
+   }
    any=true;
    html+='<div class="catblk"><div class="ch">'+esc(catName(c))+'</div><div class="cards">';
    items.forEach(function(p){

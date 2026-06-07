@@ -1,20 +1,45 @@
 {
-  "_hinweis": "Ersatzteil-Katalog. 'model' = Dateiname einer GLB in ersatzteile/models/ (aus STEP konvertiert, z.B. via build/convert). Fehlt 'model', zeigt die Kachel nur einen Platzhalter und der 3D-Button ist deaktiviert ('3D folgt'). 'art' = Artikelnummer (— = folgt aus STEP/PDM).",
+  "_hinweis": "Ersatzteil-Katalog. Jede Kategorie = eine Baugruppe der Maschine; 'teile' = deren Unter-Baugruppen (Kacheln). 'model' = GLB-Dateiname in ersatzteile/models/ (aus STEP konvertiert). Leere Kategorie (teile:[]) zeigt den Hinweis 'sub_soon'. 'art' = Artikelnummer (— = folgt aus STEP/PDM).",
   "kategorien": [
     {
-      "h": "Baugruppen",
-      "h_en": "Assemblies",
+      "h": "Fahrgestell", "h_en": "Chassis",
+      "teile": []
+    },
+    {
+      "h": "Bunker", "h_en": "Hopper",
+      "teile": []
+    },
+    {
+      "h": "Siebdeck 1", "h_en": "Screen deck 1",
+      "teile": []
+    },
+    {
+      "h": "Siebdeck 2", "h_en": "Screen deck 2",
       "teile": [
-        { "id": "FAHRGESTELL", "art": "—", "name": "Fahrgestell", "name_en": "Chassis", "desc": "Komplette Baugruppe – 3D-Ansicht folgt", "desc_en": "Complete assembly – 3D view to follow", "price": 0, "model": null },
-        { "id": "BUNKER", "art": "—", "name": "Bunker", "name_en": "Hopper", "desc": "Komplette Baugruppe – 3D-Ansicht folgt", "desc_en": "Complete assembly – 3D view to follow", "price": 0, "model": null },
-        { "id": "SIEBDECK-1", "art": "—", "name": "Siebdeck 1", "name_en": "Screen deck 1", "desc": "Komplette Baugruppe – 3D-Ansicht folgt", "desc_en": "Complete assembly – 3D view to follow", "price": 0, "model": null },
-        { "id": "SIEBDECK-2", "art": "—", "name": "Siebdeck 2", "name_en": "Screen deck 2", "desc": "Komplette Baugruppe – 3D-Ansicht folgt", "desc_en": "Complete assembly – 3D view to follow", "price": 0, "model": null },
-        { "id": "GROBKORNBAND", "art": "—", "name": "Grobkornband", "name_en": "Coarse-grain conveyor", "desc": "Komplette Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar", "desc_en": "Complete assembly – pick and order all individual parts in 3D", "price": 0, "model": "gkb1_lang.glb" },
-        { "id": "FEINKORNBAND-1", "art": "—", "name": "Feinkornband 1", "name_en": "Fine-grain conveyor 1", "desc": "Komplette Baugruppe – 3D-Ansicht folgt", "desc_en": "Complete assembly – 3D view to follow", "price": 0, "model": null },
-        { "id": "FEINKORNBAND-2", "art": "—", "name": "Feinkornband 2", "name_en": "Fine-grain conveyor 2", "desc": "Komplette Baugruppe – 3D-Ansicht folgt", "desc_en": "Complete assembly – 3D view to follow", "price": 0, "model": null },
-        { "id": "FEINKORNBAND-3", "art": "—", "name": "Feinkornband 3", "name_en": "Fine-grain conveyor 3", "desc": "Komplette Baugruppe – 3D-Ansicht folgt", "desc_en": "Complete assembly – 3D view to follow", "price": 0, "model": null },
-        { "id": "SCHALTSCHRANK", "art": "—", "name": "Schaltschrank", "name_en": "Control cabinet", "desc": "Komplette Baugruppe – 3D-Ansicht folgt", "desc_en": "Complete assembly – 3D view to follow", "price": 0, "model": null }
+        { "id": "SD2-ABSAUGUNG", "art": "—", "name": "Absaugung Siebdeck 2", "name_en": "Suction screen deck 2", "desc": "Unter-Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar", "desc_en": "Sub-assembly – pick and order all individual parts in 3D", "price": 0, "model": "absaugung-sd2.glb", "img": "absaugung_sd2" }
       ]
+    },
+    {
+      "h": "Grobkornband", "h_en": "Coarse-grain conveyor",
+      "teile": [
+        { "id": "GKB-GESAMT", "art": "—", "name": "Grobkornband", "name_en": "Coarse-grain conveyor", "desc": "Gesamtbaugruppe – im 3D alle Einzelteile auswählbar und bestellbar", "desc_en": "Complete assembly – pick and order all individual parts in 3D", "price": 0, "model": "gkb1_lang.glb" }
+      ]
+    },
+    {
+      "h": "Feinkornband 1", "h_en": "Fine-grain conveyor 1",
+      "teile": []
+    },
+    {
+      "h": "Feinkornband 2", "h_en": "Fine-grain conveyor 2",
+      "teile": []
+    },
+    {
+      "h": "Feinkornband 3", "h_en": "Fine-grain conveyor 3",
+      "teile": []
+    },
+    {
+      "h": "Schaltschrank", "h_en": "Control cabinet",
+      "teile": []
     }
   ]
 }
