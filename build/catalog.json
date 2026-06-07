@@ -249,7 +249,8 @@
         "name": "Siebdeck 1 Band längs",
         "desc": "Überlauf gerade nach hinten · 1550 mm",
         "price": 1980,
-        "img": "image17"
+        "img": "image17",
+        "conf": ["5001204", "5001159", "5001160", "5001161"]
       },
       {
         "id": "5001204",

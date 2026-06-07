@@ -443,12 +443,20 @@ var lang="de";
  }
  function isActive(id){var o=optById[id];if(!o)return false;var c=catById[id];if(o.ex)return state.excl[o.ex]===id;if(c&&c.ex)return state.excl[c.ex]===id;return !!state.chosen[id];}
  function updateAvailability(){
+  var blocked={};
   CATS.forEach(function(c){c.opts.forEach(function(o){
-   if(!o.req)return;
-   var ok=isActive(o.req);
+   if(o.conf&&isActive(o.id)){o.conf.forEach(function(id){blocked[id]=true;});}
+  });});
+  CATS.forEach(function(c){c.opts.forEach(function(o){
+   var off=(o.req&&!isActive(o.req))||!!blocked[o.id];
    var card=document.querySelector('.pcard[data-id="'+o.id+'"]');
-   if(card)card.classList.toggle("disabled",!ok);
-   if(!ok&&state.chosen[o.id]){state.chosen[o.id]=false;if(card){var cb=card.querySelector('input[type=checkbox]');if(cb)cb.checked=false;card.classList.remove("on");}}
+   if(card)card.classList.toggle("disabled",off);
+   if(off){
+    if(state.chosen[o.id]){state.chosen[o.id]=false;if(card){var cb=card.querySelector('input[type=checkbox]');if(cb)cb.checked=false;}}
+    if(o.ex&&state.excl[o.ex]===o.id)state.excl[o.ex]="";
+    var cat=catById[o.id];if(cat&&cat.ex&&state.excl[cat.ex]===o.id)state.excl[cat.ex]="";
+    if(card)card.classList.remove("on");
+   }
   });});
  }
  function render(){
