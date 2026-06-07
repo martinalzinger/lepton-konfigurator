@@ -90,7 +90,7 @@ body{font-family:var(--sans);background:var(--paper);color:var(--ink);line-heigh
 .pcard.on{border-color:var(--red);box-shadow:0 0 0 3px var(--red-soft)}
 .pcard.disabled{opacity:.42;filter:grayscale(.7);pointer-events:none}
 .pcard.noimg .pbody{padding-top:38px}.pcard.noimg{min-height:118px}
-.pcard .pimg{height:160px;background-size:contain;background-repeat:no-repeat;background-position:center;background-color:#f3f2ee}
+.pcard .pimg{height:160px;background-size:contain;background-repeat:no-repeat;background-position:center;background-color:#fff}
 .pcard .pbody{padding:13px 14px 14px;display:flex;flex-direction:column;gap:5px;flex:1}
 .pcard .pname{font-size:13.5px;font-weight:600;line-height:1.3}
 .pcard .pdesc{font-size:11.5px;color:var(--muted);line-height:1.4;flex:1}
