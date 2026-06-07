@@ -579,6 +579,11 @@ const ICONS={
   camera=new THREE.PerspectiveCamera(45,1,0.01,1e7);
   controls=new OrbitControls(camera,canvas);
   controls.enableDamping=true;controls.dampingFactor=0.08;controls.autoRotate=true;controls.autoRotateSpeed=1.0;
+  controls.rotateSpeed=0.75;          // ruhigeres Drehen
+  controls.zoomSpeed=0.9;             // feinerer Zoom
+  controls.panSpeed=1.2;              // leichtgängigeres Verschieben
+  controls.zoomToCursor=true;         // zum Mauszeiger zoomen (statt zur Mitte)
+  controls.screenSpacePanning=true;   // intuitives Verschieben in der Bildebene
   scene.add(new THREE.HemisphereLight(0xffffff,0x6b6b70,1.0));
   var d1=new THREE.DirectionalLight(0xffffff,2.0);d1.position.set(1,2,1.4);scene.add(d1);
   var d2=new THREE.DirectionalLight(0xffffff,0.9);d2.position.set(-1.2,-0.4,-1);scene.add(d2);
@@ -597,11 +602,15 @@ const ICONS={
  function cleanLabel(s){return String(s||"").replace(/_/g," ").replace(/\s+/g," ").trim()||"Bauteil";}
  function buildGroups(root){
   var map={},order=[];
-  root.traverse(function(o){if(o.isMesh){var key=normPart(nodeName(o)||"(unbenannt)");var g=map[key];if(!g){g={raw:key,label:cleanLabel(key),meshes:[],visible:true};map[key]=g;order.push(g);}g.meshes.push(o);o.userData._g=g;}});
-  order.sort(function(a,b){return b.meshes.length-a.meshes.length||a.label.localeCompare(b.label);});
+  root.traverse(function(o){if(o.isMesh){var key=normPart(nodeName(o)||"(unbenannt)");var g=map[key];if(!g){g={raw:key,label:cleanLabel(key),meshes:[],visible:true,count:0};map[key]=g;order.push(g);}g.meshes.push(o);o.userData._g=g;}});
+  // echte Stückzahl = Anzahl Instanz-Wurzeln (Knoten mit Artikelname ohne gleichnamigen Vorfahren),
+  // NICHT die Mesh-Anzahl (ein Bauteil besteht oft aus mehreren Meshes)
+  root.traverse(function(o){if(o.name){var nm=normPart(o.name);var g=map[nm];if(!g)return;var anc=o.parent,isRoot=true;while(anc){if(anc.name&&normPart(anc.name)===nm){isRoot=false;break;}anc=anc.parent;}if(isRoot)g.count++;}});
+  order.forEach(function(g){if(!g.count)g.count=g.meshes.length;});
+  order.sort(function(a,b){return b.count-a.count||a.label.localeCompare(b.label);});
   groups=order;
  }
- function frameModel(){var box=new THREE.Box3().setFromObject(curRoot);var c=box.getCenter(new THREE.Vector3()),size=box.getSize(new THREE.Vector3());var r=Math.max(size.x,size.y,size.z)||1;fitR=r;curRoot.position.sub(c);controls.target.set(0,0,0);var d=r*1.9;camera.position.set(d*0.7,d*0.55,d*0.9);camera.near=r/200;camera.far=r*200;camera.updateProjectionMatrix();controls.update();}
+ function frameModel(){var box=new THREE.Box3().setFromObject(curRoot);var c=box.getCenter(new THREE.Vector3()),size=box.getSize(new THREE.Vector3());var r=Math.max(size.x,size.y,size.z)||1;fitR=r;curRoot.position.sub(c);controls.target.set(0,0,0);var d=r*1.9;camera.position.set(d*0.7,d*0.55,d*0.9);camera.near=r/200;camera.far=r*200;camera.updateProjectionMatrix();controls.minDistance=r*0.05;controls.maxDistance=r*12;controls.update();}
  function resetView(){if(!curRoot)return;controls.target.set(0,0,0);var d=fitR*1.9;camera.position.set(d*0.7,d*0.55,d*0.9);controls.autoRotate=true;controls.update();}
  function setHighlight(g,on){g.meshes.forEach(function(m){if(on){if(m.userData._om===undefined)m.userData._om=m.material;m.material=hlMat;}else if(m.userData._om!==undefined){m.material=m.userData._om;m.userData._om=undefined;}});}
  function selectGroup(g,scroll){if(activeG===g)return;if(activeG)setHighlight(activeG,false);activeG=g;if(g)setHighlight(g,true);controls.autoRotate=false;document.querySelectorAll(".prow").forEach(function(r){r.classList.toggle("active",r.__g===g);});if(scroll&&g){var rows=[].slice.call(document.querySelectorAll(".prow"));for(var i=0;i<rows.length;i++){if(rows[i].__g===g){rows[i].scrollIntoView({block:"nearest"});break;}}}}
@@ -618,7 +627,7 @@ const ICONS={
    html+='<div class="prow'+(g===activeG?' active':'')+(g.visible?'':' hidden')+'" data-i="'+idx+'">'
     +'<button class="eye" data-eye="'+idx+'" title="'+esc(t("tip_toggle"))+'">'+(g.visible?EYE_ON:EYE_OFF)+'</button>'
     +'<div class="pmid" data-sel="'+idx+'"><div class="pml">'+esc(g.label)+'</div><div class="pma">'+esc(g.raw)+'</div></div>'
-    +(g.meshes.length>1?'<span class="qbadge">×'+g.meshes.length+'</span>':'')
+    +(g.count>1?'<span class="qbadge" title="'+esc(t("qty_in_assembly"))+'">×'+g.count+'</span>':'')
     +'<button class="pcartbtn" data-pcart="'+idx+'" title="'+esc(t("btn_add"))+'">'+CART_S+'</button></div>';
   });
   list.innerHTML=html||'<div style="padding:20px;text-align:center;color:var(--faint);font-size:12px">'+esc(t("no_results"))+'</div>';
