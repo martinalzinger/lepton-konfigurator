@@ -2,3 +2,8 @@ __pycache__/
 *.pyc
 .DS_Store
 .vscode/
+
+# Lokale CAD-Quellen (werden zu models/*.glb verarbeitet, nicht selbst eingecheckt)
+build/models_cad/*
+!build/models_cad/README.md
+*.out.glb

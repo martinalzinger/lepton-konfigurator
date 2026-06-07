@@ -1,5 +1,5 @@
-const CACHE="lepton-v3";
-const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png"];
+const CACHE="lepton-v4";
+const ASSETS=["./","./index.html","./ersatzteile.html","./manifest.webmanifest","./icon-192.png","./icon-512.png"];
 
 self.addEventListener("install",e=>{
   // Einzeln cachen, damit ein einzelner Fehler nicht das ganze Precaching verhindert
@@ -23,17 +23,18 @@ self.addEventListener("fetch",e=>{
   if(req.method!=="GET")return;
   const isHTML=req.mode==="navigate"||(req.headers.get("accept")||"").includes("text/html");
   if(isHTML){
-    // Online: frische Seite holen und in den Cache legen.
-    // Offline: direkt die gespeicherte index.html liefern (robust gegen Vary/URL-Mismatch).
+    // Online: frische Seite holen und unter ihrer EIGENEN URL cachen.
+    // Offline: die passende Seite liefern (ersatzteile.html bleibt ersatzteile.html),
+    // erst danach auf index.html zurückfallen.
     e.respondWith(
       fetch(req).then(resp=>{
         const cp=resp.clone();
-        caches.open(CACHE).then(c=>c.put("./index.html",cp)).catch(()=>{});
+        caches.open(CACHE).then(c=>{c.put(req,cp).catch(()=>{});}).catch(()=>{});
         return resp;
       }).catch(()=>
-        caches.match("./index.html",{ignoreSearch:true})
+        caches.match(req,{ignoreSearch:true})
+          .then(r=>r||caches.match("./index.html",{ignoreSearch:true}))
           .then(r=>r||caches.match("./",{ignoreSearch:true}))
-          .then(r=>r||caches.match(req,{ignoreSearch:true,ignoreVary:true}))
       )
     );
     return;
