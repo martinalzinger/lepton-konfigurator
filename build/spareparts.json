@@ -11,7 +11,9 @@
     },
     {
       "h": "Siebdeck 1", "h_en": "Screen deck 1",
-      "teile": []
+      "teile": [
+        { "id": "SD1-BASIS", "art": "—", "name": "Basis", "name_en": "Base frame", "desc": "Grundrahmen Siebdeck 1 – im 3D alle Einzelteile auswählbar und bestellbar", "desc_en": "Screen deck 1 base frame – pick and order all individual parts in 3D", "price": 0, "model": "sd1-basis.glb" }
+      ]
     },
     {
       "h": "Siebdeck 2", "h_en": "Screen deck 2",
