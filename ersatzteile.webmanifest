@@ -1,0 +1,16 @@
+{
+  "name": "Alzinger Ersatzteile – Lepton 5100",
+  "short_name": "Ersatzteile",
+  "description": "Eigenständiger Ersatzteilkatalog mit 3D-Ansicht für die mobile Sternsiebanlage Lepton 5100.",
+  "lang": "de",
+  "start_url": "ersatzteile.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#16181a",
+  "theme_color": "#c00000",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

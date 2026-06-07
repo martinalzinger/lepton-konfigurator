@@ -1,5 +1,6 @@
-const CACHE="lepton-v4";
-const ASSETS=["./","./index.html","./ersatzteile.html","./manifest.webmanifest","./icon-192.png","./icon-512.png"];
+const CACHE="lepton-v6";
+const ASSETS=["./","./index.html","./ersatzteile.html","./manifest.webmanifest","./ersatzteile.webmanifest","./icon-192.png","./icon-512.png",
+  "./vendor/three.module.min.js","./vendor/GLTFLoader.js","./vendor/OrbitControls.js","./vendor/BufferGeometryUtils.js"];
 
 self.addEventListener("install",e=>{
   // Einzeln cachen, damit ein einzelner Fehler nicht das ganze Precaching verhindert
