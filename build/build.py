@@ -186,7 +186,7 @@ body{font-family:var(--sans);background:var(--paper);color:var(--ink);line-heigh
 body.mode-gebraucht .pcard .pprice,body.mode-gebraucht .basis .p{display:none}
 body.mode-gebraucht .hero .hsub{display:none}
 @media (max-width:680px){#doc .pad{padding:26px 22px}.machine .specs{columns:1}.terms,.sig2{grid-template-columns:1fr}.gdata{grid-template-columns:1fr}.dmeta{text-align:left}}
-@media print{@page{margin:0}body{background:#fff}body *{visibility:hidden}#doc,#doc *{visibility:visible;-webkit-print-color-adjust:exact;print-color-adjust:exact}#doc{position:absolute;left:0;top:0;width:100%;max-width:none;margin:0;border:0;box-shadow:none;border-radius:0}#doc .pad{padding:13mm 14mm 13mm 31mm}.noprint{display:none!important}.machine,.lines .grp,.lines .ln,.totals .row.gross,.sign,.sig2,.vp .party{break-inside:avoid}}
+@media print{@page{margin:0}body{background:#fff}body *{visibility:hidden}#doc,#doc *{visibility:visible;-webkit-print-color-adjust:exact;print-color-adjust:exact}#doc{position:absolute;left:0;top:0;width:100%;max-width:none;margin:0;border:0;box-shadow:none;border-radius:0}#doc .pad{padding:13mm 25mm}.noprint{display:none!important}.machine,.lines .grp,.lines .ln,.totals .row.gross,.sign,.sig2,.vp .party{break-inside:avoid}}
 #gate{position:fixed;inset:0;z-index:1000;background:linear-gradient(160deg,#16181a,#2a2c2f);display:flex;align-items:center;justify-content:center;padding:24px}
 #gate.hidden{display:none}
 #gate .gc{width:100%;max-width:340px;background:#fff;border-radius:16px;padding:30px 26px 26px;box-shadow:0 24px 60px rgba(0,0,0,.4);text-align:center}
@@ -616,7 +616,7 @@ var lang="de";
     var src=document.getElementById("doc");
     var holder=document.createElement("div");holder.style.cssText="position:fixed;left:-10000px;top:0;width:880px;background:#fff";
     var clone=src.cloneNode(true);clone.style.cssText="width:880px;max-width:none;margin:0;border:0;box-shadow:none;border-radius:0;overflow:visible";
-    var _pd=clone.querySelector(".pad");if(_pd)_pd.style.paddingLeft="126px";
+    var _pd=clone.querySelector(".pad");if(_pd){_pd.style.paddingLeft="105px";_pd.style.paddingRight="105px";}
     holder.appendChild(clone);document.body.appendChild(holder);
     window.html2canvas(clone,{scale:2,backgroundColor:"#ffffff",useCORS:true,logging:false}).then(function(canvas){
      holder.remove();
