@@ -3,7 +3,9 @@
   "kategorien": [
     {
       "h": "Fahrgestell", "h_en": "Chassis",
-      "teile": []
+      "teile": [
+        { "id": "FG-BASIS", "art": "—", "name": "Basis", "name_en": "Base frame", "desc": "Unter-Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar", "desc_en": "Sub-assembly – pick and order all individual parts in 3D", "price": 0, "model": "fahrgestell-basis.glb" }
+      ]
     },
     {
       "h": "Bunker", "h_en": "Hopper",
