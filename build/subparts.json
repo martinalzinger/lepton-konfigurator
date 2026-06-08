@@ -1,0 +1,990 @@
+{
+"PDM_1017": {
+"art": "0000660_3",
+"name": "Bolzen ø40 Hubzylinder Siebdeck"
+},
+"PDM_5108": {
+"art": "0003919_5",
+"name": "Vertikalträger links 3 SD1"
+},
+"PDM_712": {
+"art": "0000884_4",
+"name": "Vertikalträger 1 SD1"
+},
+"PDM_262": {
+"art": "0000140_1",
+"name": "Winkelgelenk EN 5102 M6R"
+},
+"PDM_683": {
+"art": "0000169_4",
+"name": "Spanner 1 Siebwalzenhebel"
+},
+"PDM_681": {
+"art": "0000171_8",
+"name": "Anbindung rechts SD1"
+},
+"PDM_682": {
+"art": "0000047_6",
+"name": "Siebwalzenhebel links 1 SD1"
+},
+"PDM_708": {
+"art": "0000791_6",
+"name": "Siebwalzenhebel links 2 SD1"
+},
+"PDM_685": {
+"art": "0000186_8",
+"name": "Anbindung links SD1"
+},
+"PDM_6048": {
+"art": "0004557_5",
+"name": "Anbindung Seilrolle vorne SD1"
+},
+"PDM_704": {
+"art": "0000260_6",
+"name": "Siebwalzenhebel rechts SD1"
+},
+"PDM_244": {
+"art": "0001980_1",
+"name": "Winkelsensor 4 mA - 20 mA; +-37,5°; 10 V - 30 V"
+},
+"PDM_1585": {
+"art": "0000132_2",
+"name": "Gewindestange M6x150"
+},
+"PDM_4780": {
+"art": "0003704_1",
+"name": "Seilrolle SD1"
+},
+"PDM_716": {
+"art": "0000976_6",
+"name": "Anbindung Zylinder links SD1"
+},
+"PDM_17194": {
+"art": "0012186_0",
+"name": "Hydraulikschlauch 2SC DN10 CEL gerade 12L - CEL gerade 12L L780"
+},
+"PDM_717": {
+"art": "0000985_7",
+"name": "Anbindung Zylinder rechts SD1"
+},
+"PDM_17195": {
+"art": "0012188_0",
+"name": "Hydraulikschlauch 2SC DN8 DKOL gerade 10L - CEL gerade 10L L1200"
+},
+"PDM_722": {
+"art": "0001319_8",
+"name": "Querträger 1 SD1"
+},
+"PDM_715": {
+"art": "0000975_6",
+"name": "Längsträger 3 SD1"
+},
+"PDM_17190": {
+"art": "0012186_0",
+"name": "Hydraulikschlauch 2SC DN10 CEL gerade 12L - CEL gerade 12L L780"
+},
+"PDM_723": {
+"art": "0001369_8",
+"name": "Querträger 2 SD1"
+},
+"PDM_14804": {
+"art": "0011174_0",
+"name": "Leitung ø10x1,5"
+},
+"PDM_25887": {
+"art": "0014364_2",
+"name": "Abdeckung unten 1 SD1"
+},
+"PDM_12928": {
+"art": "0004379_1",
+"name": "Hydraulikschlauch 2SC DN8 DKOL 90° 10L - DKOL gerade 10L L430"
+},
+"PDM_1846": {
+"art": "0002053_1",
+"name": "Sitzventil 2 fach 2/2 Wege Hydac"
+},
+"PDM_17050": {
+"art": "0012089_4",
+"name": "Rollenträger SD1"
+},
+"PDM_28206": {
+"art": "0014906_2",
+"name": "Seitenwand rechts 5 SD1"
+},
+"PDM_703": {
+"art": "0000532_13",
+"name": "Zylinder Da50 K40 KS20 H50"
+},
+"PDM_10432": {
+"art": "0008773_0",
+"name": "Gewindestange M16x590"
+},
+"PDM_46559": {
+"art": "0017508_2",
+"name": "Seitenwand rechts 3 SD1"
+},
+"PDM_28196": {
+"art": "0014899_2",
+"name": "Seitenwand rechts 4 SD1"
+},
+"PDM_1749": {
+"art": "0001745_0",
+"name": "Leitung ø12x1,5"
+},
+"PDM_45744": {
+"art": "5000250_0",
+"name": "Reduzierung DIN 50262 M32-M20"
+},
+"PDM_25716": {
+"art": "0014294_2",
+"name": "Vertikalträger 2 SD1"
+},
+"PDM_33535": {
+"art": "0016007_2",
+"name": "Schellenhälfte ø80 mit Rundrohr ø20x4"
+},
+"PDM_43736": {
+"art": "0016973_2",
+"name": "Abdeckung Antriebsstrang 16 SD1"
+},
+"PDM_24383": {
+"art": "0013949_7",
+"name": "Spannrolle mit langer Welle SD1"
+},
+"PDM_35766": {
+"art": "0016289_3",
+"name": "Abdeckung Antriebsstrang 1 SD1"
+},
+"PDM_28268": {
+"art": "0014911_5",
+"name": "Seitenwand links 6 SD1"
+},
+"PDM_27882": {
+"art": "0014851_0",
+"name": "Zahnriemenscheibe 5 SD1"
+},
+"PDM_35777": {
+"art": "0016294_6",
+"name": "Abdeckung Antriebsstrang 9 SD1"
+},
+"PDM_755": {
+"art": "0002134_3",
+"name": "Aufkleber rechts 2 SD1"
+},
+"PDM_756": {
+"art": "0002136_3",
+"name": "Aufkleber links 3 SD1"
+},
+"PDM_758": {
+"art": "0002141_3",
+"name": "Aufkleber rechts 3 SD1"
+},
+"PDM_760": {
+"art": "0002140_3",
+"name": "Aufkleber links 2 SD1"
+},
+"PDM_4911": {
+"art": "0003808_8",
+"name": "Motorträger SD1"
+},
+"PDM_19161": {
+"art": "0012958_7",
+"name": "Vertikalträger rechts 3 SD1"
+},
+"PDM_20873": {
+"art": "0013537_2",
+"name": "Progressivverteiler SD1 rechts vorne"
+},
+"PDM_5071": {
+"art": "0003905_9",
+"name": "Längsträger rechts 1 SD1"
+},
+"PDM_978": {
+"art": "0000766_12",
+"name": "Längsträger links 1 SD1"
+},
+"PDM_4596": {
+"art": "0003571_0",
+"name": "Zahnriemen SD1 Länge 960 Breite 36 Profil 8M"
+},
+"PDM_4433": {
+"art": "0003455_0",
+"name": "Motor SEW 4 kW KF39 DRN112M4/TF/C"
+},
+"PDM_1802": {
+"art": "0000855_1",
+"name": "Leitung ø12x1,5"
+},
+"PDM_694": {
+"art": "0000367_0",
+"name": "Spannsatz 45x75 SD1"
+},
+"PDM_1803": {
+"art": "0000856_1",
+"name": "Leitung ø12x1,5"
+},
+"PDM_1796": {
+"art": "0002102_2",
+"name": "Leitung ø12x1,5"
+},
+"PDM_1799": {
+"art": "0000810_0",
+"name": "Leitung ø12x1,5"
+},
+"PDM_7650": {
+"art": "0005723_0",
+"name": "Leitung ø10x1,5"
+},
+"PDM_1798": {
+"art": "0000809_0",
+"name": "Leitung ø12x1,5"
+},
+"PDM_7649": {
+"art": "0005722_0",
+"name": "Leitung ø10x1,5"
+},
+"PDM_14822": {
+"art": "0011178_0",
+"name": "Leitung ø12x1,5"
+},
+"PDM_14805": {
+"art": "0011175_1",
+"name": "Leitung ø10x1,5"
+},
+"PDM_14820": {
+"art": "0011177_0",
+"name": "Leitung ø12x1,5"
+},
+"PDM_13023": {
+"art": "0004379_1",
+"name": "Hydraulikschlauch 2SC DN8 DKOL 90° 10L - DKOL gerade 10L L430"
+},
+"PDM_13022": {
+"art": "0004379_1",
+"name": "Hydraulikschlauch 2SC DN8 DKOL 90° 10L - DKOL gerade 10L L430"
+},
+"PDM_13021": {
+"art": "0004379_1",
+"name": "Hydraulikschlauch 2SC DN8 DKOL 90° 10L - DKOL gerade 10L L430"
+},
+"PDM_14824": {
+"art": "0011180_0",
+"name": "Leitung ø12x1,5"
+},
+"PDM_12642": {
+"art": "0010202_6",
+"name": "Spannschloss Teil 1 SD1"
+},
+"PDM_12643": {
+"art": "0010203_5",
+"name": "Spannschloss Teil 2 SD1"
+},
+"PDM_12644": {
+"art": "0010204_7",
+"name": "Spannschloss Teil 3 SD1"
+},
+"PDM_12920": {
+"art": "0010324_6",
+"name": "Versteifung 1 Längsträger rechts 1 SD1"
+},
+"PDM_14823": {
+"art": "0011179_0",
+"name": "Leitung ø12x1,5"
+},
+"PDM_9959": {
+"art": "0008546_5",
+"name": "Hydraulikrohr ø14x1 L11 für Flanschlager"
+},
+"PDM_16416": {
+"art": "0000548_8",
+"name": "Lagergehäuse mit Einsatz SNR ES FLZ 209"
+},
+"PDM_16158": {
+"art": "0011721_2",
+"name": "Aufkleber links 1 SD1"
+},
+"PDM_25885": {
+"art": "0014363_2",
+"name": "Abdeckung unten 2 SD1"
+},
+"PDM_25882": {
+"art": "0014361_2",
+"name": "Abdeckung unten 3 SD1"
+},
+"PDM_16413": {
+"art": "0011739_2",
+"name": "Aufkleber rechts 1 SD1"
+},
+"PDM_17010": {
+"art": "0012065_1",
+"name": "Zahnriemenscheibe 3 SD1"
+},
+"PDM_17009": {
+"art": "0012064_1",
+"name": "Zahnriemenscheibe 2 SD1"
+},
+"PDM_17029": {
+"art": "0012076_1",
+"name": "Zahnriemenscheibe 1 SD1"
+},
+"PDM_5": {
+"art": "0001325_8",
+"name": "Zylinder Da100 K80 KS60 H985 WM"
+},
+"PDM_17197": {
+"art": "0012188_0",
+"name": "Hydraulikschlauch 2SC DN8 DKOL gerade 10L - CEL gerade 10L L1200"
+},
+"PDM_28112": {
+"art": "0014869_2",
+"name": "Seitenwand links 4 SD1"
+},
+"PDM_9686": {
+"art": "0008315_3",
+"name": "Klauenkupplung Größe 48 Zahnkranz 64Sh-D t-PUR grün"
+},
+"PDM_28271": {
+"art": "0014913_3",
+"name": "Seitenwand rechts 6 SD1"
+},
+"PDM_7325": {
+"art": "0005466_0",
+"name": "Arbeitsscheinwerfer LED 28W 1800 Lumen"
+},
+"PDM_9688": {
+"art": "0008317_4",
+"name": "Klauenkupplung Größe 48 Nabe Bohrung 30mm"
+},
+"PDM_28138": {
+"art": "0014875_0",
+"name": "Zahnriemenscheibe 4 SD1"
+},
+"PDM_28194": {
+"art": "0014898_2",
+"name": "Seitenwand links 5 SD1"
+},
+"PDM_25083": {
+"art": "0007015_0",
+"name": "Kabel B07 Wegmesssystem links SD1"
+},
+"PDM_25029": {
+"art": "0007120_0",
+"name": "Kabel Y09 Sitzventil Neigung links SD2"
+},
+"PDM_25066": {
+"art": "0007009_0",
+"name": "Kabel B01 Winkelsensor vorne SD1"
+},
+"PDM_25028": {
+"art": "0007161_0",
+"name": "Kabel Y14 Sitzventil Knick links SD1 Band"
+},
+"PDM_25027": {
+"art": "0007174_0",
+"name": "Kabel Y34 Sitzventil Knick rechts SD1 Band"
+},
+"PDM_24999": {
+"art": "0007169_0",
+"name": "Kabel Y29 Sitzventil Siebwalzenverstellung hinten SD1"
+},
+"PDM_24998": {
+"art": "0007168_0",
+"name": "Kabel Y28 Sitzventil Siebwalzenverstellung Mitte SD1"
+},
+"PDM_24384": {
+"art": "0013950_7",
+"name": "Spannrolle mit mittellanger Welle SD1"
+},
+"PDM_25175": {
+"art": "0014091_2",
+"name": "Querträger 4 SD1"
+},
+"PDM_25389": {
+"art": "0014227_2",
+"name": "Querträger 5 SD1"
+},
+"PDM_25068": {
+"art": "0007011_0",
+"name": "Kabel B03 Winkelsensor hinten SD1"
+},
+"PDM_25607": {
+"art": "0014280_6",
+"name": "Querträger 3 SD1"
+},
+"PDM_24993": {
+"art": "0007167_0",
+"name": "Kabel Y27 Sitzventil Siebwalzenverstellung vorne SD1"
+},
+"PDM_25067": {
+"art": "0007010_0",
+"name": "Kabel B02 Winkelsensor Mitte SD1"
+},
+"PDM_25084": {
+"art": "0007016_0",
+"name": "Kabel B08 Wegmesssystem rechts SD1"
+},
+"PDM_15247": {
+"art": "0011375_0",
+"name": "Leitung ø10x1,5"
+},
+"PDM_13222": {
+"art": "0010502_0",
+"name": "GP Verschlussschraube 1/8\" 0189332100"
+},
+"PDM_1835": {
+"art": "0001830_3",
+"name": "gerade Einschraubverschraubung GE 10L x G3/8\""
+},
+"PDM_7545": {
+"art": "0005627_0",
+"name": "Hohlschraubengehäuse T-11A BS-3020/3/vzt/kpl"
+},
+"PDM_13221": {
+"art": "0010501_0",
+"name": "Hohlschraubenscheibe für 0005627"
+},
+"PDM_13220": {
+"art": "0010500_0",
+"name": "Hohlschraube für 0005627"
+},
+"PDM_45761": {
+"art": "0017263_0",
+"name": "Stromkabel 303  Antrieb Siebwalzen hinten Mitte SD1"
+},
+"PDM_45731": {
+"art": "5000779_0",
+"name": "Brace Verschraubung NW17 M20x1,5"
+},
+"PDM_45729": {
+"art": "5000782_0",
+"name": "Erdungseinsatz M20"
+},
+"PDM_45726": {
+"art": "5000697_0",
+"name": "Druckausgleichsstopfen M12x1,5"
+},
+"PDM_25443": {
+"art": "0014260_2",
+"name": "Schellenhälfte ø30 63x50x20"
+},
+"PDM_35769": {
+"art": "0016290_2",
+"name": "Abdeckung Antriebsstrang 5 SD1"
+},
+"PDM_45734": {
+"art": "5000696_0",
+"name": "Reduzierung DIN 50262 M16-M12"
+},
+"PDM_46574": {
+"art": "0017518_1",
+"name": "Seitenwand rechts 2 SD1"
+},
+"PDM_35689": {
+"art": "0016269_2",
+"name": "Abdeckung Antriebsstrang 2 SD1"
+},
+"PDM_45764": {
+"art": "0017266_0",
+"name": "Stromkabel 304  Antrieb Siebwalzen hinten SD1"
+},
+"PDM_35732": {
+"art": "0016280_0",
+"name": "Messkupplung mit Überwurfmutter 10L"
+},
+"PDM_45758": {
+"art": "0017260_0",
+"name": "Stromkabel 302  Antrieb Siebwalzen vorne Mitte SD1"
+},
+"PDM_36054": {
+"art": "0016355_2",
+"name": "Gabel Kolbenstange M20"
+},
+"PDM_7543": {
+"art": "0005626_0",
+"name": "Senkbremshalteventil T-11A CBAH-LJN/LH"
+},
+"PDM_45755": {
+"art": "0017257_0",
+"name": "Stromkabel 301  Antrieb Siebwalzen vorne SD1"
+},
+"PDM_24385": {
+"art": "0013951_7",
+"name": "Spannrolle mit kurzer Welle SD1"
+},
+"PDM_25965": {
+"art": "0014387_0",
+"name": "Blende 10L 0,5 mm"
+},
+"PDM_3802": {
+"art": "0002970_0",
+"name": "Abdeckung Anbindung SD1"
+},
+"PDM_721": {
+"art": "0001282_2",
+"name": "Abdeckung Vertikalträger 1 SD1"
+},
+"PDM_12555": {
+"art": "0010133_0",
+"name": "Abdeckung Anbindung Zylinder links SD1"
+},
+"PDM_782": {
+"art": "0001339_3",
+"name": "Abdeckung Antriebsstrang 10 SD1"
+},
+"PDM_4940": {
+"art": "0003828_3",
+"name": "Abdeckung Antriebsstrang 15 SD1"
+},
+"PDM_4931": {
+"art": "0003819_5",
+"name": "Abdeckung Antriebsstrang 12 SD1"
+},
+"PDM_4936": {
+"art": "0003824_4",
+"name": "Abdeckung Antriebsstrang 14 SD1"
+},
+"PDM_4904": {
+"art": "0003803_4",
+"name": "Abdeckung Antriebsstrang 11 SD1"
+},
+"PDM_4932": {
+"art": "0003820_3",
+"name": "Abdeckung Antriebsstrang 13 SD1"
+},
+"PDM_19955": {
+"art": "0013396_3",
+"name": "Abdeckung Antriebsstrang 4/7 SD1"
+},
+"PDM_19951": {
+"art": "0013394_3",
+"name": "Abdeckung Antriebsstrang 6 SD1"
+},
+"PDM_35761": {
+"art": "0016287_2",
+"name": "Abdeckung Antriebsstrang 8 SD1"
+},
+"PDM_19957": {
+"art": "0013397_4",
+"name": "Abdeckung Antriebsstrang 3 SD1"
+},
+"PDM_8170": {
+"art": "0006117_3",
+"name": "Seitenwand links 1 SD1"
+},
+"PDM_15362": {
+"art": "0011413_4",
+"name": "Seitenwand links 2 SD1"
+},
+"PDM_16681": {
+"art": "0011866_0",
+"name": "Halter Abdeckung SD1"
+},
+"PDM_777": {
+"art": "0000862_1",
+"name": "Kabelhalter"
+},
+"PDM_8242": {
+"art": "0006147_3",
+"name": "Seitenwand rechts 1 SD1"
+},
+"PDM_25406": {
+"art": "0014238_3",
+"name": "Seitenwand links 3 SD1"
+},
+"PDM_8048": {
+"art": "0006036_3",
+"name": "Abdeckung Siebwalzen 1 SD1"
+},
+"PDM_5894": {
+"art": "0004429_0",
+"name": "Halter 1 Kabelführung vorne SD1"
+},
+"PDM_17036": {
+"art": "0012080_4",
+"name": "Aussenscheibe Zahnriemenscheibe SD1 SD2"
+},
+"PDM_8562": {
+"art": "0006357_0",
+"name": "Halter 2 Kabelführung vorne SD1"
+},
+"PDM_8192": {
+"art": "0006128_3",
+"name": "Abdeckung Siebwalzen 2 SD1"
+},
+"PDM_9504": {
+"art": "0008189_0",
+"name": "Halter 1 Abdeckung Siebwalzenhebel SD1"
+},
+"PDM_9505": {
+"art": "0008190_0",
+"name": "Halter 3 Abdeckung Siebwalzenhebel SD1"
+},
+"PDM_9506": {
+"art": "0008191_0",
+"name": "Halter 2 Abdeckung Siebwalzenhebel SD1"
+},
+"PDM_9531": {
+"art": "0008210_3",
+"name": "Abdeckung Siebwalzen 4 SD1"
+},
+"PDM_28143": {
+"art": "0014879_1",
+"name": "Aussenscheibe Zahnriemenscheibe Antrieb SD1 SD2"
+},
+"PDM_25603": {
+"art": "0014277_4",
+"name": "Abdeckung Siebwalzen 3 SD1"
+},
+"PDM_34126": {
+"art": "0016066_0",
+"name": "Halter Abdeckung Siebwalzenhebel rechts SD1"
+},
+"PDM_26660": {
+"art": "0014536_3",
+"name": "Längsträger 5 SD1"
+},
+"PDM_24170": {
+"art": "0013865_2",
+"name": "Halter 5 Spannrolle SD1"
+},
+"PDM_709": {
+"art": "0000844_4",
+"name": "Querträger 6 SD1"
+},
+"PDM_6741": {
+"art": "0005073_1",
+"name": "Halter Wellschlauch Teil 1"
+},
+"PDM_15948": {
+"art": "0011632_5",
+"name": "Längsträger rechts 4 SD1"
+},
+"PDM_25383": {
+"art": "0014221_3",
+"name": "Hebel Winkelsensor"
+},
+"PDM_4515": {
+"art": "0003530_4",
+"name": "Deckblech Schelle ø80"
+},
+"PDM_996": {
+"art": "0001776_8",
+"name": "Längsträger rechts 2 SD1"
+},
+"PDM_989": {
+"art": "0001994_8",
+"name": "Längsträger links 2 SD1"
+},
+"PDM_6827": {
+"art": "0005118_1",
+"name": "Halter Wellschlauch Teil 2"
+},
+"PDM_6742": {
+"art": "0005074_1",
+"name": "Halter Wellschlauch Teil 3"
+},
+"PDM_713": {
+"art": "0000894_6",
+"name": "Mittelscheibe Zahnriemenscheibe Z51"
+},
+"PDM_8644": {
+"art": "0006431_4",
+"name": "Versteifung 1 Längsträger links 1 SD1"
+},
+"PDM_16140": {
+"art": "0011709_5",
+"name": "Längsträger links 4 SD1"
+},
+"PDM_25392": {
+"art": "0014229_2",
+"name": "Querträger 8 SD1"
+},
+"PDM_8061": {
+"art": "0006047_3",
+"name": "Abdeckung Siebwalzenhebel links SD1"
+},
+"PDM_34123": {
+"art": "0016065_0",
+"name": "Abdeckung Siebwalzenhebel rechts SD1"
+},
+"PDM_740": {
+"art": "0001377_4",
+"name": "Querträger 7 SD1"
+},
+"PDM_761": {
+"art": "0002151_3",
+"name": "Gleitplatte 1 Seilführung"
+},
+"PDM_774": {
+"art": "0002154_3",
+"name": "Gleitplatte 2 Seilführung"
+},
+"PDM_20692": {
+"art": "0013505_2",
+"name": "Gewindeplatte Motorträger SD1"
+},
+"PDM_36060": {
+"art": "0016360_1",
+"name": "Deckblech Schelle ø30"
+},
+"PDM_23654": {
+"art": "0013797_4",
+"name": "Halter 4 Spannrolle SD1"
+},
+"PDM_23646": {
+"art": "0013794_4",
+"name": "Halter 2 Spannrolle SD1"
+},
+"PDM_23636": {
+"art": "0013787_5",
+"name": "Halter 1 Spannrolle SD1"
+},
+"PDM_75": {
+"art": "0003067_1",
+"name": "Scheibe DIN 125 A 21"
+},
+"PDM_511": {
+"art": "0003351_1",
+"name": "Sechskantschraube DIN 931 M12x140"
+},
+"PDM_37": {
+"art": "0002571_3",
+"name": "Scheibe DIN 125 A 8,4"
+},
+"PDM_74": {
+"art": "0003063_3",
+"name": "Scheibe DIN 125 A 13"
+},
+"PDM_114": {
+"art": "0002572_3",
+"name": "Scheibe DIN 125 A 10,5"
+},
+"PDM_1839": {
+"art": "0001717_1",
+"name": "Einstellbare L-Verschraubung EVL OMD 10L"
+},
+"PDM_234": {
+"art": "0003046_3",
+"name": "Sechskantschraube DIN 931 M10x70"
+},
+"PDM_100": {
+"art": "0003061_3",
+"name": "Sechskantmutter DIN 985 M12"
+},
+"PDM_323": {
+"art": "0003169_2",
+"name": "Sechskantschraube DIN 933 M12x30"
+},
+"PDM_78": {
+"art": "0003354_1",
+"name": "Sechskantschraube DIN 933 M12x40"
+},
+"PDM_1823": {
+"art": "0001692_0",
+"name": "gerade Einschraubverschraubung GE 10L x M16x1,5"
+},
+"PDM_1826": {
+"art": "0001732_1",
+"name": "Stauff Einfachschelle ø10 Größe 1A"
+},
+"PDM_1822": {
+"art": "0001689_2",
+"name": "Stauff Einfachschelle ø12 Größe 1A"
+},
+"PDM_1820": {
+"art": "0001691_0",
+"name": "gerade Einschraubverschraubung GE 12L x M16x1,5"
+},
+"PDM_1821": {
+"art": "0001699_1",
+"name": "Einstellbare L-Verschraubung EVL OMD 12L"
+},
+"PDM_91": {
+"art": "0003062_2",
+"name": "Sechskantmutter DIN 985 M16"
+},
+"PDM_5390": {
+"art": "0004053_1",
+"name": "Spannmutter M16"
+},
+"PDM_4910": {
+"art": "0003807_0",
+"name": "gerade Verschraubung beidseitiger Rohranschluss 10L"
+},
+"PDM_99": {
+"art": "0003355_1",
+"name": "Sechskantschraube DIN 933 M12x35"
+},
+"PDM_6138": {
+"art": "0004599_1",
+"name": "Sechskantschraube DIN 933 M12x55"
+},
+"PDM_14848": {
+"art": "5000371_1",
+"name": "Sechskantschraube DIN 931 M12x150"
+},
+"PDM_958": {
+"art": "0003309_2",
+"name": "Sechskantschraube DIN 933 M8x20"
+},
+"PDM_396": {
+"art": "0003179_3",
+"name": "Sechskantschraube DIN 933 M8x25"
+},
+"PDM_4427": {
+"art": "0003449_1",
+"name": "Sechskantschraube DIN 933 M8x16"
+},
+"PDM_1564": {
+"art": "0003310_2",
+"name": "Sechskantschraube DIN 933 M8x12"
+},
+"PDM_882": {
+"art": "0003068_4",
+"name": "Sechskantschraube DIN 933 M10x20"
+},
+"PDM_1953": {
+"art": "0003405_1",
+"name": "Innensechskantschraube DIN 912 M5x35"
+},
+"PDM_76": {
+"art": "0003404_1",
+"name": "Schlossschraube DIN 603 M12x30"
+},
+"PDM_122": {
+"art": "0003056_2",
+"name": "Sechskantschraube DIN 933 M10x25"
+},
+"PDM_116": {
+"art": "0003058_2",
+"name": "Sechskantmutter DIN 985 M8"
+},
+"PDM_120": {
+"art": "0003304_2",
+"name": "Sechskantschraube DIN 933 M12x50"
+},
+"PDM_968": {
+"art": "0003365_1",
+"name": "Sechskantschraube DIN 933 M20x40"
+},
+"PDM_3812": {
+"art": "0002980_1",
+"name": "Sechskantschraube DIN 933 M16x70"
+},
+"PDM_964": {
+"art": "0003126_1",
+"name": "Sechskantschraube DIN 933 M16x40"
+},
+"PDM_203": {
+"art": "0003050_2",
+"name": "Sechskantmutter DIN 934 M16"
+},
+"PDM_1081": {
+"art": "0003131_1",
+"name": "Scheibe DIN 9021 22"
+},
+"PDM_1845": {
+"art": "0001701_0",
+"name": "gerade Verschraubung beidseitiger Rohranschluss 12L"
+},
+"PDM_13655": {
+"art": "0010743_1",
+"name": "Sechskantschraube DIN 931 M20x130"
+},
+"PDM_96": {
+"art": "0003347_1",
+"name": "Sechskantmutter DIN 985 M20"
+},
+"PDM_93": {
+"art": "0002574_2",
+"name": "Scheibe DIN 125 A 17"
+},
+"PDM_15414": {
+"art": "0011445_0",
+"name": "Klappsplint ø4,5"
+},
+"PDM_617": {
+"art": "0003371_1",
+"name": "Sechskantschraube DIN 933 M6x16"
+},
+"PDM_5355": {
+"art": "0004026_1",
+"name": "Sechskantschraube DIN 933 M6x35"
+},
+"PDM_615": {
+"art": "0003372_2",
+"name": "Sechskantschraube DIN 933 M6x25"
+},
+"PDM_557": {
+"art": "0003378_2",
+"name": "Sechskantmutter DIN 985 M6"
+},
+"PDM_556": {
+"art": "0002570_1",
+"name": "Scheibe DIN 125 A 6,4"
+},
+"PDM_113": {
+"art": "0003059_6",
+"name": "Sechskantmutter DIN 985 M10"
+},
+"PDM_14760": {
+"art": "0011140_1",
+"name": "Stauff Einfachschelle Größe 1A Deckplatte"
+},
+"PDM_37478": {
+"art": "5000937_0",
+"name": "Innensechskantschraube DIN 6912 M6x50"
+},
+"PDM_608": {
+"art": "0002568_1",
+"name": "Scheibe DIN 125 A 4,3"
+},
+"PDM_609": {
+"art": "0003408_2",
+"name": "Sechskantmutter DIN 985 M4"
+},
+"PDM_2148": {
+"art": "0003366_1",
+"name": "Sechskantschraube DIN 933 M4x16"
+},
+"PDM_101": {
+"art": "0003060_1",
+"name": "Sechskantschraube DIN 933 M16x50"
+},
+"PDM_6877": {
+"art": "0005153_1",
+"name": "Sechskantschraube DIN 931 M16x70"
+},
+"PDM_111": {
+"art": "0003358_1",
+"name": "Sechskantschraube DIN 933 M8x30"
+},
+"PDM_575": {
+"art": "0003329_1",
+"name": "Sechskantschraube DIN 931 M6x65"
+},
+"PDM_23642": {
+"art": "0013790_0",
+"name": "Mutter für T-Nut DIN 508 M16x18"
+},
+"PDM_33576": {
+"art": "5000344_0",
+"name": "Sechskantschraube DIN 931 M6x40"
+},
+"PDM_48394": {
+"art": "5001320_0",
+"name": "Spannstift ISO 8752 8x20"
+},
+"PDM_240": {
+"art": "0003044_3",
+"name": "Sechskantmutter ISO 4035 M20"
+},
+"PDM_20587": {
+"art": "5000769_4",
+"name": "Winkeleinschraubverschraubung ø6 R1/8\""
+},
+"PDM_24168": {
+"art": "0013864_0",
+"name": "Sechskantschraube DIN 931 M10x110"
+}
+}

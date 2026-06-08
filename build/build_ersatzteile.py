@@ -18,6 +18,9 @@ A=jload("assets.b64.json")
 IMG=dict(A["IMG"]); LOGO_L=A["LOGO_L"]; LOGO_D=A["LOGO_D"]; HERO=A["HERO"]; RED=A["RED"]; RED2=A["RED2"]
 SPA=jload("assets_spareparts.b64.json")          # zusätzliche Bilder (z.B. Bunker-Vorschau)
 IMG.update(SPA)
+# Zuordnung PDM-Nummer -> echte Artikelnummer + Bezeichnung (für den 3D-Teile-Explorer)
+try: PARTMAP=jload("subparts.json")
+except Exception: PARTMAP={}
 I18N_RAW=jload("i18n_ersatzteile.json")
 SP_RAW=jload("spareparts.json")
 LANGS=["de","en","pl","fr"]
@@ -505,7 +508,7 @@ body{font-family:var(--sans);background:var(--paper);color:var(--ink);line-heigh
 <div id="toast"></div>
 <div id="doc"></div>
 <script>
-const IMG=%%IMG%%; const MODELS=%%MODELS%%; const CAT=%%CAT%%; const I18N=%%I18N%%;
+const IMG=%%IMG%%; const MODELS=%%MODELS%%; const CAT=%%CAT%%; const I18N=%%I18N%%; const PARTMAP=%%PARTMAP%%;
 const MAIL="%%MAIL%%"; const LOGO_L="%%LOGOL%%"; const LOGO_D="%%LOGOD%%";
 const LOCALE={de:"de-DE",en:"en-GB",pl:"pl-PL",fr:"fr-FR"};
 const LKEY="amb_lepton_lang", CKEY="amb_lepton_cart", FKEY="amb_lepton_et_fields";
@@ -687,9 +690,11 @@ const ICONS={
  // (z.B. PDM_025419_25421 / PDM_045732_cecd62 -> PDM_025419 bzw. PDM_045732)
  function normPart(s){var n=String(s||"");var pdm=n.match(/^(PDM_\d+)/i);if(pdm)return pdm[1];n=n.replace(/_-_\d{4}.*$/,"");n=n.replace(/_oa_\d+$/i,"");n=n.replace(/_v?\d+(\.\d+)+$/i,"");n=n.replace(/_\d{1,3}$/,"");n=n.replace(/_oa$/i,"");return n.trim()||String(s||"");}
  function cleanLabel(s){return String(s||"").replace(/_/g," ").replace(/\s+/g," ").trim()||"Bauteil";}
+ // PDM-Nummer normalisieren (führende Nullen egal) -> Artikelnummer+Bezeichnung aus PARTMAP
+ function pdmCanon(s){var m=String(s||"").match(/^PDM_0*(\d+)/i);return m?("PDM_"+m[1]):String(s||"");}
  function buildGroups(root){
   var map={},order=[];
-  root.traverse(function(o){if(o.isMesh){var key=normPart(nodeName(o)||"(unbenannt)");var g=map[key];if(!g){g={raw:key,label:cleanLabel(key),meshes:[],visible:true,count:0};map[key]=g;order.push(g);}g.meshes.push(o);o.userData._g=g;}});
+  root.traverse(function(o){if(o.isMesh){var key=normPart(nodeName(o)||"(unbenannt)");var g=map[key];if(!g){var info=PARTMAP[pdmCanon(key)];g={raw:key,label:cleanLabel(key),art:(info&&info.art)||key,name:(info&&info.name)||cleanLabel(key),meshes:[],visible:true,count:0};map[key]=g;order.push(g);}g.meshes.push(o);o.userData._g=g;}});
   // echte Stückzahl = Anzahl Instanz-Wurzeln (Knoten mit Artikelname ohne gleichnamigen Vorfahren),
   // NICHT die Mesh-Anzahl (ein Bauteil besteht oft aus mehreren Meshes)
   root.traverse(function(o){if(o.name){var nm=normPart(o.name);var g=map[nm];if(!g)return;var anc=o.parent,isRoot=true;while(anc){if(anc.name&&normPart(anc.name)===nm){isRoot=false;break;}anc=anc.parent;}if(isRoot)g.count++;}});
@@ -716,10 +721,10 @@ const ICONS={
  function renderPartList(q){
   var list=document.getElementById("partList"),html="";
   groups.forEach(function(g,idx){
-   if(q){if((g.raw+" "+g.label).toLowerCase().indexOf(q)<0)return;}
+   if(q){if((g.raw+" "+g.name+" "+g.art).toLowerCase().indexOf(q)<0)return;}
    html+='<div class="prow'+(g===activeG?' active':'')+(g.visible?'':' hidden')+'" data-i="'+idx+'">'
     +'<button class="eye" data-eye="'+idx+'" title="'+esc(t("tip_toggle"))+'">'+(g.visible?EYE_ON:EYE_OFF)+'</button>'
-    +'<div class="pmid" data-sel="'+idx+'"><div class="pml">'+esc(g.label)+'</div><div class="pma">'+esc(g.raw)+'</div></div>'
+    +'<div class="pmid" data-sel="'+idx+'"><div class="pml">'+esc(g.name)+'</div><div class="pma">'+esc(g.art)+'</div></div>'
     +(g.count>1?'<span class="qbadge" title="'+esc(t("qty_in_assembly"))+'">×'+g.count+'</span>':'')
     +'<button class="pcartbtn" data-pcart="'+idx+'" title="'+esc(t("btn_add"))+'">'+CART_S+'</button></div>';
   });
@@ -728,7 +733,7 @@ const ICONS={
   list.querySelectorAll(".prow").forEach(function(r){r.__g=groups[+r.getAttribute("data-i")];});
   list.querySelectorAll("[data-sel]").forEach(function(el){el.addEventListener("click",function(){selectGroup(groups[+el.getAttribute("data-sel")],false);});});
   list.querySelectorAll("[data-eye]").forEach(function(b){b.addEventListener("click",function(e){e.stopPropagation();toggleGroup(groups[+b.getAttribute("data-eye")]);});});
-  list.querySelectorAll("[data-pcart]").forEach(function(b){b.addEventListener("click",function(e){e.stopPropagation();var g=groups[+b.getAttribute("data-pcart")];addSub(g.raw,g.label);});});
+  list.querySelectorAll("[data-pcart]").forEach(function(b){b.addEventListener("click",function(e){e.stopPropagation();var g=groups[+b.getAttribute("data-pcart")];addSub(g.art,g.name);});});
  }
  function showNo(msg){document.getElementById("mvLoad").style.display="none";var no=document.getElementById("mvNo");no.style.display="flex";no.textContent=msg||t("no_3d");}
  function open3D(id){
@@ -844,8 +849,9 @@ out=out.replace("%%IMG%%",json.dumps(IMG))
 out=out.replace("%%MODELS%%",json.dumps(MODELS))
 out=out.replace("%%CAT%%",json.dumps(CAT,ensure_ascii=False))
 out=out.replace("%%I18N%%",json.dumps(I18N,ensure_ascii=False))
+out=out.replace("%%PARTMAP%%",json.dumps(PARTMAP,ensure_ascii=False))
 
-for tok in ["%%RED%%","%%RED2%%","%%HERO%%","%%LOGOL%%","%%LOGOD%%","%%MAIL%%","%%IMG%%","%%MODELS%%","%%CAT%%","%%I18N%%"]:
+for tok in ["%%RED%%","%%RED2%%","%%HERO%%","%%LOGOL%%","%%LOGOD%%","%%MAIL%%","%%IMG%%","%%MODELS%%","%%CAT%%","%%I18N%%","%%PARTMAP%%"]:
     assert tok not in out, "Token übrig: "+tok
 for need in ['id="cartBtn"','id="tcanvas"','id="partList"','renderCatalog','data-lang="pl"','ensureThree','importmap','./vendor/GLTFLoader.js']:
     assert need in out, "fehlt: "+need
