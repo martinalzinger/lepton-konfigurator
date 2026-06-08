@@ -25,7 +25,7 @@
     {
       "h": "Siebdeck 2", "h_en": "Screen deck 2",
       "teile": [
-        { "id": "SD2-ABSAUGUNG", "art": "—", "name": "Absaugung Siebdeck 2", "name_en": "Suction screen deck 2", "desc": "Unter-Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar", "desc_en": "Sub-assembly – pick and order all individual parts in 3D", "price": 0, "model": "absaugung-sd2.glb", "img": "absaugung_sd2" }
+        { "id": "SD2-ABSAUGUNG", "art": "—", "name": "Absaugung Siebdeck 2", "name_en": "Suction screen deck 2", "desc": "Unter-Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar", "desc_en": "Sub-assembly – pick and order all individual parts in 3D", "price": 0, "model": "absaugung-sd2.glb", "img": "absaugung_sd2", "rot": [-90, 0, 0] }
       ]
     },
     {
@@ -49,7 +49,7 @@
     {
       "h": "Schaltschrank", "h_en": "Control cabinet",
       "teile": [
-        { "id": "ESK-ELEKTROSCHRANK", "art": "004566", "name": "Elektroschrank", "name_en": "Electrical cabinet", "desc": "Komplette Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar", "desc_en": "Complete assembly – pick and order all individual parts in 3D", "price": 0, "model": "elektroschrank.glb", "img": "elektroschrank" }
+        { "id": "ESK-ELEKTROSCHRANK", "art": "004566", "name": "Elektroschrank", "name_en": "Electrical cabinet", "desc": "Komplette Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar", "desc_en": "Complete assembly – pick and order all individual parts in 3D", "price": 0, "model": "elektroschrank.glb", "img": "elektroschrank", "rot": [-90, 0, 0] }
       ]
     }
   ]
