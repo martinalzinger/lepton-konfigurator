@@ -305,6 +305,10 @@ body{font-family:var(--sans);background:var(--paper);color:var(--ink);line-heigh
 .fld label{font-size:12px;color:var(--muted);font-weight:600}
 .fld input,.fld textarea{font-family:var(--sans);font-size:13.5px;border:1px solid var(--line-strong);background:#fff;border-radius:8px;padding:9px 11px;outline:none}
 .fld input:focus,.fld textarea:focus{border-color:var(--red);box-shadow:0 0 0 3px var(--red-soft)}
+.segchoice{display:flex;gap:6px}
+.segchoice button{flex:1;font-family:var(--sans);font-size:13px;font-weight:600;border:1px solid var(--line-strong);background:#fff;color:var(--muted);border-radius:8px;padding:9px 8px;cursor:pointer;transition:.12s}
+.segchoice button:hover{border-color:var(--ink)}
+.segchoice button.active{background:var(--red);border-color:var(--red);color:#fff}
 .fld textarea{min-height:60px;resize:vertical}
 .frow{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .dfoot{padding:14px 18px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:8px}
@@ -482,6 +486,13 @@ body{font-family:var(--sans);background:var(--paper);color:var(--ink);line-heigh
         </div>
         <div class="fld"><label data-i18n="lbl_mail">E-Mail</label><input id="c_mail" type="email"></div>
         <div class="fld"><label data-i18n="lbl_masch">Maschinen-Nr. / Baujahr</label><input id="c_masch" data-i18n-ph="ph_optional"></div>
+        <div class="fld"><label data-i18n="lbl_liefer">Lieferart</label>
+          <div class="segchoice" id="lieferSeg">
+            <button type="button" data-liefer="standard" class="active" data-i18n="liefer_standard">Normaler Versand</button>
+            <button type="button" data-liefer="express" data-i18n="liefer_express">Nachtexpress</button>
+          </div>
+          <input type="hidden" id="c_liefer" value="standard">
+        </div>
         <div class="fld"><label data-i18n="lbl_msg">Nachricht</label><textarea id="c_msg" data-i18n-ph="ph_optional"></textarea></div>
       </div>
     </div>
@@ -795,7 +806,8 @@ const ICONS={
  // ---- toast ----
  var toTimer;function toast(m){var el=document.getElementById("toast");el.textContent=m;el.classList.add("show");clearTimeout(toTimer);toTimer=setTimeout(function(){el.classList.remove("show");},1600);}
  // ---- fields persist ----
- var FLDS=["c_firma","c_name","c_tel","c_mail","c_masch","c_msg"];
+ var FLDS=["c_firma","c_name","c_tel","c_mail","c_masch","c_liefer","c_msg"];
+ function syncLiefer(){var v=fv("c_liefer")||"standard";document.querySelectorAll("#lieferSeg button").forEach(function(b){b.classList.toggle("active",b.getAttribute("data-liefer")===v);});}
  function loadFields(){try{var o=JSON.parse(localStorage.getItem(FKEY)||"{}");FLDS.forEach(function(id){if(o[id]!=null){var e=document.getElementById(id);if(e)e.value=o[id];}});}catch(e){}}
  function saveFields(){try{var o={};FLDS.forEach(function(id){var e=document.getElementById(id);if(e)o[id]=e.value;});localStorage.setItem(FKEY,JSON.stringify(o));}catch(e){}}
  function fv(id){var e=document.getElementById(id);return e?(e.value||"").trim():"";}
@@ -809,7 +821,8 @@ const ICONS={
   L.forEach(function(l){body+="  "+l.q+"× "+l.p.art+"  "+pName(l.p)+(l.p.zoll?"   "+t("col_zoll")+" "+l.p.zoll:"")+(l.p.weight>0?"   "+fmtKg(l.p.weight*l.q):"")+(l.p.price>0?"   "+money(l.p.price*l.q):"")+"\n";});
   var tw=totalWeight();if(tw>0)body+="\n"+t("weight_total")+": "+fmtKg(tw)+"\n";
   var sub=subtotal();if(sub>0)body+=t("cart_subtotal")+": "+money(sub)+"\n";
-  if(fv("c_masch"))body+="\n"+t("lbl_masch")+": "+fv("c_masch")+"\n";
+  body+="\n"+t("lbl_liefer")+": "+t("liefer_"+(fv("c_liefer")||"standard"))+"\n";
+  if(fv("c_masch"))body+=t("lbl_masch")+": "+fv("c_masch")+"\n";
   if(fv("c_msg"))body+="\n"+fv("c_msg")+"\n";
   body+="\n"+t("mail_regards")+"\n"+[fv("c_name"),fv("c_firma")].filter(Boolean).join("\n");
   var contact=[fv("c_mail"),fv("c_tel")].filter(Boolean).join(" · ");if(contact)body+="\n"+contact;
@@ -828,7 +841,7 @@ const ICONS={
   var from=[fv("c_firma"),fv("c_name"),fv("c_mail"),fv("c_tel")].filter(Boolean).map(esc).join("<br>")||'<span style="color:#9a9aa0">—</span>';
   var doc=stripe+'<div class="dpad">'
    +'<div class="dhd"><div class="dfirm"><img class="dlogo" src="'+LOGO_D+'"><div class="fnm" style="margin-top:3px">Maschinenbau GmbH</div>Am Gewerbering 14 · D-84069 Schierling<br>www.alzinger-recyclingtechnik.com<br>'+MAIL+'</div>'
-   +'<div class="dmeta">'+t("doc_date")+' <b>'+esc(date)+'</b></div></div>'
+   +'<div class="dmeta">'+t("doc_date")+' <b>'+esc(date)+'</b><br>'+t("lbl_liefer")+': <b>'+esc(t("liefer_"+(fv("c_liefer")||"standard")))+'</b></div></div>'
    +'<div class="dtitle">'+esc(t("doc_title"))+'</div>'
    +'<div class="dparties"><div><span class="s">'+t("doc_from")+'</span>'+from+(fv("c_masch")?'<br><span style="color:#9a9aa0;font-size:11px">'+t("doc_machine")+': '+esc(fv("c_masch"))+'</span>':'')+'</div>'
    +'<div><span class="s">'+t("doc_to")+'</span><b>Alzinger Maschinenbau GmbH</b><br>Am Gewerbering 14<br>D-84069 Schierling</div></div>'
@@ -860,7 +873,7 @@ const ICONS={
  function setLang(l){if(!I18N[l])return;lang=l;try{localStorage.setItem(LKEY,l);}catch(e){}applyLang();buildChips();renderCatalog();renderCart();}
  function init(){
   document.getElementById("tbLogo").src=LOGO_L;
-  applyLang();buildChips();renderCatalog();updateBadge();renderCart();loadFields();
+  applyLang();buildChips();renderCatalog();updateBadge();renderCart();loadFields();syncLiefer();
   document.getElementById("search").addEventListener("input",function(e){query=e.target.value;renderCatalog();});
   document.querySelectorAll("#langsel button").forEach(function(b){b.addEventListener("click",function(){setLang(b.getAttribute("data-lang"));});});
   document.getElementById("cartBtn").addEventListener("click",openCart);
@@ -875,6 +888,7 @@ const ICONS={
   document.getElementById("printReq").addEventListener("click",printReq);
   document.getElementById("clearCart").addEventListener("click",function(){cart={};saveCart();updateBadge();renderCatalog();renderCart();});
   FLDS.forEach(function(id){var e=document.getElementById(id);if(e)e.addEventListener("input",saveFields);});
+  document.querySelectorAll("#lieferSeg button").forEach(function(b){b.addEventListener("click",function(){document.getElementById("c_liefer").value=b.getAttribute("data-liefer");syncLiefer();saveFields();});});
   document.addEventListener("keydown",function(e){if(e.key==="Escape"){close3D();closeCart();}});
  }
  init();
