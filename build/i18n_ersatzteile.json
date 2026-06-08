@@ -174,10 +174,10 @@
     "fr": "Vider"
   },
   "viewer_hint": {
-    "de": "1 Finger = drehen · 2 Finger / Scrollen = Zoom · Tippen = Teil wählen",
-    "en": "1 finger = rotate · 2 fingers / scroll = zoom · tap = select part",
-    "pl": "1 palec = obrót · 2 palce / przewijanie = zoom · dotknij = wybór części",
-    "fr": "1 doigt = tourner · 2 doigts / molette = zoom · toucher = sélectionner"
+    "de": "1 Finger = drehen · 2 Finger = Zoom & verschieben · Tippen = Teil wählen",
+    "en": "1 finger = rotate · 2 fingers = zoom & pan · tap = select part",
+    "pl": "1 palec = obrót · 2 palce = zoom i przesuwanie · dotknij = wybór części",
+    "fr": "1 doigt = tourner · 2 doigts = zoom & déplacer · toucher = sélectionner"
   },
   "parts_title": {
     "de": "Einzelteile",
