@@ -212,14 +212,17 @@ body.mode-gebraucht .hero .hsub{display:none}
 <script>
 (function(){
  function sha256(ascii){function r(v,a){return (v>>>a)|(v<<(32-a));}var mp=Math.pow,mw=mp(2,32),res="",words=[],bl=ascii.length*8;var hash=sha256.h=sha256.h||[],k=sha256.k=sha256.k||[],pc=k.length,ic={},i,j;for(var c=2;pc<64;c++){if(!ic[c]){for(i=0;i<313;i+=c)ic[i]=c;hash[pc]=(mp(c,.5)*mw)|0;k[pc++]=(mp(c,1/3)*mw)|0;}}ascii+="\x80";while(ascii.length%64-56)ascii+="\x00";for(i=0;i<ascii.length;i++){j=ascii.charCodeAt(i);if(j>>8)return;words[i>>2]|=j<<((3-i)%4)*8;}words[words.length]=((bl/mw)|0);words[words.length]=bl;for(j=0;j<words.length;){var w=words.slice(j,j+=16),oh=hash;hash=hash.slice(0,8);for(i=0;i<64;i++){var w15=w[i-15],w2=w[i-2],a=hash[0],e=hash[4],t1=hash[7]+(r(e,6)^r(e,11)^r(e,25))+((e&hash[5])^((~e)&hash[6]))+k[i]+(w[i]=i<16?w[i]:(w[i-16]+(r(w15,7)^r(w15,18)^(w15>>>3))+w[i-7]+(r(w2,17)^r(w2,19)^(w2>>>10)))|0),t2=(r(a,2)^r(a,13)^r(a,22))+((a&hash[1])^(a&hash[2])^(hash[1]&hash[2]));hash=[(t1+t2)|0].concat(hash);hash[4]=(hash[4]+t1)|0;}for(i=0;i<8;i++)hash[i]=(hash[i]+oh[i])|0;}for(i=0;i<8;i++){for(j=3;j+1;j--){var b=(hash[i]>>(j*8))&255;res+=((b<16)?0:"")+b.toString(16);}}return res;}
- var HASH="2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324";
- var AKEY="amb_lepton_auth";
+ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324",n:""},{h:"378b467d56232e509fc568bfc3849a9d1fb40c6a248a35d755cb9db1053c33bf",n:"Johannes Rudel"},{h:"2c5ce471a6a1e91a47b4a357064cdab49fbc11e76982da2371b15c0c6608b80f",n:"Tobias Ermel"}];
+ var AKEY="amb_lepton_auth",UKEY="amb_lepton_user";
  var gate=document.getElementById("gate");
  function pass(){gate.classList.add("hidden");}
- try{if(localStorage.getItem(AKEY)===HASH)pass();}catch(e){}
+ function findUser(hash){for(var i=0;i<USERS.length;i++)if(USERS[i].h===hash)return USERS[i];return null;}
+ function fillVerk(n){if(!n)return;var mv=document.getElementById("m_verk");if(mv&&!mv.value){mv.value=n;try{mv.dispatchEvent(new Event("input",{bubbles:true}));}catch(_){}}}
+ try{if(findUser(localStorage.getItem(AKEY)))pass();}catch(e){}
  document.getElementById("gateForm").addEventListener("submit",function(ev){ev.preventDefault();
   var u=(document.getElementById("gu").value||"").trim().toLowerCase(),p=(document.getElementById("gp").value||"");
-  if(sha256(u+":"+p)===HASH){try{localStorage.setItem(AKEY,HASH);}catch(_){}document.getElementById("gerr").textContent="";pass();}
+  var hit=findUser(sha256(u+":"+p));
+  if(hit){try{localStorage.setItem(AKEY,hit.h);localStorage.setItem(UKEY,hit.n||"");}catch(_){}document.getElementById("gerr").textContent="";pass();fillVerk(hit.n);}
   else{document.getElementById("gerr").textContent="Benutzername oder Passwort falsch.";var gp=document.getElementById("gp");gp.value="";gp.focus();}
  });
 })();
@@ -579,6 +582,7 @@ var lang="de";
  function init(){
   try{var sl=localStorage.getItem(LKEY);if(sl&&I18N[sl])lang=sl;}catch(e){}
   document.getElementById("tbLogo").src=ASSET.LOGO_L;
+  try{var who=localStorage.getItem("amb_lepton_user");if(who){var mv=document.getElementById("m_verk");if(mv&&!mv.value)mv.value=who;}}catch(e){}
   if(IMG["image3"])document.getElementById("basisImg").style.backgroundImage="url("+IMG["image3"]+")";
   buildCatalog();
   IDS.forEach(function(id){var e=document.getElementById(id);if(e){e.addEventListener("input",render);e.addEventListener("change",render);}});
