@@ -41,7 +41,9 @@
     },
     {
       "h": "Schaltschrank", "h_en": "Control cabinet",
-      "teile": []
+      "teile": [
+        { "id": "ESK-ELEKTROSCHRANK", "art": "004566", "name": "Elektroschrank", "name_en": "Electrical cabinet", "desc": "Komplette Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar", "desc_en": "Complete assembly – pick and order all individual parts in 3D", "price": 0, "model": "elektroschrank.glb" }
+      ]
     }
   ]
 }
