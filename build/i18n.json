@@ -905,6 +905,12 @@
    "en": "Save as PDF",
    "pl": "Zapisz jako PDF",
    "fr": "Enregistrer en PDF"
+  },
+  "menu_saved": {
+   "de": "Gespeicherte Dokumente",
+   "en": "Saved documents",
+   "pl": "Zapisane dokumenty",
+   "fr": "Documents enregistrés"
   }
  },
  "spec": [
