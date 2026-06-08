@@ -352,5 +352,17 @@
     "en": "Sub-assemblies to follow – 3D coming soon",
     "pl": "Podzespoły w przygotowaniu – 3D wkrótce",
     "fr": "Sous-ensembles à venir – 3D bientôt"
+  },
+  "col_weight": {
+    "de": "Gewicht",
+    "en": "Weight",
+    "pl": "Waga",
+    "fr": "Poids"
+  },
+  "weight_total": {
+    "de": "Gesamtgewicht",
+    "en": "Total weight",
+    "pl": "Waga całkowita",
+    "fr": "Poids total"
   }
 }
