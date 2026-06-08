@@ -18,6 +18,9 @@ A=jload("assets.b64.json")
 IMG=dict(A["IMG"]); LOGO_L=A["LOGO_L"]; LOGO_D=A["LOGO_D"]; HERO=A["HERO"]; RED=A["RED"]; RED2=A["RED2"]
 SPA=jload("assets_spareparts.b64.json")          # zusätzliche Bilder (z.B. Bunker-Vorschau)
 IMG.update(SPA)
+# Zuordnung PDM-Nummer -> echte Artikelnummer + Bezeichnung (für den 3D-Teile-Explorer)
+try: PARTMAP=jload("subparts.json")
+except Exception: PARTMAP={}
 I18N_RAW=jload("i18n_ersatzteile.json")
 SP_RAW=jload("spareparts.json")
 LANGS=["de","en","pl","fr"]
@@ -174,7 +177,7 @@ used_img=set()
 for c in CAT:
     for p in c["items"]:
         if p.get("img"): used_img.add(p["img"])
-IMG={k:IMG[k] for k in used_img if k in IMG}
+IMG={k:v for k,v in IMG.items() if k in used_img}   # stabile Reihenfolge (reproduzierbarer Build)
 
 print("Modelle ausgelagert:",len([k for k in MODELS]),"-> models/   eingebettete Bilder:",len(IMG))
 
@@ -199,6 +202,18 @@ TPL=r'''<!DOCTYPE html>
 *{box-sizing:border-box;margin:0;padding:0}
 html{-webkit-text-size-adjust:100%}
 body{font-family:var(--sans);background:var(--paper);color:var(--ink);line-height:1.45;font-size:15px;-webkit-font-smoothing:antialiased}
+#gate{position:fixed;inset:0;z-index:1000;background:linear-gradient(160deg,#16181a,#2a2c2f);display:flex;align-items:center;justify-content:center;padding:24px}
+#gate.hidden{display:none}
+#gate .gc{width:100%;max-width:340px;background:#fff;border-radius:16px;padding:30px 26px 26px;box-shadow:0 24px 60px rgba(0,0,0,.4);text-align:center}
+#gate .gl{height:34px;margin:0 auto 16px;display:block}
+#gate .gh{font-size:20px;font-weight:800;letter-spacing:-.01em}
+#gate .gs{font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-top:6px}
+#gate form{margin-top:20px;display:flex;flex-direction:column;gap:10px}
+#gate input{font-family:var(--sans);font-size:15px;border:1px solid var(--line-strong);background:var(--field);border-radius:9px;padding:12px 13px;color:var(--ink);outline:none;width:100%}
+#gate input:focus{border-color:var(--red);box-shadow:0 0 0 3px var(--red-soft);background:#fffdfc}
+#gate button{margin-top:4px;background:var(--red);color:#fff;border:0;border-radius:9px;padding:13px;font-family:var(--mono);font-size:12px;letter-spacing:.06em;text-transform:uppercase;font-weight:600;cursor:pointer}
+#gate button:hover{background:var(--red2)}
+#gate .ge{color:var(--red);font-size:12.5px;min-height:16px;font-weight:600}
 .topbar{position:sticky;top:0;z-index:80;background:var(--red);color:#fff}
 .topbar-in{max-width:1180px;margin:0 auto;padding:12px 20px}
 .tb-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
@@ -233,6 +248,7 @@ body{font-family:var(--sans);background:var(--paper);color:var(--ink);line-heigh
 .catblk>.ch{font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--slate);font-weight:600;display:flex;align-items:center;gap:9px;margin:0 2px 12px}
 .catblk>.ch::before{content:"";width:5px;height:15px;background:var(--gold);border-radius:1px}
 .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(232px,1fr));gap:14px}
+.phnote{grid-column:1/-1;border:1px dashed var(--line-strong);border-radius:10px;padding:18px 16px;color:var(--faint);font-size:13px;font-style:italic;background:var(--field)}
 .pcard{background:var(--surface);border:1px solid var(--line);border-radius:13px;overflow:hidden;display:flex;flex-direction:column;transition:.14s}
 .pcard:hover{border-color:var(--line-strong);box-shadow:0 8px 22px rgba(0,0,0,.07)}
 .pcard.incart{border-color:var(--red);box-shadow:0 0 0 2px var(--red-soft)}
@@ -374,6 +390,45 @@ body{font-family:var(--sans);background:var(--paper);color:var(--ink);line-heigh
 <script type="importmap">{"imports":{"three":"./vendor/three.module.min.js"}}</script>
 </head>
 <body>
+<div id="gate" class="noprint">
+  <div class="gc">
+    <img class="gl" src="%%LOGOD%%" alt="Alzinger">
+    <div class="gh" id="gateH">Händler-Login</div>
+    <div class="gs" id="gateS">Ersatzteilkatalog Lepton 5100</div>
+    <form id="gateForm" autocomplete="on">
+      <input id="gu" name="username" placeholder="Benutzername" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false">
+      <input id="gp" name="password" type="password" placeholder="Passwort" autocomplete="current-password">
+      <button type="submit" id="gateBtn">Anmelden</button>
+      <div class="ge" id="gerr"></div>
+    </form>
+  </div>
+</div>
+<script>
+(function(){
+ function sha256(ascii){function r(v,a){return (v>>>a)|(v<<(32-a));}var mp=Math.pow,mw=mp(2,32),res="",words=[],bl=ascii.length*8;var hash=sha256.h=sha256.h||[],k=sha256.k=sha256.k||[],pc=k.length,ic={},i,j;for(var c=2;pc<64;c++){if(!ic[c]){for(i=0;i<313;i+=c)ic[i]=c;hash[pc]=(mp(c,.5)*mw)|0;k[pc++]=(mp(c,1/3)*mw)|0;}}ascii+="\x80";while(ascii.length%64-56)ascii+="\x00";for(i=0;i<ascii.length;i++){j=ascii.charCodeAt(i);if(j>>8)return;words[i>>2]|=j<<((3-i)%4)*8;}words[words.length]=((bl/mw)|0);words[words.length]=bl;for(j=0;j<words.length;){var w=words.slice(j,j+=16),oh=hash;hash=hash.slice(0,8);for(i=0;i<64;i++){var w15=w[i-15],w2=w[i-2],a=hash[0],e=hash[4],t1=hash[7]+(r(e,6)^r(e,11)^r(e,25))+((e&hash[5])^((~e)&hash[6]))+k[i]+(w[i]=i<16?w[i]:(w[i-16]+(r(w15,7)^r(w15,18)^(w15>>>3))+w[i-7]+(r(w2,17)^r(w2,19)^(w2>>>10)))|0),t2=(r(a,2)^r(a,13)^r(a,22))+((a&hash[1])^(a&hash[2])^(hash[1]&hash[2]));hash=[(t1+t2)|0].concat(hash);hash[4]=(hash[4]+t1)|0;}for(i=0;i<8;i++)hash[i]=(hash[i]+oh[i])|0;}for(i=0;i<8;i++){for(j=3;j+1;j--){var b=(hash[i]>>(j*8))&255;res+=((b<16)?0:"")+b.toString(16);}}return res;}
+ var HASHES=["f5939f6c9e00e5336ad0f89fc338cc1f33852adeb5912db03eca1004b7ea560b","e1e7cf21dbe88d824482ca87474e7610f60a04a7447b745623c1951312958589","48a0f14ca81a59a4aee853de72c3cb531920352e67a757d15a60682165418d1b"];
+ var AKEY="amb_ersatzteile_auth";
+ var T={de:{h:"Händler-Login",s:"Ersatzteilkatalog Lepton 5100",u:"Benutzername",p:"Passwort",b:"Anmelden",e:"Benutzername oder Passwort falsch."},
+        en:{h:"Dealer login",s:"Spare parts catalogue Lepton 5100",u:"Username",p:"Password",b:"Sign in",e:"Wrong username or password."},
+        pl:{h:"Logowanie dealera",s:"Katalog części Lepton 5100",u:"Nazwa użytkownika",p:"Hasło",b:"Zaloguj się",e:"Błędna nazwa użytkownika lub hasło."},
+        fr:{h:"Connexion revendeur",s:"Catalogue de pièces Lepton 5100",u:"Identifiant",p:"Mot de passe",b:"Se connecter",e:"Identifiant ou mot de passe incorrect."}};
+ var lang="de";
+ try{var sl=localStorage.getItem("amb_lepton_lang");if(sl&&T[sl])lang=sl;else{var n=(navigator.language||"").slice(0,2).toLowerCase();if(T[n])lang=n;}}catch(e){}
+ var tt=T[lang]||T.de;
+ document.getElementById("gateH").textContent=tt.h;document.getElementById("gateS").textContent=tt.s;
+ document.getElementById("gu").placeholder=tt.u;document.getElementById("gp").placeholder=tt.p;document.getElementById("gateBtn").textContent=tt.b;
+ var gate=document.getElementById("gate");
+ function authed(v){return !!v&&HASHES.indexOf(v)>=0;}
+ function pass(){gate.classList.add("hidden");}
+ try{if(authed(localStorage.getItem(AKEY)))pass();}catch(e){}
+ document.getElementById("gateForm").addEventListener("submit",function(ev){ev.preventDefault();
+  var u=(document.getElementById("gu").value||"").trim().toLowerCase(),p=(document.getElementById("gp").value||"");
+  var h=sha256(u+":"+p);
+  if(authed(h)){try{localStorage.setItem(AKEY,h);}catch(_){}document.getElementById("gerr").textContent="";pass();}
+  else{document.getElementById("gerr").textContent=tt.e;var gp=document.getElementById("gp");gp.value="";gp.focus();}
+ });
+})();
+</script>
 <header class="topbar">
   <div class="topbar-in"><div class="tb-row">
     <div class="tb-logo"><img id="tbLogo" alt="Alzinger"></div>
@@ -453,7 +508,7 @@ body{font-family:var(--sans);background:var(--paper);color:var(--ink);line-heigh
 <div id="toast"></div>
 <div id="doc"></div>
 <script>
-const IMG=%%IMG%%; const MODELS=%%MODELS%%; const CAT=%%CAT%%; const I18N=%%I18N%%;
+const IMG=%%IMG%%; const MODELS=%%MODELS%%; const CAT=%%CAT%%; const I18N=%%I18N%%; const PARTMAP=%%PARTMAP%%;
 const MAIL="%%MAIL%%"; const LOGO_L="%%LOGOL%%"; const LOGO_D="%%LOGOD%%";
 const LOCALE={de:"de-DE",en:"en-GB",pl:"pl-PL",fr:"fr-FR"};
 const LKEY="amb_lepton_lang", CKEY="amb_lepton_cart", FKEY="amb_lepton_et_fields";
@@ -515,7 +570,12 @@ const ICONS={
   CAT.forEach(function(c){
    if(filter&&c.h!==filter)return;
    var items=c.items.filter(matches);
-   if(!items.length)return;
+   if(!items.length){
+    if(query)return;            // bei aktiver Suche leere Kategorien ausblenden
+    any=true;
+    html+='<div class="catblk"><div class="ch">'+esc(catName(c))+'</div><div class="cards"><div class="phnote">'+esc(t("sub_soon"))+'</div></div></div>';
+    return;
+   }
    any=true;
    html+='<div class="catblk"><div class="ch">'+esc(catName(c))+'</div><div class="cards">';
    items.forEach(function(p){
@@ -562,7 +622,7 @@ const ICONS={
  function closeCart(){document.getElementById("drawer").classList.remove("open");document.getElementById("backdrop").classList.remove("open");}
  // ===== 3D-Explorer (three.js wird BEI BEDARF dynamisch geladen) =====
  var THREE,GLTFLoader,OrbitControls,RoomEnvironment,loader,hlMat;
- var renderer,scene,camera,controls,raycaster,curRoot=null,groups=[],activeG=null,fitR=1,vinit=false,viewerActive=false,threeReady=false;
+ var renderer,scene,camera,controls,raycaster,curRoot=null,pivot=null,autoSpin=true,groups=[],activeG=null,fitR=1,vinit=false,viewerActive=false,threeReady=false;
  function ensureThree(){
   if(threeReady)return Promise.resolve(true);
   return Promise.all([import("./vendor/three.module.min.js"),import("./vendor/GLTFLoader.js"),import("./vendor/OrbitControls.js"),import("./vendor/RoomEnvironment.js")]).then(function(m){
@@ -577,38 +637,64 @@ const ICONS={
   var canvas=document.getElementById("tcanvas");
   renderer=new THREE.WebGLRenderer({canvas:canvas,antialias:true,alpha:true});
   renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
-  renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.25;
+  renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.5;
   scene=new THREE.Scene();
   // Neutrale Studio-Umgebung -> metallische Teile werden hell & plastisch (statt schwarz)
   var pmrem=new THREE.PMREMGenerator(renderer);
   scene.environment=pmrem.fromScene(new RoomEnvironment(),0.04).texture;
   camera=new THREE.PerspectiveCamera(45,1,0.01,1e7);
   controls=new OrbitControls(camera,canvas);
-  controls.enableDamping=true;controls.dampingFactor=0.08;controls.autoRotate=true;controls.autoRotateSpeed=1.0;
+  controls.enableDamping=true;controls.dampingFactor=0.08;
+  controls.autoRotate=false;       // Idle-Drehung erfolgt am Modell (pivot), nicht an der Kamera
+  controls.enableRotate=false;     // Kamera-Rotation aus -> freie Modell-Rotation (Pointer-Handler unten)
   controls.rotateSpeed=0.75;          // ruhigeres Drehen
   controls.zoomSpeed=0.9;             // feinerer Zoom
   controls.panSpeed=1.2;              // leichtgängigeres Verschieben
   controls.zoomToCursor=true;         // zum Mauszeiger zoomen (statt zur Mitte)
   controls.screenSpacePanning=true;   // intuitives Verschieben in der Bildebene
-  scene.add(new THREE.HemisphereLight(0xffffff,0x6b6b70,1.0));
-  var d1=new THREE.DirectionalLight(0xffffff,2.0);d1.position.set(1,2,1.4);scene.add(d1);
-  var d2=new THREE.DirectionalLight(0xffffff,0.9);d2.position.set(-1.2,-0.4,-1);scene.add(d2);
+  // Rundum-Beleuchtung: gleichmäßig hell von allen Seiten (keine dunkle Seite mehr)
+  scene.add(new THREE.HemisphereLight(0xffffff,0x9a9aa0,1.6));
+  scene.add(new THREE.AmbientLight(0xffffff,0.45));
+  var dl=[[1,2,1.4,1.5],[-1,-0.6,-1,1.5],[-1.5,0.8,1,1.1],[1.5,0.6,-1.2,1.1],[0,-1.6,0.4,0.7]];
+  dl.forEach(function(p){var d=new THREE.DirectionalLight(0xffffff,p[3]);d.position.set(p[0],p[1],p[2]);scene.add(d);});
   raycaster=new THREE.Raycaster();
-  var dn=null;
-  canvas.addEventListener("pointerdown",function(e){dn={x:e.clientX,y:e.clientY,t:Date.now()};});
-  canvas.addEventListener("pointerup",function(e){if(!dn)return;if(Math.hypot(e.clientX-dn.x,e.clientY-dn.y)<5&&Date.now()-dn.t<500)pickAt(e);dn=null;});
+  // --- Freie 360°-Rotation des Modells (Pivot, kein Pol-Stopp); Zoom/Pan via OrbitControls ---
+  var dn=null,last=null,drag=false;
+  var vR=new THREE.Vector3(),vU=new THREE.Vector3(),vT=new THREE.Vector3(),qa=new THREE.Quaternion(),qb=new THREE.Quaternion();
+  canvas.addEventListener("pointerdown",function(e){
+   if(e.isPrimary===false){drag=false;last=null;return;}   // zweiter Finger -> OrbitControls pant/zoomt
+   dn={x:e.clientX,y:e.clientY,t:Date.now()};last={x:e.clientX,y:e.clientY};drag=true;
+  });
+  canvas.addEventListener("pointermove",function(e){
+   if(!drag||!last||!pivot||e.isPrimary===false)return;
+   var dx=e.clientX-last.x,dy=e.clientY-last.y;last={x:e.clientX,y:e.clientY};
+   if(!dx&&!dy)return;
+   autoSpin=false;
+   camera.matrixWorld.extractBasis(vR,vU,vT);             // bildschirm-relative Achsen
+   qa.setFromAxisAngle(vU,dx*0.006);qb.setFromAxisAngle(vR,dy*0.006);
+   pivot.quaternion.premultiply(qa).premultiply(qb);
+  });
+  window.addEventListener("pointerup",function(e){
+   if(drag&&dn&&Math.hypot(e.clientX-dn.x,e.clientY-dn.y)<5&&Date.now()-dn.t<500)pickAt(e);
+   drag=false;dn=null;last=null;
+  });
   window.addEventListener("resize",resizeViewer);
-  (function loop(){requestAnimationFrame(loop);if(viewerActive&&renderer){controls.update();renderer.render(scene,camera);}})();
+  var WUP=new THREE.Vector3(0,1,0);
+  (function loop(){requestAnimationFrame(loop);if(viewerActive&&renderer){if(autoSpin&&pivot)pivot.rotateOnWorldAxis(WUP,0.004);controls.update();renderer.render(scene,camera);}})();
  }
  function resizeViewer(){if(!renderer)return;var c=renderer.domElement,w=c.clientWidth||1,h=c.clientHeight||1;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();}
- function clearModel(){if(curRoot){scene.remove(curRoot);curRoot.traverse(function(o){if(o.isMesh&&o.geometry&&o.geometry.dispose)o.geometry.dispose();});curRoot=null;}groups=[];activeG=null;}
+ function clearModel(){if(curRoot){if(curRoot.parent)curRoot.parent.remove(curRoot);curRoot.traverse(function(o){if(o.isMesh&&o.geometry&&o.geometry.dispose)o.geometry.dispose();});curRoot=null;}groups=[];activeG=null;}
  function nodeName(o){var n=o;while(n){if(n.name)return n.name;n=n.parent;}return "";}
  // Instanz-/Versions-Suffixe entfernen -> Artikelnummer (z.B. 248027_24 -> 248027)
- function normPart(s){var n=String(s||"");n=n.replace(/_-_\d{4}.*$/,"");n=n.replace(/_oa_\d+$/i,"");n=n.replace(/_v?\d+(\.\d+)+$/i,"");n=n.replace(/_\d{1,3}$/,"");n=n.replace(/_oa$/i,"");return n.trim()||String(s||"");}
+ // PDM-Export (Solid Edge/STEP): nach führender Artikelnummer gruppieren
+ // (z.B. PDM_025419_25421 / PDM_045732_cecd62 -> PDM_025419 bzw. PDM_045732)
+ function normPart(s){var n=String(s||"");var pdm=n.match(/^(PDM_\d+)/i);if(pdm)return pdm[1];n=n.replace(/_-_\d{4}.*$/,"");n=n.replace(/_oa_\d+$/i,"");n=n.replace(/_v?\d+(\.\d+)+$/i,"");n=n.replace(/_\d{1,3}$/,"");n=n.replace(/_oa$/i,"");return n.trim()||String(s||"");}
  function cleanLabel(s){return String(s||"").replace(/_/g," ").replace(/\s+/g," ").trim()||"Bauteil";}
+ // PDM-Nummer normalisieren (führende Nullen egal) -> Artikelnummer+Bezeichnung aus PARTMAP
+ function pdmCanon(s){var m=String(s||"").match(/^PDM_0*(\d+)/i);return m?("PDM_"+m[1]):String(s||"");}
  function buildGroups(root){
   var map={},order=[];
-  root.traverse(function(o){if(o.isMesh){var key=normPart(nodeName(o)||"(unbenannt)");var g=map[key];if(!g){g={raw:key,label:cleanLabel(key),meshes:[],visible:true,count:0};map[key]=g;order.push(g);}g.meshes.push(o);o.userData._g=g;}});
+  root.traverse(function(o){if(o.isMesh){var key=normPart(nodeName(o)||"(unbenannt)");var g=map[key];if(!g){var info=PARTMAP[pdmCanon(key)];g={raw:key,label:cleanLabel(key),art:(info&&info.art)||key,name:(info&&info.name)||cleanLabel(key),meshes:[],visible:true,count:0};map[key]=g;order.push(g);}g.meshes.push(o);o.userData._g=g;}});
   // echte Stückzahl = Anzahl Instanz-Wurzeln (Knoten mit Artikelname ohne gleichnamigen Vorfahren),
   // NICHT die Mesh-Anzahl (ein Bauteil besteht oft aus mehreren Meshes)
   root.traverse(function(o){if(o.name){var nm=normPart(o.name);var g=map[nm];if(!g)return;var anc=o.parent,isRoot=true;while(anc){if(anc.name&&normPart(anc.name)===nm){isRoot=false;break;}anc=anc.parent;}if(isRoot)g.count++;}});
@@ -616,10 +702,16 @@ const ICONS={
   order.sort(function(a,b){return b.count-a.count||a.label.localeCompare(b.label);});
   groups=order;
  }
- function frameModel(){var box=new THREE.Box3().setFromObject(curRoot);var c=box.getCenter(new THREE.Vector3()),size=box.getSize(new THREE.Vector3());var r=Math.max(size.x,size.y,size.z)||1;fitR=r;curRoot.position.sub(c);controls.target.set(0,0,0);var d=r*1.9;camera.position.set(d*0.7,d*0.55,d*0.9);camera.near=r/200;camera.far=r*200;camera.updateProjectionMatrix();controls.minDistance=r*0.05;controls.maxDistance=r*12;controls.update();}
- function resetView(){if(!curRoot)return;controls.target.set(0,0,0);var d=fitR*1.9;camera.position.set(d*0.7,d*0.55,d*0.9);controls.autoRotate=true;controls.update();}
+ function frameModel(){
+  if(!pivot){pivot=new THREE.Group();scene.add(pivot);}
+  if(curRoot.parent!==pivot){if(curRoot.parent)curRoot.parent.remove(curRoot);pivot.add(curRoot);}
+  pivot.quaternion.identity();curRoot.position.set(0,0,0);pivot.updateMatrixWorld(true);
+  var box=new THREE.Box3().setFromObject(curRoot);var c=box.getCenter(new THREE.Vector3()),size=box.getSize(new THREE.Vector3());var r=Math.max(size.x,size.y,size.z)||1;fitR=r;
+  curRoot.position.copy(c).multiplyScalar(-1);          // Modell-Mittelpunkt = Pivot-Ursprung
+  controls.target.set(0,0,0);var d=r*1.9;camera.position.set(d*0.7,d*0.55,d*0.9);camera.near=r/200;camera.far=r*200;camera.updateProjectionMatrix();controls.minDistance=r*0.05;controls.maxDistance=r*12;controls.update();autoSpin=true;}
+ function resetView(){if(!curRoot)return;if(pivot)pivot.quaternion.identity();controls.target.set(0,0,0);var d=fitR*1.9;camera.position.set(d*0.7,d*0.55,d*0.9);autoSpin=true;controls.update();}
  function setHighlight(g,on){g.meshes.forEach(function(m){if(on){if(m.userData._om===undefined)m.userData._om=m.material;m.material=hlMat;}else if(m.userData._om!==undefined){m.material=m.userData._om;m.userData._om=undefined;}});}
- function selectGroup(g,scroll){if(activeG===g)return;if(activeG)setHighlight(activeG,false);activeG=g;if(g)setHighlight(g,true);controls.autoRotate=false;document.querySelectorAll(".prow").forEach(function(r){r.classList.toggle("active",r.__g===g);});if(scroll&&g){var rows=[].slice.call(document.querySelectorAll(".prow"));for(var i=0;i<rows.length;i++){if(rows[i].__g===g){rows[i].scrollIntoView({block:"nearest"});break;}}}}
+ function selectGroup(g,scroll){if(activeG===g)return;if(activeG)setHighlight(activeG,false);activeG=g;if(g)setHighlight(g,true);autoSpin=false;document.querySelectorAll(".prow").forEach(function(r){r.classList.toggle("active",r.__g===g);});if(scroll&&g){var rows=[].slice.call(document.querySelectorAll(".prow"));for(var i=0;i<rows.length;i++){if(rows[i].__g===g){rows[i].scrollIntoView({block:"nearest"});break;}}}}
  function toggleGroup(g){g.visible=!g.visible;g.meshes.forEach(function(m){m.visible=g.visible;});document.querySelectorAll(".prow").forEach(function(r){if(r.__g===g)r.classList.toggle("hidden",!g.visible);});}
  function showAllParts(){groups.forEach(function(g){g.visible=true;g.meshes.forEach(function(m){m.visible=true;});});document.querySelectorAll(".prow").forEach(function(r){r.classList.remove("hidden");});}
  function pickAt(e){if(!curRoot)return;var c=renderer.domElement,r=c.getBoundingClientRect();var p=new THREE.Vector2(((e.clientX-r.left)/r.width)*2-1,-((e.clientY-r.top)/r.height)*2+1);raycaster.setFromCamera(p,camera);var hits=raycaster.intersectObject(curRoot,true);for(var i=0;i<hits.length;i++){var o=hits[i].object;if(o.visible&&o.userData&&o.userData._g){selectGroup(o.userData._g,true);return;}}}
@@ -629,10 +721,10 @@ const ICONS={
  function renderPartList(q){
   var list=document.getElementById("partList"),html="";
   groups.forEach(function(g,idx){
-   if(q){if((g.raw+" "+g.label).toLowerCase().indexOf(q)<0)return;}
+   if(q){if((g.raw+" "+g.name+" "+g.art).toLowerCase().indexOf(q)<0)return;}
    html+='<div class="prow'+(g===activeG?' active':'')+(g.visible?'':' hidden')+'" data-i="'+idx+'">'
     +'<button class="eye" data-eye="'+idx+'" title="'+esc(t("tip_toggle"))+'">'+(g.visible?EYE_ON:EYE_OFF)+'</button>'
-    +'<div class="pmid" data-sel="'+idx+'"><div class="pml">'+esc(g.label)+'</div><div class="pma">'+esc(g.raw)+'</div></div>'
+    +'<div class="pmid" data-sel="'+idx+'"><div class="pml">'+esc(g.name)+'</div><div class="pma">'+esc(g.art)+'</div></div>'
     +(g.count>1?'<span class="qbadge" title="'+esc(t("qty_in_assembly"))+'">×'+g.count+'</span>':'')
     +'<button class="pcartbtn" data-pcart="'+idx+'" title="'+esc(t("btn_add"))+'">'+CART_S+'</button></div>';
   });
@@ -641,7 +733,7 @@ const ICONS={
   list.querySelectorAll(".prow").forEach(function(r){r.__g=groups[+r.getAttribute("data-i")];});
   list.querySelectorAll("[data-sel]").forEach(function(el){el.addEventListener("click",function(){selectGroup(groups[+el.getAttribute("data-sel")],false);});});
   list.querySelectorAll("[data-eye]").forEach(function(b){b.addEventListener("click",function(e){e.stopPropagation();toggleGroup(groups[+b.getAttribute("data-eye")]);});});
-  list.querySelectorAll("[data-pcart]").forEach(function(b){b.addEventListener("click",function(e){e.stopPropagation();var g=groups[+b.getAttribute("data-pcart")];addSub(g.raw,g.label);});});
+  list.querySelectorAll("[data-pcart]").forEach(function(b){b.addEventListener("click",function(e){e.stopPropagation();var g=groups[+b.getAttribute("data-pcart")];addSub(g.art,g.name);});});
  }
  function showNo(msg){document.getElementById("mvLoad").style.display="none";var no=document.getElementById("mvNo");no.style.display="flex";no.textContent=msg||t("no_3d");}
  function open3D(id){
@@ -657,12 +749,14 @@ const ICONS={
    initViewer();setTimeout(resizeViewer,30);clearModel();
    loader.load(url,function(gltf){
     curRoot=gltf.scene||(gltf.scenes&&gltf.scenes[0]);scene.add(curRoot);
+    // Umgebungslicht je Material verstärken -> Teile auch im Schatten gut sichtbar
+    curRoot.traverse(function(o){if(o.isMesh&&o.material){(Array.isArray(o.material)?o.material:[o.material]).forEach(function(mt){if("envMapIntensity" in mt){mt.envMapIntensity=1.3;mt.needsUpdate=true;}});}});
     buildGroups(curRoot);frameModel();resizeViewer();renderPartList("");
     document.getElementById("mvLoad").style.display="none";
    },undefined,function(){showNo();});
   }).catch(function(){showNo(t("three_fail"));});
  }
- function close3D(){document.getElementById("mvModal").classList.remove("open");viewerActive=false;if(controls)controls.autoRotate=true;}
+ function close3D(){document.getElementById("mvModal").classList.remove("open");viewerActive=false;autoSpin=true;}
  // ---- toast ----
  var toTimer;function toast(m){var el=document.getElementById("toast");el.textContent=m;el.classList.add("show");clearTimeout(toTimer);toTimer=setTimeout(function(){el.classList.remove("show");},1600);}
  // ---- fields persist ----
@@ -755,8 +849,9 @@ out=out.replace("%%IMG%%",json.dumps(IMG))
 out=out.replace("%%MODELS%%",json.dumps(MODELS))
 out=out.replace("%%CAT%%",json.dumps(CAT,ensure_ascii=False))
 out=out.replace("%%I18N%%",json.dumps(I18N,ensure_ascii=False))
+out=out.replace("%%PARTMAP%%",json.dumps(PARTMAP,ensure_ascii=False))
 
-for tok in ["%%RED%%","%%RED2%%","%%HERO%%","%%LOGOL%%","%%LOGOD%%","%%MAIL%%","%%IMG%%","%%MODELS%%","%%CAT%%","%%I18N%%"]:
+for tok in ["%%RED%%","%%RED2%%","%%HERO%%","%%LOGOL%%","%%LOGOD%%","%%MAIL%%","%%IMG%%","%%MODELS%%","%%CAT%%","%%I18N%%","%%PARTMAP%%"]:
     assert tok not in out, "Token übrig: "+tok
 for need in ['id="cartBtn"','id="tcanvas"','id="partList"','renderCatalog','data-lang="pl"','ensureThree','importmap','./vendor/GLTFLoader.js']:
     assert need in out, "fehlt: "+need
