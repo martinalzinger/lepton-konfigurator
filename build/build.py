@@ -328,7 +328,7 @@ body.mode-gebraucht .hero .hsub{display:none}
   </div>
   <div class="savebar"><select id="savedList"><option value="">—</option></select><button class="btn s" id="loadBtn" data-i18n="btn_load">Laden</button><button class="btn s" id="saveBtn" data-i18n="btn_save">Speichern</button><button class="btn s" id="delBtn" data-i18n="btn_delete">Löschen</button></div>
   <div class="pvbar"><span class="t" id="pvTitle">Angebot — Vorschau</span>
-    <div><button class="btn g" id="resetBtn" data-i18n="btn_reset">Zurücksetzen</button> <button class="btn p" id="printBtn" onclick="window.print()">Angebot drucken</button></div>
+    <div><button class="btn g" id="resetBtn" data-i18n="btn_reset">Zurücksetzen</button> <button class="btn p" id="pdfBtn" data-i18n="btn_pdf">Als PDF speichern</button> <button class="btn s" id="printBtn">Angebot drucken</button></div>
   </div>
 </div>
 <div id="doc"></div>
@@ -340,7 +340,7 @@ body.mode-gebraucht .hero .hsub{display:none}
       <div class="b"><span class="k" data-i18n="bar_net">Netto gesamt</span><span class="vv big" id="sumNet">340.300 €</span></div>
       <div class="b"><span class="k" id="sumTaxLabel">Gesamt</span><span class="vv cr" id="sumGross">340.300 €</span></div>
     </div>
-    <button class="btn p" data-i18n="btn_print" onclick="window.print()">Drucken</button>
+    <button class="btn p" id="printBtn2" data-i18n="btn_print">Drucken</button>
   </div>
 </div>
 <script>
@@ -579,6 +579,10 @@ var lang="de";
  function doSave(){var name=window.prompt(t("prompt_save_name"),suggestName());if(name===null)return;name=name.trim();if(!name)return;var o=loadAll();o[name]=gatherState();if(!saveAll(o)){window.alert(t("alert_save_fail"));return;}refreshSaved();document.getElementById("savedList").value=name;}
  function doLoad(){var n=document.getElementById("savedList").value;if(!n)return;var o=loadAll();if(o[n])applyState(o[n]);}
  function doDelete(){var n=document.getElementById("savedList").value;if(!n)return;if(!window.confirm(tf("confirm_delete",{n:n})))return;var o=loadAll();delete o[n];saveAll(o);refreshSaved();}
+ function docFilename(){var who=v("k_firma")||pers()||"",nr=v("m_nr")||"";var parts=[t("pill_"+state.mode),who,nr].filter(Boolean);var name=parts.join(" ").replace(/[\/\\:*?"<>|#]/g,"").trim().replace(/\s+/g,"_");return name||t("pill_"+state.mode);}
+ var _origTitle=document.title;
+ function doPrint(){document.title=docFilename();window.print();}
+ window.addEventListener("afterprint",function(){document.title=_origTitle;});
  function init(){
   try{var sl=localStorage.getItem(LKEY);if(sl&&I18N[sl])lang=sl;}catch(e){}
   document.getElementById("tbLogo").src=ASSET.LOGO_L;
@@ -591,6 +595,7 @@ var lang="de";
   document.querySelectorAll("#langsel button").forEach(function(b){b.addEventListener("click",function(){setLang(b.getAttribute("data-lang"));});});
   document.addEventListener("click",function(e){var m=document.getElementById("menu");if(m.classList.contains("open")&&!m.contains(e.target)&&e.target.id!=="burger")m.classList.remove("open");});
   document.getElementById("resetBtn").addEventListener("click",resetAll);
+  ["pdfBtn","printBtn","printBtn2"].forEach(function(id){var b=document.getElementById(id);if(b)b.addEventListener("click",doPrint);});
   applyDefaults();
   applyLang();
   applyMode("angebot");

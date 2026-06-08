@@ -899,6 +899,12 @@
    "en": "Language",
    "pl": "Język",
    "fr": "Langue"
+  },
+  "btn_pdf": {
+   "de": "Als PDF speichern",
+   "en": "Save as PDF",
+   "pl": "Zapisz jako PDF",
+   "fr": "Enregistrer en PDF"
   }
  },
  "spec": [
