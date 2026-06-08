@@ -662,9 +662,8 @@ const ICONS={
   controls.enableRotate=false;     // Kamera-Rotation aus -> freie Modell-Rotation (Pointer-Handler unten)
   controls.rotateSpeed=0.75;          // ruhigeres Drehen
   controls.zoomSpeed=0.9;             // feinerer Zoom
-  controls.panSpeed=1.2;              // leichtgängigeres Verschieben
-  controls.zoomToCursor=true;         // zum Mauszeiger zoomen (statt zur Mitte)
-  controls.screenSpacePanning=true;   // intuitives Verschieben in der Bildebene
+  controls.enablePan=false;           // kein versehentliches Verschieben beim Pinch
+  controls.zoomToCursor=false;        // mittig zoomen (Modell bleibt zentriert)
   // Rundum-Beleuchtung: gleichmäßig hell von allen Seiten (keine dunkle Seite mehr)
   scene.add(new THREE.HemisphereLight(0xffffff,0x9a9aa0,1.6));
   scene.add(new THREE.AmbientLight(0xffffff,0.45));
