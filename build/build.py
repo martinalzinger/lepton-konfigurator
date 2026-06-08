@@ -40,15 +40,20 @@ body{font-family:var(--sans);background:var(--paper);color:var(--ink);line-heigh
 .langsel button:hover{opacity:1}
 .langsel button.active{background:#fff;color:var(--red);opacity:1}
 .tb-burger{background:none;border:0;cursor:pointer;padding:4px;display:inline-flex}
-.menu{position:absolute;top:100%;right:14px;margin-top:8px;width:268px;background:#fff;border-radius:12px;box-shadow:0 18px 44px rgba(0,0,0,.28);overflow:hidden;display:none;z-index:90}
+.menu{position:absolute;top:100%;right:14px;margin-top:8px;width:268px;max-height:84vh;background:#fff;border-radius:12px;box-shadow:0 18px 44px rgba(0,0,0,.28);overflow:hidden auto;display:none;z-index:90}
 .menu.open{display:block}
 .menu .mh{background:var(--ink);color:#fff;font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;padding:12px 16px}
-.menu button{display:flex;width:100%;align-items:center;justify-content:space-between;gap:10px;background:#fff;border:0;border-top:1px solid var(--line);padding:14px 16px;font-family:var(--sans);font-size:15px;font-weight:600;color:var(--ink);cursor:pointer;text-align:left}
-.menu button:hover{background:#faf7f7}
-.menu button.active{color:var(--red)}
-.menu button .dot{width:9px;height:9px;border-radius:50%;border:2px solid var(--line-strong);flex-shrink:0}
-.menu button.active .dot{background:var(--red);border-color:var(--red)}
-.menu button .lab small{display:block;font-weight:400;font-size:11px;color:var(--muted);margin-top:1px}
+.menu>button{display:flex;width:100%;align-items:center;justify-content:space-between;gap:10px;background:#fff;border:0;border-top:1px solid var(--line);padding:14px 16px;font-family:var(--sans);font-size:15px;font-weight:600;color:var(--ink);cursor:pointer;text-align:left}
+.menu>button:hover{background:#faf7f7}
+.menu>button.active{color:var(--red)}
+.menu>button .dot{width:9px;height:9px;border-radius:50%;border:2px solid var(--line-strong);flex-shrink:0}
+.menu>button.active .dot{background:var(--red);border-color:var(--red)}
+.menu>button .lab small{display:block;font-weight:400;font-size:11px;color:var(--muted);margin-top:1px}
+.menu .mssec{padding:11px 14px;border-top:1px solid var(--line)}
+.menu .mssec select{width:100%;font-family:var(--sans);font-size:13px;border:1px solid var(--line-strong);background:var(--field);border-radius:8px;padding:9px 10px;color:var(--ink);outline:none}
+.menu .msbtns{display:flex;gap:6px;margin-top:8px}
+.menu .msbtns button{flex:1;font-family:var(--mono);font-size:10px;letter-spacing:.04em;text-transform:uppercase;font-weight:600;padding:9px 4px;border:1px solid var(--line-strong);background:#fff;color:var(--ink);border-radius:7px;cursor:pointer}
+.menu .msbtns button:hover{border-color:var(--ink)}
 .hero{position:relative;min-height:330px;background-image:linear-gradient(90deg,rgba(16,17,19,.86) 0%,rgba(16,17,19,.55) 55%,rgba(16,17,19,.25) 100%),url("%%HERO%%");background-size:cover;background-position:center;color:#fff;display:flex;align-items:flex-end}
 .hero-in{max-width:1120px;margin:0 auto;width:100%;padding:42px 20px 40px}
 .hero .kick{font-family:var(--mono);font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:#ff9d8c;font-weight:500}
@@ -249,6 +254,11 @@ body.mode-gebraucht .hero .hsub{display:none}
       </div>
     </div>
     <div class="menu" id="menu">
+      <div class="mh" data-i18n="menu_saved">Gespeicherte Dokumente</div>
+      <div class="mssec">
+        <select id="savedList"><option value="">—</option></select>
+        <div class="msbtns"><button id="loadBtn" data-i18n="btn_load">Laden</button><button id="saveBtn" data-i18n="btn_save">Speichern</button><button id="delBtn" data-i18n="btn_delete">Löschen</button></div>
+      </div>
       <div class="mh" data-i18n="menu_choose">Dokument wählen</div>
       <button data-mode="angebot"><span class="lab"><span data-i18n="mode_angebot">Angebot</span><small data-i18n="mode_angebot_sub">Unverbindliches Angebot</small></span><span class="dot"></span></button>
       <button data-mode="kaufvertrag"><span class="lab"><span data-i18n="mode_kaufvertrag">Kaufvertrag</span><small data-i18n="mode_kaufvertrag_sub">Verbindlicher Kaufvertrag</small></span><span class="dot"></span></button>
@@ -327,7 +337,6 @@ body.mode-gebraucht .hero .hsub{display:none}
       <div class="fld wide"><label data-i18n="lbl_sonder">Sonderabsprachen</label><textarea id="t_sonder" data-i18n-ph="ph_optional" placeholder="optional"></textarea></div>
     </div></div>
   </div>
-  <div class="savebar"><select id="savedList"><option value="">—</option></select><button class="btn s" id="loadBtn" data-i18n="btn_load">Laden</button><button class="btn s" id="saveBtn" data-i18n="btn_save">Speichern</button><button class="btn s" id="delBtn" data-i18n="btn_delete">Löschen</button></div>
   <div class="pvbar"><span class="t" id="pvTitle">Angebot — Vorschau</span>
     <div><button class="btn g" id="resetBtn" data-i18n="btn_reset">Zurücksetzen</button> <button class="btn p" id="pdfBtn" data-i18n="btn_pdf">Als PDF speichern</button> <button class="btn s" id="printBtn">Angebot drucken</button></div>
   </div>
