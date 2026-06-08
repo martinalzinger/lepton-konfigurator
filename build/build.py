@@ -168,7 +168,7 @@ body{font-family:var(--sans);background:var(--paper);color:var(--ink);line-heigh
 .lines .p{font-family:var(--mono);font-weight:500;white-space:nowrap}
 .totals{margin-top:18px;border-top:2px solid var(--ink);padding-top:12px}
 .totals .row{display:flex;justify-content:space-between;gap:14px;font-size:13px;padding:4px 0}
-.totals .row .v{font-family:var(--mono)}
+.totals .row .v{font-family:var(--mono);white-space:nowrap;flex-shrink:0}
 .totals .row.net{font-size:15px;font-weight:700}.totals .row.net .v{color:var(--red);font-size:16px}
 .totals .row.gross{background:var(--ink);color:#fff;margin:8px -10px 0;padding:11px 10px;border-radius:6px;font-weight:700}.totals .row.gross .v{color:#fff;font-size:16px}
 .taxnote{font-size:11px;color:var(--muted);margin-top:8px;font-style:italic}
