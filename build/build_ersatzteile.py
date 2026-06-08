@@ -159,7 +159,7 @@ for cat in SP_RAW["kategorien"]:
             "name":p["name"], "name_en":p.get("name_en"),
             "desc":p.get("desc",""), "desc_en":p.get("desc_en"),
             "price":p.get("price",0),
-            "model": mk, "modelKind": kind, "img": p.get("img")
+            "model": mk, "modelKind": kind, "img": p.get("img"), "rot": p.get("rot")
         })
     CAT.append({"h":cat["h"], "h_en":cat.get("h_en"), "items":items})
 
@@ -283,7 +283,7 @@ body{font-family:var(--sans);background:var(--paper);color:var(--ink);line-heigh
 .dhead button{background:none;border:0;color:#fff;font-size:26px;line-height:1;cursor:pointer;opacity:.8}.dhead button:hover{opacity:1}
 .dbody{flex:1;overflow:auto;padding:14px 18px}
 .citem{display:flex;gap:11px;padding:11px 0;border-bottom:1px solid var(--line);align-items:center}
-.citem .ci-th{width:52px;height:44px;border-radius:6px;background:#fff;border:1px solid var(--line);flex-shrink:0;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.citem .ci-th{width:66px;height:56px;border-radius:6px;background:#fff;border:1px solid var(--line);flex-shrink:0;display:flex;align-items:center;justify-content:center;overflow:hidden}
 .citem .ci-th img{max-width:100%;max-height:100%;object-fit:contain}
 .citem .ci-th svg{width:30px;height:30px;stroke:#b7b3a8;fill:none;stroke-width:1.4}
 .citem .ci-n{flex:1;min-width:0}
@@ -348,9 +348,9 @@ body{font-family:var(--sans);background:var(--paper);color:var(--ink);line-heigh
 .prow .eye svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.7}
 .prow.hidden .eye{color:var(--faint)}
 .prow .pmid{flex:1;min-width:0}
-.prow .pthumbS{width:42px;height:42px;flex-shrink:0;background:#fff;border:1px solid var(--line);border-radius:6px;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.prow .pthumbS{width:60px;height:60px;flex-shrink:0;background:#fff;border:1px solid var(--line);border-radius:7px;display:flex;align-items:center;justify-content:center;overflow:hidden}
 .prow .pthumbS img{width:100%;height:100%;object-fit:contain}
-.dtbl .pdfimg{height:26px;width:26px;object-fit:contain;vertical-align:middle;margin-right:7px;border:1px solid #e4e2db;border-radius:3px;background:#fff}
+.dtbl .pdfimg{height:36px;width:36px;object-fit:contain;vertical-align:middle;margin-right:8px;border:1px solid #e4e2db;border-radius:3px;background:#fff}
 .prow .pml{font-size:12.5px;font-weight:600;line-height:1.25;word-break:break-word}
 .prow .pma{font-family:var(--mono);font-size:10px;color:var(--faint)}
 .prow .qbadge{font-family:var(--mono);font-size:10px;color:var(--slate);background:var(--field);border:1px solid var(--line);border-radius:5px;padding:1px 5px;flex-shrink:0}
@@ -635,7 +635,7 @@ const ICONS={
  function closeCart(){document.getElementById("drawer").classList.remove("open");document.getElementById("backdrop").classList.remove("open");}
  // ===== 3D-Explorer (three.js wird BEI BEDARF dynamisch geladen) =====
  var THREE,GLTFLoader,OrbitControls,RoomEnvironment,loader,hlMat;
- var renderer,scene,camera,controls,raycaster,curRoot=null,pivot=null,autoSpin=true,groups=[],activeG=null,fitR=1,vinit=false,viewerActive=false,threeReady=false;
+ var renderer,scene,camera,controls,raycaster,curRoot=null,pivot=null,autoSpin=true,baseQuat=null,camDist=1,curModelRot=null,groups=[],activeG=null,fitR=1,vinit=false,viewerActive=false,threeReady=false;
  function ensureThree(){
   if(threeReady)return Promise.resolve(true);
   return Promise.all([import("./vendor/three.module.min.js"),import("./vendor/GLTFLoader.js"),import("./vendor/OrbitControls.js"),import("./vendor/RoomEnvironment.js")]).then(function(m){
@@ -662,9 +662,8 @@ const ICONS={
   controls.enableRotate=false;     // Kamera-Rotation aus -> freie Modell-Rotation (Pointer-Handler unten)
   controls.rotateSpeed=0.75;          // ruhigeres Drehen
   controls.zoomSpeed=0.9;             // feinerer Zoom
-  controls.panSpeed=1.2;              // leichtgängigeres Verschieben
-  controls.zoomToCursor=true;         // zum Mauszeiger zoomen (statt zur Mitte)
-  controls.screenSpacePanning=true;   // intuitives Verschieben in der Bildebene
+  controls.enablePan=false;           // kein versehentliches Verschieben beim Pinch
+  controls.zoomToCursor=false;        // mittig zoomen (Modell bleibt zentriert)
   // Rundum-Beleuchtung: gleichmäßig hell von allen Seiten (keine dunkle Seite mehr)
   scene.add(new THREE.HemisphereLight(0xffffff,0x9a9aa0,1.6));
   scene.add(new THREE.AmbientLight(0xffffff,0.45));
@@ -715,14 +714,34 @@ const ICONS={
   order.sort(function(a,b){return b.count-a.count||a.label.localeCompare(b.label);});
   groups=order;
  }
+ // Ausricht-Quaternion: bringt Modell-Achse a0 -> Welt-X (waagrecht), a1 -> Welt-Y (oben)
+ function axisPermQuat(a0,a1){
+  var ax={x:new THREE.Vector3(1,0,0),y:new THREE.Vector3(0,1,0),z:new THREE.Vector3(0,0,1)};
+  var u=ax[a0].clone(),w=ax[a1].clone(),tt=new THREE.Vector3().crossVectors(u,w);
+  var m=new THREE.Matrix4();m.set(u.x,u.y,u.z,0, w.x,w.y,w.z,0, tt.x,tt.y,tt.z,0, 0,0,0,1);
+  return new THREE.Quaternion().setFromRotationMatrix(m);
+ }
+ function eulerQuat(d){if(!d)return new THREE.Quaternion();return new THREE.Quaternion().setFromEuler(new THREE.Euler(d[0]*Math.PI/180,d[1]*Math.PI/180,d[2]*Math.PI/180,"XYZ"));}
+ function framePos(d){return new THREE.Vector3(0.62,0.5,0.85).normalize().multiplyScalar(d);}
  function frameModel(){
   if(!pivot){pivot=new THREE.Group();scene.add(pivot);}
   if(curRoot.parent!==pivot){if(curRoot.parent)curRoot.parent.remove(curRoot);pivot.add(curRoot);}
   pivot.quaternion.identity();curRoot.position.set(0,0,0);pivot.updateMatrixWorld(true);
-  var box=new THREE.Box3().setFromObject(curRoot);var c=box.getCenter(new THREE.Vector3()),size=box.getSize(new THREE.Vector3());var r=Math.max(size.x,size.y,size.z)||1;fitR=r;
-  curRoot.position.copy(c).multiplyScalar(-1);          // Modell-Mittelpunkt = Pivot-Ursprung
-  controls.target.set(0,0,0);var d=r*1.9;camera.position.set(d*0.7,d*0.55,d*0.9);camera.near=r/200;camera.far=r*200;camera.updateProjectionMatrix();controls.minDistance=r*0.05;controls.maxDistance=r*12;controls.update();autoSpin=true;}
- function resetView(){if(!curRoot)return;if(pivot)pivot.quaternion.identity();controls.target.set(0,0,0);var d=fitR*1.9;camera.position.set(d*0.7,d*0.55,d*0.9);autoSpin=true;controls.update();}
+  var box=new THREE.Box3().setFromObject(curRoot);var c=box.getCenter(new THREE.Vector3()),size=box.getSize(new THREE.Vector3());
+  curRoot.position.copy(c).multiplyScalar(-1);                       // Mittelpunkt -> Pivot-Ursprung
+  var dims=[["x",size.x],["y",size.y],["z",size.z]].sort(function(a,b){return b[1]-a[1];});
+  baseQuat=axisPermQuat(dims[0][0],dims[1][0]);                      // konsistente Ausrichtung
+  if(curModelRot){baseQuat=eulerQuat(curModelRot).multiply(baseQuat);}  // optionale Zusatz-Drehung pro Modell
+  pivot.quaternion.copy(baseQuat);
+  var sx=dims[0][1],sy=dims[1][1],sz=dims[2][1];fitR=Math.max(sx,sy,sz)||1;
+  var R=0.5*Math.sqrt(sx*sx+sy*sy+sz*sz)||1;                          // Bounding-Kugel
+  var fov=camera.fov*Math.PI/180,asp=camera.aspect||1.4;
+  camDist=Math.max(R/Math.sin(fov/2), R/Math.sin(Math.atan(Math.tan(fov/2)*asp)))*1.05;
+  controls.target.set(0,0,0);camera.position.copy(framePos(camDist));
+  camera.near=Math.max(R*0.0015,1e-4);camera.far=R*60;camera.updateProjectionMatrix();
+  controls.minDistance=R*0.004;controls.maxDistance=R*16;controls.update();autoSpin=true;
+ }
+ function resetView(){if(!curRoot)return;if(pivot&&baseQuat)pivot.quaternion.copy(baseQuat);controls.target.set(0,0,0);camera.position.copy(framePos(camDist||fitR*1.6));autoSpin=true;controls.update();}
  function setHighlight(g,on){g.meshes.forEach(function(m){if(on){if(m.userData._om===undefined)m.userData._om=m.material;m.material=hlMat;}else if(m.userData._om!==undefined){m.material=m.userData._om;m.userData._om=undefined;}});}
  function selectGroup(g,scroll){if(activeG===g)return;if(activeG)setHighlight(activeG,false);activeG=g;if(g)setHighlight(g,true);autoSpin=false;document.querySelectorAll(".prow").forEach(function(r){r.classList.toggle("active",r.__g===g);});if(scroll&&g){var rows=[].slice.call(document.querySelectorAll(".prow"));for(var i=0;i<rows.length;i++){if(rows[i].__g===g){rows[i].scrollIntoView({block:"nearest"});break;}}}}
  function toggleGroup(g){g.visible=!g.visible;g.meshes.forEach(function(m){m.visible=g.visible;});document.querySelectorAll(".prow").forEach(function(r){if(r.__g===g)r.classList.toggle("hidden",!g.visible);});}
@@ -752,6 +771,7 @@ const ICONS={
  function showNo(msg){document.getElementById("mvLoad").style.display="none";var no=document.getElementById("mvNo");no.style.display="flex";no.textContent=msg||t("no_3d");}
  function open3D(id){
   var p=byId[id];document.getElementById("mvName").textContent=pName(p);document.getElementById("mvArt").textContent=t("art_prefix")+p.art;
+  curModelRot=p.rot||null;
   document.getElementById("mvModal").classList.add("open");viewerActive=true;
   document.getElementById("mvNo").style.display="none";
   document.getElementById("partList").innerHTML="";document.getElementById("partCount").textContent="0";
