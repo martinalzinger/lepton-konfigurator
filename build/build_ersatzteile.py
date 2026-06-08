@@ -600,7 +600,7 @@ const ICONS={
  function addToCart(id){cart[id]=(cart[id]||0)+1;saveCart();updateBadge();renderCatalog();renderCart();toast(t("toast_added"));}
  function fmtKg(w){return (w||0).toLocaleString(LOCALE[lang]||"de-DE",{maximumFractionDigits:2})+" kg";}
  function totalWeight(){var s=0;lines().forEach(function(l){if(typeof l.p.weight==="number")s+=l.p.weight*l.q;});return s;}
- function addSub(art,name,weight){var id="sub:"+art;subReg[id]={art:art,name:name,price:0,weight:(typeof weight==="number"?weight:null)};saveSub();cart[id]=(cart[id]||0)+1;saveCart();updateBadge();renderCart();toast(t("toast_added"));}
+ function addSub(art,name,weight,zoll){var id="sub:"+art;subReg[id]={art:art,name:name,price:0,weight:(typeof weight==="number"?weight:null),zoll:zoll||null};saveSub();cart[id]=(cart[id]||0)+1;saveCart();updateBadge();renderCart();toast(t("toast_added"));}
  function setQty(id,q){q=Math.max(0,q|0);if(q===0){delete cart[id];if(subReg[id]){delete subReg[id];saveSub();}}else cart[id]=q;saveCart();updateBadge();renderCatalog();renderCart();}
  function renderCart(){
   var ids=Object.keys(cart).filter(function(id){return item(id);});
@@ -610,7 +610,7 @@ const ICONS={
   document.getElementById("sendMail").disabled=false;document.getElementById("printReq").disabled=false;
   var h="",sub=0,anyPrice=false;
   ids.forEach(function(id){var p=item(id),q=cart[id];if(p.price>0){sub+=p.price*q;anyPrice=true;}
-   h+='<div class="citem"><div class="ci-th">'+thumbHTML(p)+'</div><div class="ci-n"><div class="ci-name">'+esc(pName(p))+'</div><div class="ci-art">'+t("art_prefix")+esc(p.art)+(p.weight>0?'  ·  '+esc(fmtKg(p.weight)):'')+'</div><div class="ci-price">'+priceHTML(p)+'</div>'
+   h+='<div class="citem"><div class="ci-th">'+thumbHTML(p)+'</div><div class="ci-n"><div class="ci-name">'+esc(pName(p))+'</div><div class="ci-art">'+t("art_prefix")+esc(p.art)+(p.weight>0?'  ·  '+esc(fmtKg(p.weight)):'')+(p.zoll?'  ·  '+t("col_zoll")+' '+esc(p.zoll):'')+'</div><div class="ci-price">'+priceHTML(p)+'</div>'
     +'<button class="ci-rm" data-rm="'+esc(id)+'">'+t("cart_remove")+'</button></div>'
     +'<div class="qty"><button data-dec="'+esc(id)+'">−</button><input data-q="'+esc(id)+'" value="'+q+'" inputmode="numeric"><button data-inc="'+esc(id)+'">+</button></div></div>';
   });
@@ -698,7 +698,7 @@ const ICONS={
  function pdmCanon(s){var m=String(s||"").match(/^PDM_0*(\d+)/i);return m?("PDM_"+m[1]):String(s||"");}
  function buildGroups(root){
   var map={},order=[];
-  root.traverse(function(o){if(o.isMesh){var key=normPart(nodeName(o)||"(unbenannt)");var g=map[key];if(!g){var info=PARTMAP[pdmCanon(key)];g={raw:key,label:cleanLabel(key),art:(info&&info.art)||key,name:(info&&info.name)||cleanLabel(key),weight:(info&&typeof info.weight==="number")?info.weight:null,meshes:[],visible:true,count:0};map[key]=g;order.push(g);}g.meshes.push(o);o.userData._g=g;}});
+  root.traverse(function(o){if(o.isMesh){var key=normPart(nodeName(o)||"(unbenannt)");var g=map[key];if(!g){var info=PARTMAP[pdmCanon(key)];g={raw:key,label:cleanLabel(key),art:(info&&info.art)||key,name:(info&&info.name)||cleanLabel(key),weight:(info&&typeof info.weight==="number")?info.weight:null,zoll:(info&&info.zoll)||null,meshes:[],visible:true,count:0};map[key]=g;order.push(g);}g.meshes.push(o);o.userData._g=g;}});
   // echte Stückzahl = Anzahl Instanz-Wurzeln (Knoten mit Artikelname ohne gleichnamigen Vorfahren),
   // NICHT die Mesh-Anzahl (ein Bauteil besteht oft aus mehreren Meshes)
   root.traverse(function(o){if(o.name){var nm=normPart(o.name);var g=map[nm];if(!g)return;var anc=o.parent,isRoot=true;while(anc){if(anc.name&&normPart(anc.name)===nm){isRoot=false;break;}anc=anc.parent;}if(isRoot)g.count++;}});
@@ -728,7 +728,7 @@ const ICONS={
    if(q){if((g.raw+" "+g.name+" "+g.art).toLowerCase().indexOf(q)<0)return;}
    html+='<div class="prow'+(g===activeG?' active':'')+(g.visible?'':' hidden')+'" data-i="'+idx+'">'
     +'<button class="eye" data-eye="'+idx+'" title="'+esc(t("tip_toggle"))+'">'+(g.visible?EYE_ON:EYE_OFF)+'</button>'
-    +'<div class="pmid" data-sel="'+idx+'"><div class="pml">'+esc(g.name)+'</div><div class="pma">'+esc(g.art)+(g.weight>0?' · '+esc(fmtKg(g.weight)):'')+'</div></div>'
+    +'<div class="pmid" data-sel="'+idx+'"><div class="pml">'+esc(g.name)+'</div><div class="pma">'+esc(g.art)+(g.weight>0?' · '+esc(fmtKg(g.weight)):'')+(g.zoll?' · '+t("col_zoll")+' '+esc(g.zoll):'')+'</div></div>'
     +(g.count>1?'<span class="qbadge" title="'+esc(t("qty_in_assembly"))+'">×'+g.count+'</span>':'')
     +'<button class="pcartbtn" data-pcart="'+idx+'" title="'+esc(t("btn_add"))+'">'+CART_S+'</button></div>';
   });
@@ -737,7 +737,7 @@ const ICONS={
   list.querySelectorAll(".prow").forEach(function(r){r.__g=groups[+r.getAttribute("data-i")];});
   list.querySelectorAll("[data-sel]").forEach(function(el){el.addEventListener("click",function(){selectGroup(groups[+el.getAttribute("data-sel")],false);});});
   list.querySelectorAll("[data-eye]").forEach(function(b){b.addEventListener("click",function(e){e.stopPropagation();toggleGroup(groups[+b.getAttribute("data-eye")]);});});
-  list.querySelectorAll("[data-pcart]").forEach(function(b){b.addEventListener("click",function(e){e.stopPropagation();var g=groups[+b.getAttribute("data-pcart")];addSub(g.art,g.name,g.weight);});});
+  list.querySelectorAll("[data-pcart]").forEach(function(b){b.addEventListener("click",function(e){e.stopPropagation();var g=groups[+b.getAttribute("data-pcart")];addSub(g.art,g.name,g.weight,g.zoll);});});
  }
  function showNo(msg){document.getElementById("mvLoad").style.display="none";var no=document.getElementById("mvNo");no.style.display="flex";no.textContent=msg||t("no_3d");}
  function open3D(id){
@@ -775,7 +775,7 @@ const ICONS={
  function sendMail(){
   var L=lines();if(!L.length){toast(t("alert_empty"));return;}
   var body=t("mail_intro")+"\n\n";
-  L.forEach(function(l){body+="  "+l.q+"× "+l.p.art+"  "+pName(l.p)+(l.p.weight>0?"   "+fmtKg(l.p.weight*l.q):"")+(l.p.price>0?"   "+money(l.p.price*l.q):"")+"\n";});
+  L.forEach(function(l){body+="  "+l.q+"× "+l.p.art+"  "+pName(l.p)+(l.p.zoll?"   "+t("col_zoll")+" "+l.p.zoll:"")+(l.p.weight>0?"   "+fmtKg(l.p.weight*l.q):"")+(l.p.price>0?"   "+money(l.p.price*l.q):"")+"\n";});
   var tw=totalWeight();if(tw>0)body+="\n"+t("weight_total")+": "+fmtKg(tw)+"\n";
   var sub=subtotal();if(sub>0)body+=t("cart_subtotal")+": "+money(sub)+"\n";
   if(fv("c_masch"))body+="\n"+t("lbl_masch")+": "+fv("c_masch")+"\n";
@@ -792,7 +792,7 @@ const ICONS={
   var date=new Date().toLocaleDateString(LOCALE[lang]||"de-DE",{day:"2-digit",month:"2-digit",year:"numeric"});
   var rows="",sub=0,anyP=false;
   L.forEach(function(l,i){var line=l.p.price>0?l.p.price*l.q:0;if(l.p.price>0){sub+=line;anyP=true;}
-   rows+='<tr><td>'+(i+1)+'</td><td>'+esc(l.p.art)+'</td><td>'+esc(pName(l.p))+'</td><td class="r">'+l.q+'</td><td class="r">'+(l.p.weight>0?esc(fmtKg(l.p.weight*l.q)):"—")+'</td><td class="r">'+(l.p.price>0?money(l.p.price):t("price_request"))+'</td><td class="r">'+(l.p.price>0?money(line):"—")+'</td></tr>';});
+   rows+='<tr><td>'+(i+1)+'</td><td>'+esc(l.p.art)+'</td><td>'+esc(pName(l.p))+'</td><td>'+esc(l.p.zoll||"—")+'</td><td class="r">'+l.q+'</td><td class="r">'+(l.p.weight>0?esc(fmtKg(l.p.weight*l.q)):"—")+'</td><td class="r">'+(l.p.price>0?money(l.p.price):t("price_request"))+'</td><td class="r">'+(l.p.price>0?money(line):"—")+'</td></tr>';});
   var tw=totalWeight();
   var from=[fv("c_firma"),fv("c_name"),fv("c_mail"),fv("c_tel")].filter(Boolean).map(esc).join("<br>")||'<span style="color:#9a9aa0">—</span>';
   var doc=stripe+'<div class="dpad">'
@@ -801,7 +801,7 @@ const ICONS={
    +'<div class="dtitle">'+esc(t("doc_title"))+'</div>'
    +'<div class="dparties"><div><span class="s">'+t("doc_from")+'</span>'+from+(fv("c_masch")?'<br><span style="color:#9a9aa0;font-size:11px">'+t("doc_machine")+': '+esc(fv("c_masch"))+'</span>':'')+'</div>'
    +'<div><span class="s">'+t("doc_to")+'</span><b>Alzinger Maschinenbau GmbH</b><br>Am Gewerbering 14<br>D-84069 Schierling</div></div>'
-   +'<table class="dtbl"><thead><tr><th>'+t("col_pos")+'</th><th>'+t("col_art")+'</th><th>'+t("col_name")+'</th><th class="r">'+t("col_qty")+'</th><th class="r">'+t("col_weight")+'</th><th class="r">'+t("col_price")+'</th><th class="r">'+t("col_sum")+'</th></tr></thead><tbody>'+rows+'</tbody></table>'
+   +'<table class="dtbl"><thead><tr><th>'+t("col_pos")+'</th><th>'+t("col_art")+'</th><th>'+t("col_name")+'</th><th>'+t("col_zoll")+'</th><th class="r">'+t("col_qty")+'</th><th class="r">'+t("col_weight")+'</th><th class="r">'+t("col_price")+'</th><th class="r">'+t("col_sum")+'</th></tr></thead><tbody>'+rows+'</tbody></table>'
    +(tw>0?'<div class="dtot" style="font-weight:600;color:var(--ink)">'+t("weight_total")+': '+fmtKg(tw)+'</div>':'')
    +(anyP?'<div class="dtot">'+t("doc_total")+': '+money(sub)+'</div>':'')
    +(fv("c_msg")?'<div class="dmsg"><b>'+t("doc_msg")+':</b>\n'+esc(fv("c_msg"))+'</div>':'')
