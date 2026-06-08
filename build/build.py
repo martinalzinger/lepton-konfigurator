@@ -76,7 +76,7 @@ body{font-family:var(--sans);background:var(--paper);color:var(--ink);line-heigh
 .fld :focus{border-color:var(--red);box-shadow:0 0 0 3px var(--red-soft);background:#fffdfc}
 .fld.wide{grid-column:1/-1}
 .subnote{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin:2px 0 8px;grid-column:1/-1}
-.basis{display:flex;gap:18px;background:var(--ink);color:#fff;border-radius:12px;overflow:hidden;flex-wrap:wrap;align-items:stretch}
+.basis{display:flex;gap:18px;background:linear-gradient(160deg,#3b3e44,#2c2f34);color:#fff;border-radius:12px;overflow:hidden;flex-wrap:wrap;align-items:stretch}
 .basis .bimg{flex:1;min-width:220px;min-height:170px;background-size:cover;background-position:center}
 .basis .btx{flex:1.3;min-width:260px;padding:20px 22px;display:flex;flex-direction:column;justify-content:center}
 .basis .tag{font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;background:var(--gold);color:#16181a;padding:3px 8px;border-radius:4px;font-weight:600;align-self:flex-start}
