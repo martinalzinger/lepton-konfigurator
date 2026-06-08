@@ -83,6 +83,10 @@ body{font-family:var(--sans);background:var(--paper);color:var(--ink);line-heigh
 .basis .t{font-weight:800;font-size:20px;margin-top:11px}
 .basis .a{font-family:var(--mono);font-size:11px;color:#b7b5ac;margin-top:4px}
 .basis .d{font-size:12.5px;color:#cfcdc6;margin-top:10px;line-height:1.5}
+.basis .bspec{margin-top:11px;display:grid;grid-template-columns:1fr 1fr;gap:3px 22px}
+.basis .bspec div{font-size:11px;color:#cfcdc6;line-height:1.4;padding-left:11px;position:relative;break-inside:avoid}
+.basis .bspec div::before{content:"·";position:absolute;left:2px;color:var(--gold);font-weight:700}
+@media (max-width:560px){.basis .bspec{grid-template-columns:1fr}}
 .basis .p{font-family:var(--mono);font-weight:600;font-size:23px;margin-top:14px}
 .catblk{margin-top:18px}
 .catblk>.ch{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--slate);font-weight:600;display:flex;align-items:center;gap:9px;margin:0 2px 10px}
@@ -317,7 +321,7 @@ body.mode-gebraucht .hero .hsub{display:none}
     <div class="kick2" data-i18n="s3_kick">03 · Konfiguration</div>
     <h2 data-i18n="h2_config">Maschine &amp; Ausstattung</h2>
     <div class="basis"><div class="bimg" id="basisImg"></div>
-      <div class="btx"><span class="tag" data-i18n="base_tag">Basismaschine · enthalten</span><div class="t">Lepton 5100</div><div class="a"><span data-i18n="art_no">Art.-Nr.</span> 5000379</div><div class="d" data-i18n="base_desc">Mobiler Scheibenseparator · Bunker 8 m³ · Siebdeck 1 (3–38°) · 4 E-Motoren</div><div class="p" id="basisPrice">340.300 €</div></div>
+      <div class="btx"><span class="tag" data-i18n="base_tag">Basismaschine · enthalten</span><div class="t">Lepton 5100</div><div class="a"><span data-i18n="art_no">Art.-Nr.</span> 5000379</div><div class="d" data-i18n="base_desc">Mobiler Scheibenseparator · Bunker 8 m³ · Siebdeck 1 (3–38°) · 4 E-Motoren</div><div class="bspec" id="basisSpec"></div><div class="p" id="basisPrice">340.300 €</div></div>
     </div>
     <div id="catalog"></div>
   </div>
@@ -562,6 +566,7 @@ var lang="de";
   document.querySelectorAll("[data-i18n]").forEach(function(el){el.textContent=t(el.getAttribute("data-i18n"));});
   document.querySelectorAll("[data-i18n-ph]").forEach(function(el){el.setAttribute("placeholder",t(el.getAttribute("data-i18n-ph")));});
   document.querySelectorAll("#langsel button").forEach(function(b){b.classList.toggle("active",b.getAttribute("data-lang")===lang);});
+  var bs=document.getElementById("basisSpec");if(bs){var sp=SPEC[lang]||SPEC.de;bs.innerHTML=sp.map(function(x){return '<div>'+esc(x)+'</div>';}).join('');}
  }
  function setLang(l){
   if(!I18N[l])return;
