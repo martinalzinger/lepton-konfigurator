@@ -159,7 +159,7 @@ for cat in SP_RAW["kategorien"]:
             "name":p["name"], "name_en":p.get("name_en"),
             "desc":p.get("desc",""), "desc_en":p.get("desc_en"),
             "price":p.get("price",0),
-            "model": mk, "modelKind": kind, "img": p.get("img")
+            "model": mk, "modelKind": kind, "img": p.get("img"), "rot": p.get("rot")
         })
     CAT.append({"h":cat["h"], "h_en":cat.get("h_en"), "items":items})
 
@@ -635,7 +635,7 @@ const ICONS={
  function closeCart(){document.getElementById("drawer").classList.remove("open");document.getElementById("backdrop").classList.remove("open");}
  // ===== 3D-Explorer (three.js wird BEI BEDARF dynamisch geladen) =====
  var THREE,GLTFLoader,OrbitControls,RoomEnvironment,loader,hlMat;
- var renderer,scene,camera,controls,raycaster,curRoot=null,pivot=null,autoSpin=true,baseQuat=null,camDist=1,groups=[],activeG=null,fitR=1,vinit=false,viewerActive=false,threeReady=false;
+ var renderer,scene,camera,controls,raycaster,curRoot=null,pivot=null,autoSpin=true,baseQuat=null,camDist=1,curModelRot=null,groups=[],activeG=null,fitR=1,vinit=false,viewerActive=false,threeReady=false;
  function ensureThree(){
   if(threeReady)return Promise.resolve(true);
   return Promise.all([import("./vendor/three.module.min.js"),import("./vendor/GLTFLoader.js"),import("./vendor/OrbitControls.js"),import("./vendor/RoomEnvironment.js")]).then(function(m){
@@ -721,6 +721,7 @@ const ICONS={
   var m=new THREE.Matrix4();m.set(u.x,u.y,u.z,0, w.x,w.y,w.z,0, tt.x,tt.y,tt.z,0, 0,0,0,1);
   return new THREE.Quaternion().setFromRotationMatrix(m);
  }
+ function eulerQuat(d){if(!d)return new THREE.Quaternion();return new THREE.Quaternion().setFromEuler(new THREE.Euler(d[0]*Math.PI/180,d[1]*Math.PI/180,d[2]*Math.PI/180,"XYZ"));}
  function framePos(d){return new THREE.Vector3(0.62,0.5,0.85).normalize().multiplyScalar(d);}
  function frameModel(){
   if(!pivot){pivot=new THREE.Group();scene.add(pivot);}
@@ -730,6 +731,7 @@ const ICONS={
   curRoot.position.copy(c).multiplyScalar(-1);                       // Mittelpunkt -> Pivot-Ursprung
   var dims=[["x",size.x],["y",size.y],["z",size.z]].sort(function(a,b){return b[1]-a[1];});
   baseQuat=axisPermQuat(dims[0][0],dims[1][0]);                      // konsistente Ausrichtung
+  if(curModelRot){baseQuat=eulerQuat(curModelRot).multiply(baseQuat);}  // optionale Zusatz-Drehung pro Modell
   pivot.quaternion.copy(baseQuat);
   var sx=dims[0][1],sy=dims[1][1],sz=dims[2][1];fitR=Math.max(sx,sy,sz)||1;
   var R=0.5*Math.sqrt(sx*sx+sy*sy+sz*sz)||1;                          // Bounding-Kugel
@@ -769,6 +771,7 @@ const ICONS={
  function showNo(msg){document.getElementById("mvLoad").style.display="none";var no=document.getElementById("mvNo");no.style.display="flex";no.textContent=msg||t("no_3d");}
  function open3D(id){
   var p=byId[id];document.getElementById("mvName").textContent=pName(p);document.getElementById("mvArt").textContent=t("art_prefix")+p.art;
+  curModelRot=p.rot||null;
   document.getElementById("mvModal").classList.add("open");viewerActive=true;
   document.getElementById("mvNo").style.display="none";
   document.getElementById("partList").innerHTML="";document.getElementById("partCount").textContent="0";
