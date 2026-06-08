@@ -376,5 +376,23 @@
     "en": "Customs code",
     "pl": "Kod celny",
     "fr": "Code douanier"
+  },
+  "lbl_liefer": {
+    "de": "Lieferart",
+    "en": "Delivery",
+    "pl": "Sposób dostawy",
+    "fr": "Livraison"
+  },
+  "liefer_standard": {
+    "de": "Normaler Versand",
+    "en": "Standard shipping",
+    "pl": "Wysyłka standardowa",
+    "fr": "Envoi standard"
+  },
+  "liefer_express": {
+    "de": "Nachtexpress",
+    "en": "Overnight express",
+    "pl": "Ekspres nocny",
+    "fr": "Express de nuit"
   }
 }
