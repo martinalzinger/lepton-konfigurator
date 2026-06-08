@@ -448,7 +448,7 @@ const ICONS={
  function closeCart(){document.getElementById("drawer").classList.remove("open");document.getElementById("backdrop").classList.remove("open");}
  // ===== 3D-Explorer (three.js wird BEI BEDARF dynamisch geladen) =====
  var THREE,GLTFLoader,OrbitControls,RoomEnvironment,loader,hlMat;
- var renderer,scene,camera,controls,raycaster,curRoot=null,pivot=null,autoSpin=true,groups=[],activeG=null,fitR=1,vinit=false,viewerActive=false,threeReady=false;
+ var renderer,scene,camera,controls,raycaster,curRoot=null,pivot=null,autoSpin=true,baseQuat=null,camDist=1,groups=[],activeG=null,fitR=1,vinit=false,viewerActive=false,threeReady=false;
  function ensureThree(){
   if(threeReady)return Promise.resolve(true);
   return Promise.all([import("./vendor/three.module.min.js"),import("./vendor/GLTFLoader.js"),import("./vendor/OrbitControls.js"),import("./vendor/RoomEnvironment.js")]).then(function(m){
@@ -528,14 +528,32 @@ const ICONS={
   order.sort(function(a,b){return b.count-a.count||a.label.localeCompare(b.label);});
   groups=order;
  }
+ // Ausricht-Quaternion: bringt Modell-Achse a0 -> Welt-X (waagrecht), a1 -> Welt-Y (oben)
+ function axisPermQuat(a0,a1){
+  var ax={x:new THREE.Vector3(1,0,0),y:new THREE.Vector3(0,1,0),z:new THREE.Vector3(0,0,1)};
+  var u=ax[a0].clone(),w=ax[a1].clone(),tt=new THREE.Vector3().crossVectors(u,w);
+  var m=new THREE.Matrix4();m.set(u.x,u.y,u.z,0, w.x,w.y,w.z,0, tt.x,tt.y,tt.z,0, 0,0,0,1);
+  return new THREE.Quaternion().setFromRotationMatrix(m);
+ }
+ function framePos(d){return new THREE.Vector3(0.62,0.5,0.85).normalize().multiplyScalar(d);}
  function frameModel(){
   if(!pivot){pivot=new THREE.Group();scene.add(pivot);}
   if(curRoot.parent!==pivot){if(curRoot.parent)curRoot.parent.remove(curRoot);pivot.add(curRoot);}
   pivot.quaternion.identity();curRoot.position.set(0,0,0);pivot.updateMatrixWorld(true);
-  var box=new THREE.Box3().setFromObject(curRoot);var c=box.getCenter(new THREE.Vector3()),size=box.getSize(new THREE.Vector3());var r=Math.max(size.x,size.y,size.z)||1;fitR=r;
-  curRoot.position.copy(c).multiplyScalar(-1);          // Modell-Mittelpunkt = Pivot-Ursprung
-  controls.target.set(0,0,0);var d=r*1.9;camera.position.set(d*0.7,d*0.55,d*0.9);camera.near=r*0.001;camera.far=r*80;camera.updateProjectionMatrix();controls.minDistance=r*0.003;controls.maxDistance=r*12;controls.update();autoSpin=true;}
- function resetView(){if(!curRoot)return;if(pivot)pivot.quaternion.identity();controls.target.set(0,0,0);var d=fitR*1.9;camera.position.set(d*0.7,d*0.55,d*0.9);autoSpin=true;controls.update();}
+  var box=new THREE.Box3().setFromObject(curRoot);var c=box.getCenter(new THREE.Vector3()),size=box.getSize(new THREE.Vector3());
+  curRoot.position.copy(c).multiplyScalar(-1);                       // Mittelpunkt -> Pivot-Ursprung
+  var dims=[["x",size.x],["y",size.y],["z",size.z]].sort(function(a,b){return b[1]-a[1];});
+  baseQuat=axisPermQuat(dims[0][0],dims[1][0]);                      // konsistente Ausrichtung
+  pivot.quaternion.copy(baseQuat);
+  var sx=dims[0][1],sy=dims[1][1],sz=dims[2][1];fitR=Math.max(sx,sy,sz)||1;
+  var R=0.5*Math.sqrt(sx*sx+sy*sy+sz*sz)||1;                          // Bounding-Kugel
+  var fov=camera.fov*Math.PI/180,asp=camera.aspect||1.4;
+  camDist=Math.max(R/Math.sin(fov/2), R/Math.sin(Math.atan(Math.tan(fov/2)*asp)))*1.05;
+  controls.target.set(0,0,0);camera.position.copy(framePos(camDist));
+  camera.near=Math.max(R*0.0015,1e-4);camera.far=R*60;camera.updateProjectionMatrix();
+  controls.minDistance=R*0.004;controls.maxDistance=R*16;controls.update();autoSpin=true;
+ }
+ function resetView(){if(!curRoot)return;if(pivot&&baseQuat)pivot.quaternion.copy(baseQuat);controls.target.set(0,0,0);camera.position.copy(framePos(camDist||fitR*1.6));autoSpin=true;controls.update();}
  function setHighlight(g,on){g.meshes.forEach(function(m){if(on){if(m.userData._om===undefined)m.userData._om=m.material;m.material=hlMat;}else if(m.userData._om!==undefined){m.material=m.userData._om;m.userData._om=undefined;}});}
  function selectGroup(g,scroll){if(activeG===g)return;if(activeG)setHighlight(activeG,false);activeG=g;if(g)setHighlight(g,true);autoSpin=false;document.querySelectorAll(".prow").forEach(function(r){r.classList.toggle("active",r.__g===g);});if(scroll&&g){var rows=[].slice.call(document.querySelectorAll(".prow"));for(var i=0;i<rows.length;i++){if(rows[i].__g===g){rows[i].scrollIntoView({block:"nearest"});break;}}}}
  function toggleGroup(g){g.visible=!g.visible;g.meshes.forEach(function(m){m.visible=g.visible;});document.querySelectorAll(".prow").forEach(function(r){if(r.__g===g)r.classList.toggle("hidden",!g.visible);});}
