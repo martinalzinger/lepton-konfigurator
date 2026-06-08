@@ -1233,5 +1233,1655 @@
 "art": "0013864_0",
 "name": "Sechskantschraube DIN 931 M10x110",
 "weight": 0.1
+},
+"PDM_34081": {
+"art": "0016063_1",
+"name": "Warning Label Battery Disconnection Switch",
+"weight": 0.0
+},
+"PDM_35394": {
+"art": "0016209_1",
+"name": "Warning Label High Voltage",
+"weight": 0.0
+},
+"PDM_35410": {
+"art": "0016223_1",
+"name": "Warning Label Mechanical Interlock",
+"weight": 0.0
+},
+"PDM_35489": {
+"art": "0016235_1",
+"name": "Warning Label Misoperation Hazard",
+"weight": 0.0
+},
+"PDM_2034": {
+"art": "0002429_0",
+"name": "Endklammer 10mm 249-117",
+"weight": 0.0
+},
+"PDM_31705": {
+"art": "0015992_0",
+"name": "Vorschaltgerät Isolationswächter 400V -> 1000V DC / 690V AC",
+"weight": 0.2
+},
+"PDM_54758": {
+"art": "0017988_0",
+"name": "Schiebemmutter M8",
+"weight": 0.0
+},
+"PDM_19871": {
+"art": "5000559_1",
+"name": "Klemmbügel KLBUE 4-13,5",
+"weight": 0.0
+},
+"PDM_4871": {
+"art": "0003772_1",
+"name": "Frequenzumrichter SEW MCLTEB0075-5A3-4-00 7,5 kW",
+"weight": 2.9
+},
+"PDM_19924": {
+"art": "5000573_0",
+"name": "Abschlussplatte WAP 2,5-10",
+"weight": 0.0
+},
+"PDM_2041": {
+"art": "0002438_0",
+"name": "Durchgangsklemme 2 Leiter",
+"weight": 0.0
+},
+"PDM_31700": {
+"art": "0015989_0",
+"name": "FI-Schutzschalter 4-polig 40/0,03A",
+"weight": 0.4
+},
+"PDM_2042": {
+"art": "0002437_0",
+"name": "Steckdose 230V 16A Hutschiene",
+"weight": 0.1
+},
+"PDM_31697": {
+"art": "0015988_0",
+"name": "Leitungsschutzschalter C16/1",
+"weight": 0.1
+},
+"PDM_31701": {
+"art": "0015990_0",
+"name": "Sammelschiene 3-Phasen Polzahl 6",
+"weight": 0.0
+},
+"PDM_35627": {
+"art": "0016251_0",
+"name": "Installationsrelais 250V AC 20A",
+"weight": 0.1
+},
+"PDM_33557": {
+"art": "0016014_1",
+"name": "Warnaufkleber Elektrische Spannung",
+"weight": 0.0
+},
+"PDM_35418": {
+"art": "0016228_1",
+"name": "Warnaufkleber Mechanische Verriegelung",
+"weight": 0.0
+},
+"PDM_35487": {
+"art": "0016234_1",
+"name": "Warnaufkleber Fehlbedienung",
+"weight": 0.0
+},
+"PDM_31674": {
+"art": "0015969_0",
+"name": "Einspeiseblock 3-Phasen für MS",
+"weight": 0.1
+},
+"PDM_31664": {
+"art": "0015959_0",
+"name": "Hilfskontakt Motorschutzschalter",
+"weight": 0.0
+},
+"PDM_31663": {
+"art": "0015958_0",
+"name": "Motorschutzschalter 400V AC 65A",
+"weight": 1.0
+},
+"PDM_44483": {
+"art": "0017097_0",
+"name": "Frequenzumrichter SEW MCLTEB0150-5A3-4-00 15 kW",
+"weight": 9.1
+},
+"PDM_2002": {
+"art": "0000085_2",
+"name": "Frequenzumrichter SEW MCLTEB0040-5A3-4-00 4,0 kW",
+"weight": 1.7
+},
+"PDM_44452": {
+"art": "0017072_2",
+"name": "Rahmen Schaltschrank",
+"weight": 27.6
+},
+"PDM_16530": {
+"art": "0011802_3",
+"name": "Abdeckung Lüfter Schaltschrank",
+"weight": 1.4
+},
+"PDM_4691": {
+"art": "0003642_1",
+"name": "Türarretierung Schaltschrank",
+"weight": 0.0
+},
+"PDM_5834": {
+"art": "0004382_1",
+"name": "Einziehmutter mit Senkkopf und Teilsechskantschaft M5",
+"weight": 0.0
+},
+"PDM_2073": {
+"art": "0000518_1",
+"name": "Einziehmutter mit Senkkopf und Teilsechskantschaft M6",
+"weight": 0.0
+},
+"PDM_55831": {
+"art": "5000797_0",
+"name": "Belüftungsstopfen ø20",
+"weight": 0.0
+},
+"PDM_4559": {
+"art": "0003537_1",
+"name": "Scharnierhälfte GN 237-ZD-120-60-A-SR",
+"weight": 0.2
+},
+"PDM_56012": {
+"art": "0018138_0",
+"name": "Gummi-Metall-Puffer GN 351-50-30-M10-ES-55",
+"weight": 0.1
+},
+"PDM_7112": {
+"art": "0005319_0",
+"name": "Lüfterhaube FG-12-BK",
+"weight": 0.0
+},
+"PDM_2136": {
+"art": "0001384_0",
+"name": "Zündschloss 330362",
+"weight": 0.2
+},
+"PDM_2134": {
+"art": "0001660_0",
+"name": "Display Topcon OPUS A8 STANDARD Full",
+"weight": 3.0
+},
+"PDM_2139": {
+"art": "0001389_0",
+"name": "Kippschalter R13/28F 250V AC 10A",
+"weight": 0.0
+},
+"PDM_4598": {
+"art": "0003573_0",
+"name": "Frischluftfilter Schaltschrank",
+"weight": 0.4
+},
+"PDM_5338": {
+"art": "0007106_0",
+"name": "Schalter Arbeitsscheinwerfer ø30",
+"weight": 0.0
+},
+"PDM_2088": {
+"art": "0000144_0",
+"name": "Mobilsteuerung STW ESX 3CM A1",
+"weight": 1.3
+},
+"PDM_9710": {
+"art": "0008330_0",
+"name": "Mobilsteuerung STW ESX 3CM A2",
+"weight": 1.3
+},
+"PDM_2089": {
+"art": "0000035_0",
+"name": "Mobilsteuerung STW ESX E/A-Modul IOX A3",
+"weight": 0.3
+},
+"PDM_9709": {
+"art": "0008329_0",
+"name": "Mobilsteuerung STW ESX E/A-Modul IOX A4",
+"weight": 0.3
+},
+"PDM_2011": {
+"art": "0001420_0",
+"name": "Batterietrennschalter 300A 30-313-12-EC-10-917",
+"weight": 0.8
+},
+"PDM_2050": {
+"art": "0002450_0",
+"name": "Isolationswächter RN5897",
+"weight": 0.2
+},
+"PDM_2009": {
+"art": "0001406_0",
+"name": "Kipphebelschalter Kissling 07-1-2-13 936",
+"weight": 0.1
+},
+"PDM_2027": {
+"art": "0002401_0",
+"name": "Sicherungstrennschalter Sentron 3NP1133-1CA20",
+"weight": 0.7
+},
+"PDM_5814": {
+"art": "0004365_0",
+"name": "Thermostat SK 3110.000",
+"weight": 0.1
+},
+"PDM_5088": {
+"art": "0003912_0",
+"name": "Lüfterfilter RCP-12",
+"weight": 0.1
+},
+"PDM_4603": {
+"art": "0003576_0",
+"name": "Lüfter 120x120x38",
+"weight": 0.3
+},
+"PDM_2051": {
+"art": "0002451_1",
+"name": "Sammelschienenhalter 2-polig Rittal SV9340.040",
+"weight": 0.1
+},
+"PDM_9767": {
+"art": "0008375_1",
+"name": "Datenmodul TCG-4",
+"weight": 0.4
+},
+"PDM_4849": {
+"art": "0003754_0",
+"name": "Sterngriffschraube GN 6336.4-ST-32-M6-25",
+"weight": 0.0
+},
+"PDM_35502": {
+"art": "0016242_1",
+"name": "Aufkleber Batteriehauptschalter EN",
+"weight": 0.0
+},
+"PDM_31659": {
+"art": "0015954_0",
+"name": "Welle 6mm L400mm",
+"weight": 0.1
+},
+"PDM_34753": {
+"art": "0016111_0",
+"name": "Warnalarm 12V/24V",
+"weight": 0.2
+},
+"PDM_44417": {
+"art": "0017041_1",
+"name": "Aufkleber Lastumschalter Schaltschrank",
+"weight": 0.0
+},
+"PDM_6011": {
+"art": "0004525_1",
+"name": "Kabelsammelhalterung 2031 10 GRIP 10",
+"weight": 0.0
+},
+"PDM_19939": {
+"art": "0013390_0",
+"name": "Kantenschutz mit Dichtschlauch oben selbstklemmend, EPDM 60 ± 5 Shore A schwarz",
+"weight": 0.7
+},
+"PDM_5356": {
+"art": "0004027_1",
+"name": "Sechskantschraube DIN 933 M5x50",
+"weight": 0.0
+},
+"PDM_611": {
+"art": "0003410_2",
+"name": "Sechskantmutter DIN 934 M6",
+"weight": 0.0
+},
+"PDM_3897": {
+"art": "0003080_1",
+"name": "Sechskantschraube DIN 933 M6x20",
+"weight": 0.0
+},
+"PDM_2087": {
+"art": "0003400_1",
+"name": "Senkkopfschraube DIN 7991 M8x20",
+"weight": 0.0
+},
+"PDM_5354": {
+"art": "0004025_1",
+"name": "Sechskantschraube DIN 933 M6x70",
+"weight": 0.0
+},
+"PDM_5816": {
+"art": "0004367_2",
+"name": "Verdrahtungskanal 30x80 L670",
+"weight": 0.2
+},
+"PDM_5815": {
+"art": "0004366_2",
+"name": "Verdrahtungskanal 30x80 L1600",
+"weight": 0.5
+},
+"PDM_5770": {
+"art": "0007092_0",
+"name": "Kabelverschraubung M12x1,5",
+"weight": 0.0
+},
+"PDM_5775": {
+"art": "0007096_0",
+"name": "Kabelverschraubung M32x1,5",
+"weight": 0.0
+},
+"PDM_5772": {
+"art": "0007093_0",
+"name": "Kabelverschraubung M16x1,5",
+"weight": 0.0
+},
+"PDM_5773": {
+"art": "0007094_0",
+"name": "Kabelverschraubung M20x1,5",
+"weight": 0.0
+},
+"PDM_5774": {
+"art": "0007095_0",
+"name": "Kabelverschraubung M25x1,5",
+"weight": 0.0
+},
+"PDM_5776": {
+"art": "0004327_1",
+"name": "Kabelverschraubung DIN 50262 M63x1,5",
+"weight": 0.5
+},
+"PDM_12425": {
+"art": "0010056_2",
+"name": "C-Profilschiene gelocht 35x18 L1600",
+"weight": 1.3
+},
+"PDM_44426": {
+"art": "0017048_0",
+"name": "Sammelschiene 12x5 L138",
+"weight": 0.1
+},
+"PDM_5809": {
+"art": "0004363_2",
+"name": "Hutprofilschiene gelocht 35x7,5 L1600",
+"weight": 0.6
+},
+"PDM_2023": {
+"art": "0002397_2",
+"name": "Hutprofilschiene gelocht 35x7,5 L370",
+"weight": 0.1
+},
+"PDM_2024": {
+"art": "0002398_2",
+"name": "Hutprofilschiene gelocht 35x7,5 L110",
+"weight": 0.0
+},
+"PDM_19865": {
+"art": "0013345_2",
+"name": "C-Profilschiene gelocht 35x18 L1100",
+"weight": 0.9
+},
+"PDM_606": {
+"art": "0003407_1",
+"name": "Sechskantmutter DIN 934 M5",
+"weight": 0.0
+},
+"PDM_1293": {
+"art": "0003426_2",
+"name": "Sechskantmutter DIN 985 M5",
+"weight": 0.0
+},
+"PDM_605": {
+"art": "0002569_2",
+"name": "Scheibe DIN 125 A 5,3",
+"weight": 0.0
+},
+"PDM_9462": {
+"art": "0008159_1",
+"name": "Senkkopfschraube DIN 7991 M8x30",
+"weight": 0.0
+},
+"PDM_1951": {
+"art": "0003422_1",
+"name": "Innensechskantschraube DIN 912 M6x20",
+"weight": 0.0
+},
+"PDM_54925": {
+"art": "0018060_0",
+"name": "Kantenschutzprofil 1-2mm L1040",
+"weight": 0.0
+},
+"PDM_56011": {
+"art": "5000510_0",
+"name": "Dichteinsatz 4xø6,5 Kabelverschraubung M25x1,5",
+"weight": 0.0
+},
+"PDM_2091": {
+"art": "0000547_0",
+"name": "Sicherungsklemme 2 Leiter LED rot",
+"weight": 0.0
+},
+"PDM_35403": {
+"art": "0016216_0",
+"name": "Abschlussdeckel Durchgangsklemmen 2 Leiter 6mm²",
+"weight": 0.0
+},
+"PDM_19270": {
+"art": "5000066_0",
+"name": "Leiteranschlussklemme 1,5-16mm²",
+"weight": 0.0
+},
+"PDM_21199": {
+"art": "0013691_2",
+"name": "Klemmschiene 9x6,5 M5 L195",
+"weight": 0.1
+},
+"PDM_19888": {
+"art": "5000251_1",
+"name": "Gegenmutter DIN 50262 M25x1,5",
+"weight": 0.0
+},
+"PDM_17752": {
+"art": "0012471_0",
+"name": "Abstandshalter M5159/2",
+"weight": 0.0
+},
+"PDM_19882": {
+"art": "5000247_1",
+"name": "Kabelverschraubung DIN 50262 M32x1,5",
+"weight": 0.2
+},
+"PDM_54802": {
+"art": "0018008_0",
+"name": "Zugbügel 16mm\" PE",
+"weight": 0.0
+},
+"PDM_19825": {
+"art": "5000126_0",
+"name": "Leiteranschlussklemme 4-35mm² ZK81",
+"weight": 0.0
+},
+"PDM_1315": {
+"art": "0003392_1",
+"name": "Linsenkopfschraube ISO 7380-2 M6x12",
+"weight": 0.0
+},
+"PDM_1294": {
+"art": "0003403_1",
+"name": "Linsenkopfschraube ISO 7380-2 M6x16",
+"weight": 0.0
+},
+"PDM_18399": {
+"art": "5000332_0",
+"name": "Sechskantschraube DIN 933 M5x10",
+"weight": 0.0
+},
+"PDM_19246": {
+"art": "5000423_0",
+"name": "Linsenkopfschraube ISO 7380-2 M5x10",
+"weight": 0.0
+},
+"PDM_5854": {
+"art": "0004400_0",
+"name": "Flachstecksicherung standard 10A",
+"weight": 0.0
+},
+"PDM_2090": {
+"art": "0000546_0",
+"name": "Abschlussplatte 282-333",
+"weight": 0.0
+},
+"PDM_17013": {
+"art": "5000360_0",
+"name": "Sechskantschraube DIN 933 M10x16",
+"weight": 0.0
+},
+"PDM_1525": {
+"art": "0003418_1",
+"name": "Schlossschraube DIN 603 M10x20",
+"weight": 0.0
+},
+"PDM_3956": {
+"art": "0003121_1",
+"name": "Sechskantschraube DIN 933 M6x12",
+"weight": 0.0
+},
+"PDM_19826": {
+"art": "5000067_0",
+"name": "Leiteranschlussklemme 16-50mm² SK50 F5",
+"weight": 0.0
+},
+"PDM_19880": {
+"art": "5000248_1",
+"name": "Kabelverschraubung DIN 50262 M20x1,5",
+"weight": 0.1
+},
+"PDM_19875": {
+"art": "0013353_0",
+"name": "Kabelabstandschelle PROTEC.class PKAS1017",
+"weight": 0.0
+},
+"PDM_19870": {
+"art": "0013348_1",
+"name": "Sammelschiene 10x3 L330",
+"weight": 0.1
+},
+"PDM_19876": {
+"art": "5000883_0",
+"name": "Kabelsammelhalterung 712/1",
+"weight": 0.0
+},
+"PDM_19881": {
+"art": "5000249_1",
+"name": "Kabelverschraubung DIN 50262 M25x1,5",
+"weight": 0.1
+},
+"PDM_19883": {
+"art": "0007097_0",
+"name": "Gegenmutter DIN 50262 M12x1,5",
+"weight": 0.0
+},
+"PDM_19884": {
+"art": "0007098_0",
+"name": "Gegenmutter DIN 50262 M16x1,5",
+"weight": 0.0
+},
+"PDM_19885": {
+"art": "0007099_0",
+"name": "Gegenmutter DIN 50262 M20x1,5",
+"weight": 0.0
+},
+"PDM_19896": {
+"art": "5000253_1",
+"name": "Gegenmutter DIN 50262 M63x1,5",
+"weight": 0.1
+},
+"PDM_19886": {
+"art": "0007100_0",
+"name": "Gegenmutter DIN 50262 M25x1,5",
+"weight": 0.0
+},
+"PDM_19887": {
+"art": "0007101_0",
+"name": "Gegenmutter DIN 50262 M32x1,5",
+"weight": 0.0
+},
+"PDM_19894": {
+"art": "5000252_1",
+"name": "Gegenmutter DIN 50262 M32x1,5",
+"weight": 0.0
+},
+"PDM_35408": {
+"art": "0016221_0",
+"name": "Abschlussdeckel Doppelstockklemme 2,5mm²",
+"weight": 0.0
+},
+"PDM_35397": {
+"art": "0016211_0",
+"name": "Doppelstockklemme mit Potentialverbinder 1,5mm²",
+"weight": 0.0
+},
+"PDM_35406": {
+"art": "0016219_0",
+"name": "Doppelstockklemme mit Potentialverbinder 2,5mm²",
+"weight": 0.0
+},
+"PDM_35398": {
+"art": "0016212_0",
+"name": "Abschlussdeckel Doppelstockklemme 1,5mm²",
+"weight": 0.0
+},
+"PDM_35407": {
+"art": "0016220_0",
+"name": "Doppelstockklemme PE 2,5mm²",
+"weight": 0.0
+},
+"PDM_35404": {
+"art": "0016217_0",
+"name": "Doppelstockklemme 1,5mm²",
+"weight": 0.0
+},
+"PDM_35402": {
+"art": "0016215_0",
+"name": "Schildträger Endklammer 10mm",
+"weight": 0.0
+},
+"PDM_35405": {
+"art": "0016218_0",
+"name": "Doppelstockklemme 2,5mm²",
+"weight": 0.0
+},
+"PDM_2028": {
+"art": "0000544_0",
+"name": "Endklammer 6mm 249-116",
+"weight": 0.0
+},
+"PDM_35765": {
+"art": "0016288_1",
+"name": "Verdrahtungskanal 20x40 L1600",
+"weight": 0.3
+},
+"PDM_2035": {
+"art": "0002430_0",
+"name": "Erdungsklemme WPE 4",
+"weight": 0.0
+},
+"PDM_19819": {
+"art": "5000068_1",
+"name": "Endwinkel WEW 35/2",
+"weight": 0.0
+},
+"PDM_44435": {
+"art": "0017057_0",
+"name": "Verdrahtungskanal 30x80 L755",
+"weight": 0.3
+},
+"PDM_44436": {
+"art": "0017058_0",
+"name": "Verdrahtungskanal 20x40 L755",
+"weight": 0.2
+},
+"PDM_35401": {
+"art": "0016214_0",
+"name": "Durchgangsklemme PE 2 Leiter 6mm²",
+"weight": 0.0
+},
+"PDM_44429": {
+"art": "0017051_0",
+"name": "Durchgangsklemme blau 2 Leiter 6mm²",
+"weight": 0.0
+},
+"PDM_44467": {
+"art": "0017084_0",
+"name": "Hutprofilschiene gelocht 35x7,5 L140",
+"weight": 0.1
+},
+"PDM_19791": {
+"art": "0013297_0",
+"name": "Sechskantschraube DIN 933 M4x6",
+"weight": 0.0
+},
+"PDM_11198": {
+"art": "0009245_0",
+"name": "Kabeltülle Doppelseitig 6x9x11",
+"weight": 0.0
+},
+"PDM_44433": {
+"art": "0017055_0",
+"name": "Hutprofilschiene gelocht 35x7,5 L755",
+"weight": 0.3
+},
+"PDM_44434": {
+"art": "0017056_0",
+"name": "Hutprofilschiene gelocht 35x7,5 L690",
+"weight": 0.2
+},
+"PDM_607": {
+"art": "0003373_1",
+"name": "Sechskantschraube DIN 933 M5x16",
+"weight": 0.0
+},
+"PDM_11199": {
+"art": "0009246_0",
+"name": "Kantenschutz mit Dichtschlauch oben selbstklemmend, EPDM 60 ± 5 Shore A schwarz",
+"weight": 0.2
+},
+"PDM_44447": {
+"art": "0017067_0",
+"name": "C-Profilschiene gelocht 35x18 L260",
+"weight": 0.2
+},
+"PDM_44446": {
+"art": "0017066_0",
+"name": "C-Profilschiene gelocht 35x18 L755",
+"weight": 0.6
+},
+"PDM_44438": {
+"art": "0017060_0",
+"name": "Verdrahtungskanal 30x80 L690",
+"weight": 0.2
+},
+"PDM_44437": {
+"art": "0017059_0",
+"name": "Verdrahtungskanal 20x40 L690",
+"weight": 0.1
+},
+"PDM_112": {
+"art": "0001488_3",
+"name": "Einziehmutter mit Senkkopf und Teilsechskantschaft M8",
+"weight": 0.0
+},
+"PDM_44486": {
+"art": "5000426_0",
+"name": "Linsenkopfschraube ISO 7380-2 M5x16",
+"weight": 0.0
+},
+"PDM_44487": {
+"art": "5000428_0",
+"name": "Linsenkopfschraube ISO 7380-2 M5x25",
+"weight": 0.0
+},
+"PDM_44492": {
+"art": "5000427_0",
+"name": "Linsenkopfschraube ISO 7380-2 M5x20",
+"weight": 0.0
+},
+"PDM_44493": {
+"art": "0017105_0",
+"name": "Innensechskantschraube DIN 912 M5x20",
+"weight": 0.0
+},
+"PDM_20935": {
+"art": "5000405_0",
+"name": "Innensechskantschraube DIN 912 M5x30",
+"weight": 0.0
+},
+"PDM_610": {
+"art": "0003409_1",
+"name": "Innensechskantschraube DIN 912 M4x16",
+"weight": 0.0
+},
+"PDM_17185": {
+"art": "5000439_0",
+"name": "Linsenkopfschraube ISO 7380-2 M8x30",
+"weight": 0.0
+},
+"PDM_44514": {
+"art": "5000338_0",
+"name": "Sechskantschraube DIN 933 M5x60",
+"weight": 0.0
+},
+"PDM_44536": {
+"art": "0017140_0",
+"name": "Langmutter DIN 6334 FK 10 M5x25",
+"weight": 0.0
+},
+"PDM_54801": {
+"art": "0018007_0",
+"name": "Zugbügel 4mm² PE",
+"weight": 0.0
+},
+"PDM_54804": {
+"art": "0018010_0",
+"name": "Linsenkopfschraube ISO 7380-1 M8x35",
+"weight": 0.0
+},
+"PDM_19895": {
+"art": "5000506_1",
+"name": "Gegenmutter DIN 50262 M40x1,5",
+"weight": 0.0
+},
+"PDM_54805": {
+"art": "0018011_0",
+"name": "Kantenschutzprofil 1-2mm L345",
+"weight": 0.0
+},
+"PDM_54806": {
+"art": "0018012_0",
+"name": "Kantenschutzprofil 1-2mm L190",
+"weight": 0.0
+},
+"PDM_54809": {
+"art": "0018014_0",
+"name": "Kantenschutzprofil 1-2mm L245",
+"weight": 0.0
+},
+"PDM_54811": {
+"art": "0018016_0",
+"name": "Kantenschutzprofil 1-2mm L45",
+"weight": 0.0
+},
+"PDM_54812": {
+"art": "0018017_0",
+"name": "Kantenschutzprofil 1-2mm L70",
+"weight": 0.0
+},
+"PDM_54810": {
+"art": "0018015_0",
+"name": "Kantenschutzprofil 1-2mm L120",
+"weight": 0.0
+},
+"PDM_54813": {
+"art": "0018018_0",
+"name": "Kantenschutzprofil 1-2mm L175",
+"weight": 0.0
+},
+"PDM_54814": {
+"art": "0018019_0",
+"name": "Kantenschutzprofil 1-2mm L80",
+"weight": 0.0
+},
+"PDM_54815": {
+"art": "0018020_0",
+"name": "Kantenschutzprofil 1-2mm L122",
+"weight": 0.0
+},
+"PDM_54816": {
+"art": "0018021_0",
+"name": "Kantenschutzprofil 1-2mm L205",
+"weight": 0.0
+},
+"PDM_54817": {
+"art": "0018022_0",
+"name": "Kantenschutzprofil 1-2mm L125",
+"weight": 0.0
+},
+"PDM_54818": {
+"art": "0018027_0",
+"name": "Kantenschutzprofil 1-2mm L150",
+"weight": 0.0
+},
+"PDM_54819": {
+"art": "0018024_0",
+"name": "Kantenschutzprofil 1-2mm L165",
+"weight": 0.0
+},
+"PDM_54820": {
+"art": "0018025_0",
+"name": "Kantenschutzprofil 1-2mm L85",
+"weight": 0.0
+},
+"PDM_54821": {
+"art": "0018026_0",
+"name": "Kantenschutzprofil 1-2mm L115",
+"weight": 0.0
+},
+"PDM_54822": {
+"art": "0018027_0",
+"name": "Kantenschutzprofil 1-2mm L150",
+"weight": 0.0
+},
+"PDM_54824": {
+"art": "0018017_0",
+"name": "Kantenschutzprofil 1-2mm L70",
+"weight": 0.0
+},
+"PDM_54823": {
+"art": "0018028_0",
+"name": "Kantenschutzprofil 1-2mm L100",
+"weight": 0.0
+},
+"PDM_19905": {
+"art": "0013374_1",
+"name": "Verschlussschraube DIN 50262 M40x1,5",
+"weight": 0.0
+},
+"PDM_19904": {
+"art": "0013373_1",
+"name": "Verschlussschraube DIN 50262 M25x1,5",
+"weight": 0.0
+},
+"PDM_19878": {
+"art": "5000254_2",
+"name": "Reduzierung DIN 50262 M25-M20",
+"weight": 0.0
+},
+"PDM_31666": {
+"art": "0015961_0",
+"name": "Motorschutzschalter 400V AC 25A",
+"weight": 0.3
+},
+"PDM_31672": {
+"art": "0015967_0",
+"name": "Sammelschiene 3-Phasen für 4 MS",
+"weight": 0.1
+},
+"PDM_31683": {
+"art": "0015978_0",
+"name": "Leistungsschütz 400V AC 4kW",
+"weight": 0.3
+},
+"PDM_19838": {
+"art": "0013336_0",
+"name": "Schaltplantasche DIN A4",
+"weight": 0.1
+},
+"PDM_44519": {
+"art": "0017123_0",
+"name": "LED-Streifen L1240",
+"weight": 0.0
+},
+"PDM_44402": {
+"art": "5001122_0",
+"name": "Masseband 16mm² 200mm",
+"weight": 0.0
+},
+"PDM_46381": {
+"art": "0017493_0",
+"name": "Relais Finder 40.61.9.024.1000",
+"weight": 0.0
+},
+"PDM_2106": {
+"art": "0000929_0",
+"name": "Relaissockel Finder 95.85.3 mit Haltebügel",
+"weight": 0.0
+},
+"PDM_2107": {
+"art": "0000932_0",
+"name": "Anzeige- und EMV-Entstörmodul für Relaissockels Serie 40/44",
+"weight": 0.0
+},
+"PDM_44441": {
+"art": "0017063_1",
+"name": "Halter 1 CAN-Bus-Kabel Schaltschrank",
+"weight": 0.6
+},
+"PDM_31686": {
+"art": "0015981_0",
+"name": "Parallelverbindungssatz Lastumschalter 4-polig",
+"weight": 0.2
+},
+"PDM_55960": {
+"art": "5000264_0",
+"name": "Kabel Antennenverlängerung 4G L5000",
+"weight": 0.2
+},
+"PDM_2142": {
+"art": "0001255_1",
+"name": "Zunge Stangenschloss 1121-U25",
+"weight": 0.0
+},
+"PDM_2141": {
+"art": "0001251_1",
+"name": "Stangenführung 1121-109",
+"weight": 0.0
+},
+"PDM_35412": {
+"art": "0016225_0",
+"name": "Schlüsselschild Stangenschloss 1221-U22",
+"weight": 0.0
+},
+"PDM_54825": {
+"art": "0018030_0",
+"name": "Betätigung Dreikant 8 1121-U15",
+"weight": 0.0
+},
+"PDM_2140": {
+"art": "0001250_0",
+"name": "Stangenschloss 1121-U1-C",
+"weight": 0.1
+},
+"PDM_55830": {
+"art": "5001217_0",
+"name": "Sicherung Siemens 3NA68 80A",
+"weight": 0.2
+},
+"PDM_19836": {
+"art": "0007023_0",
+"name": "Kippschalter-Betätigungsschutz",
+"weight": 0.0
+},
+"PDM_19820": {
+"art": "5000551_0",
+"name": "Reservefach AK BC",
+"weight": 0.0
+},
+"PDM_19879": {
+"art": "5000507_0",
+"name": "Reduzierung DIN 50262 M32-M25",
+"weight": 0.0
+},
+"PDM_31669": {
+"art": "0015964_0",
+"name": "Motorschutzschalter 400V AC 6,3A",
+"weight": 0.2
+},
+"PDM_31667": {
+"art": "0015962_0",
+"name": "Motorschutzschalter 400V AC 16A",
+"weight": 0.3
+},
+"PDM_31668": {
+"art": "0015963_0",
+"name": "Motorschutzschalter 400V AC 10A",
+"weight": 0.2
+},
+"PDM_31670": {
+"art": "0015965_0",
+"name": "Motorschutzschalter 400V AC 4A",
+"weight": 0.2
+},
+"PDM_31665": {
+"art": "0015960_0",
+"name": "Motorschutzschalter 400V AC 32A",
+"weight": 0.3
+},
+"PDM_36625": {
+"art": "0016370_0",
+"name": "Motorschutzschalter 400V AC 12A",
+"weight": 0.3
+},
+"PDM_31687": {
+"art": "0015982_0",
+"name": "Lastumschalter 4-polig 400V AC 125A",
+"weight": 1.4
+},
+"PDM_31689": {
+"art": "0015983_0",
+"name": "Hilfskontakt Links Lastumschalter 4-polig",
+"weight": 0.0
+},
+"PDM_31673": {
+"art": "0015968_0",
+"name": "Sammelschiene 3-Phasen für 5 MS",
+"weight": 0.2
+},
+"PDM_31658": {
+"art": "0015953_0",
+"name": "Pistolengriff Welle 6mm",
+"weight": 0.1
+},
+"PDM_35396": {
+"art": "0016210_1",
+"name": "Aufkleber Typenschild Schaltschrank Amerika",
+"weight": 0.0
+},
+"PDM_31681": {
+"art": "0015976_0",
+"name": "Zeitrelais abfallverzögert 1 Wechsler 24-48V DC / 24-240V AC",
+"weight": 0.1
+},
+"PDM_31682": {
+"art": "0015977_0",
+"name": "Leistungsschütz 400V AC 7.5kW",
+"weight": 0.3
+},
+"PDM_31685": {
+"art": "0015980_0",
+"name": "Sicherheitsrelais 1-Kanal 24V DC",
+"weight": 0.2
+},
+"PDM_31684": {
+"art": "0015979_0",
+"name": "Sicherheitsrelais 2-Kanal 24V DC",
+"weight": 0.2
+},
+"PDM_31660": {
+"art": "0015955_0",
+"name": "Hauptschütz 24V DC 9A",
+"weight": 2.4
+},
+"PDM_31661": {
+"art": "0015956_0",
+"name": "Hilfskontakt Hauptschütz",
+"weight": 0.0
+},
+"PDM_44128": {
+"art": "0017023_1",
+"name": "Doppelstockklemme blau 2,5mm²",
+"weight": 0.0
+},
+"PDM_46849": {
+"art": "0017594_0",
+"name": "Widerstand 2,2 kOhm, 0,6 W",
+"weight": 0.0
+},
+"PDM_31677": {
+"art": "0015972_0",
+"name": "Softstarter 400V AC 12A",
+"weight": 0.4
+},
+"PDM_31706": {
+"art": "0015993_0",
+"name": "Strommessumformer Eingangsstrom 0-100A Ausgangsstrom 4-20mA",
+"weight": 0.1
+},
+"PDM_31662": {
+"art": "0015957_0",
+"name": "Abdeckung Hauptschütz",
+"weight": 0.0
+},
+"PDM_54826": {
+"art": "0018031_0",
+"name": "Schlüssel Dreikant 8 1004-04",
+"weight": 0.0
+},
+"PDM_31690": {
+"art": "0015984_0",
+"name": "Hilfskontakt Rechts Lastumschalter 4-polig",
+"weight": 0.0
+},
+"PDM_31678": {
+"art": "0015973_0",
+"name": "Überwachungsrelais 3-Phasen 200-500V AC",
+"weight": 0.1
+},
+"PDM_31707": {
+"art": "0015994_0",
+"name": "Spannungsmessumformer Eingangsbereich 0-660V AC / Ausgangsbereich -10V-10V -20mA-20mA",
+"weight": 0.2
+},
+"PDM_31679": {
+"art": "0015974_0",
+"name": "Temperatur-Motorschutzrelais",
+"weight": 0.1
+},
+"PDM_44395": {
+"art": "5001119_0",
+"name": "Schirmklammer mit Bohrung 8-18mm",
+"weight": 0.0
+},
+"PDM_44396": {
+"art": "5001120_0",
+"name": "Schirmklammer für Sammelschiene 3-12mm",
+"weight": 0.0
+},
+"PDM_44397": {
+"art": "5001121_0",
+"name": "Schirmklammer zweifach für Sammelschiene 3-6mm",
+"weight": 0.0
+},
+"PDM_44424": {
+"art": "0017046_0",
+"name": "Signalleuchte Blau ø22mm",
+"weight": 0.0
+},
+"PDM_44409": {
+"art": "5001122_0",
+"name": "Masseband 16mm² 200mm",
+"weight": 0.0
+},
+"PDM_44406": {
+"art": "5001122_0",
+"name": "Masseband 16mm² 200mm",
+"weight": 0.0
+},
+"PDM_35384": {
+"art": "0016204_2",
+"name": "Aufkleber Bedienpult EN Schaltschrank",
+"weight": 0.0
+},
+"PDM_44400": {
+"art": "5001122_0",
+"name": "Masseband 16mm² 200mm",
+"weight": 0.0
+},
+"PDM_43784": {
+"art": "0007104_0",
+"name": "Sicherung Mega-Fuse 80A",
+"weight": 0.0
+},
+"PDM_2145": {
+"art": "0001266_1",
+"name": "Doppelbartschlüssel 1004-06",
+"weight": 0.0
+},
+"PDM_7129": {
+"art": "0005332_1",
+"name": "Sender Arcon T5 Funkfernsteuerung",
+"weight": 1.4
+},
+"PDM_7128": {
+"art": "0005331_0",
+"name": "Empfänger Arcon Funkfernsteuerung",
+"weight": 0.7
+},
+"PDM_14913": {
+"art": "0011239_0",
+"name": "Batterie Arcon E-Pack M Funkfernsteuerung",
+"weight": 0.2
+},
+"PDM_11288": {
+"art": "0009311_0",
+"name": "Ladegerät Arcon BCP-M Funkfernsteuerung",
+"weight": 0.5
+},
+"PDM_14710": {
+"art": "0011112_1",
+"name": "Antenne Arcon Funkfernsteuerung",
+"weight": 0.0
+},
+"PDM_14709": {
+"art": "0011111_0",
+"name": "Antennenverlängerungskabel 7,0m RG58 mit Halter",
+"weight": 0.3
+},
+"PDM_18855": {
+"art": "0012766_0",
+"name": "Aufkleberset Sender T5 Funkfernsteuerung",
+"weight": 0.0
+},
+"PDM_44469": {
+"art": "0017086_0",
+"name": "Haltegurt Arcon Funkfernsteuerung",
+"weight": 0.1
+},
+"PDM_2143": {
+"art": "0001262_0",
+"name": "Schlüsselschild Stangenschloss 1221-U23",
+"weight": 0.0
+},
+"PDM_2144": {
+"art": "0001263_1",
+"name": "Betätigung Doppelbart 1121-U17",
+"weight": 0.0
+},
+"PDM_44444": {
+"art": "0017065_1",
+"name": "Halter 2 CAN-Bus-Kabel Schaltschrank",
+"weight": 0.8
+},
+"PDM_18757": {
+"art": "0012692_0",
+"name": "Bolzen GN 154",
+"weight": 0.0
+},
+"PDM_18759": {
+"art": "0012694_0",
+"name": "Scharnierhälfte GN 154-34-40-B",
+"weight": 0.0
+},
+"PDM_18758": {
+"art": "0012693_0",
+"name": "Scharnierhälfte GN 154-34-40-B",
+"weight": 0.0
+},
+"PDM_2092": {
+"art": "0000415_0",
+"name": "Durchgangsklemme 4 Leiter",
+"weight": 0.0
+},
+"PDM_6092": {
+"art": "0004597_0",
+"name": "Relaissockel Finder 93.01.0.024",
+"weight": 0.0
+},
+"PDM_2094": {
+"art": "0000652_0",
+"name": "Durchgangsklemme 2 x 2 Leiter",
+"weight": 0.0
+},
+"PDM_4716": {
+"art": "0003656_1",
+"name": "Verdrahtungskanal 40x80 L210",
+"weight": 0.1
+},
+"PDM_4717": {
+"art": "0003657_1",
+"name": "Verdrahtungskanal 40x80 L955",
+"weight": 0.4
+},
+"PDM_5817": {
+"art": "0004368_2",
+"name": "Hutprofilschiene gelocht 35x7,5 L954",
+"weight": 0.3
+},
+"PDM_5849": {
+"art": "0004395_2",
+"name": "Hutprofilschiene gelocht 35x7,5 L400",
+"weight": 0.1
+},
+"PDM_19832": {
+"art": "0007024_0",
+"name": "Widerstandsklemme 60 Ohm 16polig",
+"weight": 0.1
+},
+"PDM_5954": {
+"art": "0004484_0",
+"name": "Übergabemodul Wago 289-455",
+"weight": 0.0
+},
+"PDM_5845": {
+"art": "0004391_2",
+"name": "Hutprofilschiene gelocht 35x7,5 L280",
+"weight": 0.1
+},
+"PDM_5857": {
+"art": "0004402_0",
+"name": "Flachstecksicherung standard 15A",
+"weight": 0.0
+},
+"PDM_6137": {
+"art": "0004598_0",
+"name": "Relais Finder 34.51.7.024.0010",
+"weight": 0.0
+},
+"PDM_5853": {
+"art": "0004399_0",
+"name": "Flachstecksicherung standard 5A",
+"weight": 0.0
+},
+"PDM_2104": {
+"art": "0001235_0",
+"name": "Flachstecksicherung standard 3A",
+"weight": 0.0
+},
+"PDM_2103": {
+"art": "0001234_0",
+"name": "Sicherungshalter Stecksicherung Maxi",
+"weight": 0.0
+},
+"PDM_2093": {
+"art": "0000545_0",
+"name": "Abschluss- / Zwischenplatte 280-317",
+"weight": 0.0
+},
+"PDM_2112": {
+"art": "0000927_0",
+"name": "Brücke Sicherungsklemme",
+"weight": 0.0
+},
+"PDM_2111": {
+"art": "0000928_0",
+"name": "Brücke Durchgangsklemme",
+"weight": 0.0
+},
+"PDM_2095": {
+"art": "0000820_0",
+"name": "Durchgangsklemme 4 Leiter LED rot",
+"weight": 0.0
+},
+"PDM_44525": {
+"art": "0007074_0",
+"name": "Wellrohrverschraubung PG09 NW10",
+"weight": 0.0
+},
+"PDM_44524": {
+"art": "0007072_0",
+"name": "Wellrohrverschraubung PG11 NW12+13",
+"weight": 0.0
+},
+"PDM_2008": {
+"art": "0001419_0",
+"name": "Sicherungshalter Mega-Fuse",
+"weight": 0.1
+},
+"PDM_44529": {
+"art": "0007073_0",
+"name": "Gegenmutter PG11",
+"weight": 0.0
+},
+"PDM_2108": {
+"art": "0001276_0",
+"name": "Flachstecksicherung maxi 40A",
+"weight": 0.0
+},
+"PDM_2109": {
+"art": "0001281_0",
+"name": "Crimpverbinder Stecksicherung Maxi",
+"weight": 0.0
+},
+"PDM_2110": {
+"art": "0001244_0",
+"name": "Dicht- und Schutzstopfen øA 20 / øI 5",
+"weight": 0.0
+},
+"PDM_2105": {
+"art": "0000931_0",
+"name": "Relais Finder 40.61.9.024.0000",
+"weight": 0.0
+},
+"PDM_44528": {
+"art": "0007075_0",
+"name": "Gegenmutter PG09",
+"weight": 0.0
+},
+"PDM_44527": {
+"art": "0007077_0",
+"name": "Gegenmutter PG07",
+"weight": 0.0
+},
+"PDM_44526": {
+"art": "0007076_0",
+"name": "Wellrohrverschraubung PG07 NW8,5",
+"weight": 0.0
+},
+"PDM_4824": {
+"art": "0003742_1",
+"name": "Linsenkopfschraube ISO 7380-2 M6x25",
+"weight": 0.0
+},
+"PDM_17755": {
+"art": "5000790_0",
+"name": "Differenzstromwandler ND5015/035/61",
+"weight": 0.1
+},
+"PDM_55963": {
+"art": "5000263_0",
+"name": "Kabel Antennenverlängerung WLAN L5000",
+"weight": 0.2
+},
+"PDM_55962": {
+"art": "5000265_0",
+"name": "Kabel Antennenverlängerung GPS L5000",
+"weight": 0.2
+},
+"PDM_55961": {
+"art": "5000262_0",
+"name": "Kabel Antennenverlängerung DIV L5000",
+"weight": 0.2
+},
+"PDM_23597": {
+"art": "0013766_2",
+"name": "Halter Innenbeleuchtung Schaltschrank",
+"weight": 0.2
+},
+"PDM_44427": {
+"art": "0017049_0",
+"name": "Querträger 2 Elektrokomponenten Schaltschrank",
+"weight": 1.3
+},
+"PDM_5242": {
+"art": "0003949_3",
+"name": "Blech",
+"weight": 0.8
+},
+"PDM_4876": {
+"art": "0003776_1",
+"name": "Blech",
+"weight": 5.3
+},
+"PDM_46329": {
+"art": "0017483_0",
+"name": "Abdeckung oben Schaltschrank",
+"weight": 1.4
+},
+"PDM_4600": {
+"art": "0003574_1",
+"name": "Blech",
+"weight": 0.8
+},
+"PDM_4848": {
+"art": "0003753_0",
+"name": "Abdeckung Wartungsöffnung Schaltschrank",
+"weight": 0.1
+},
+"PDM_2127": {
+"art": "0000261_0",
+"name": "Halter Maxi Fuse",
+"weight": 0.0
+},
+"PDM_5240": {
+"art": "0003947_3",
+"name": "Querträger 1 Elektrokomponenten Schaltschrank",
+"weight": 2.8
+},
+"PDM_44428": {
+"art": "0017050_0",
+"name": "Querträger 3 Elektrokomponenten Schaltschrank",
+"weight": 1.2
+},
+"PDM_16954": {
+"art": "0012032_0",
+"name": "Ablage Funkfernsteuerung Schaltschrank",
+"weight": 3.1
+},
+"PDM_16955": {
+"art": "0012033_0",
+"name": "Türe Funkfernsteuerung Schaltschrank",
+"weight": 1.5
+},
+"PDM_16956": {
+"art": "0012034_0",
+"name": "Träger Dichtung Ablage Funkfernsteuerung Schaltschrank",
+"weight": 0.3
+},
+"PDM_44439": {
+"art": "0017061_1",
+"name": "Blech",
+"weight": 0.3
+},
+"PDM_44440": {
+"art": "0017062_1",
+"name": "Blech",
+"weight": 0.4
+},
+"PDM_51714": {
+"art": "0017896_0",
+"name": "Halter Schirmklemmbügel",
+"weight": 0.0
+},
+"PDM_54889": {
+"art": "0018055_0",
+"name": "Halter Schirmklemmbügel",
+"weight": 0.0
+},
+"PDM_4685": {
+"art": "0003637_0",
+"name": "Halter Türarretierung Schaltschrank",
+"weight": 0.0
+},
+"PDM_5688": {
+"art": "0004251_1",
+"name": "Versteifung quer Rahmen Schaltschrank",
+"weight": 1.6
+},
+"PDM_25712": {
+"art": "0014291_0",
+"name": "Halter Kabel Rückwand Schaltschrank",
+"weight": 0.6
+},
+"PDM_44449": {
+"art": "0017069_0",
+"name": "Halter Sammelschiene",
+"weight": 0.0
+},
+"PDM_29857": {
+"art": "0015748_5",
+"name": "Blech",
+"weight": 16.2
+},
+"PDM_5768": {
+"art": "0004324_0",
+"name": "Abschluss Türe vorne Schaltschrank",
+"weight": 0.6
+},
+"PDM_4601": {
+"art": "0003575_0",
+"name": "Halter Frischluftfilter Schaltschrank",
+"weight": 0.4
+},
+"PDM_4688": {
+"art": "0003639_0",
+"name": "Versteifung Türe vorne Schaltschrank",
+"weight": 0.5
+},
+"PDM_4564": {
+"art": "0003542_2",
+"name": "Türe hinten Schaltschrank",
+"weight": 18.2
+},
+"PDM_4693": {
+"art": "0003644_0",
+"name": "Versteifung Türe hinten Schaltschrank",
+"weight": 0.5
+},
+"PDM_44520": {
+"art": "0017124_0",
+"name": "Halter 3 CAN-Bus-Kabel Schaltschrank",
+"weight": 0.0
+},
+"PDM_47791": {
+"art": "0017634_0",
+"name": "Halter 1 Welle Lastumschalter",
+"weight": 0.1
+},
+"PDM_6830": {
+"art": "0005120_1",
+"name": "Halter Kabel universal ø7",
+"weight": 0.0
+},
+"PDM_44448": {
+"art": "0017068_1",
+"name": "Blech",
+"weight": 0.1
+},
+"PDM_44522": {
+"art": "0017126_0",
+"name": "Halter Kabel Rückwand Schaltschrank",
+"weight": 0.4
+},
+"PDM_44521": {
+"art": "0017125_0",
+"name": "Halter 4 CAN-Bus-Kabel Schaltschrank",
+"weight": 0.0
+},
+"PDM_47792": {
+"art": "0017635_0",
+"name": "Halter 2 Welle Lastumschalter",
+"weight": 0.0
+},
+"PDM_4676": {
+"art": "0003630_0",
+"name": "Hebel Türarretierung Schaltschrank",
+"weight": 0.0
+},
+"PDM_44450": {
+"art": "0017070_3",
+"name": "Träger Elektrokomponenten 400V Schaltschrank",
+"weight": 15.2
+},
+"PDM_35382": {
+"art": "0016202_1",
+"name": "Schirmungsbügel Buskabel",
+"weight": 0.1
+},
+"PDM_4568": {
+"art": "0003546_0",
+"name": "Anschlussstange Stangenschloss",
+"weight": 0.2
+},
+"PDM_2147": {
+"art": "0001279_0",
+"name": "Scheibe Stangenschloss",
+"weight": 0.0
+},
+"PDM_35419": {
+"art": "0016229_0",
+"name": "Versteifung unten Türe Schaltschrank",
+"weight": 0.8
+},
+"PDM_4594": {
+"art": "0003569_1",
+"name": "Träger Elektrokomponenten 24V Schaltschrank",
+"weight": 2.7
+},
+"PDM_16667": {
+"art": "0011852_2",
+"name": "Gewindeplatte Schaltschrank",
+"weight": 0.0
+},
+"PDM_17777": {
+"art": "0012488_0",
+"name": "Halter Rahmen oben Schaltschrank",
+"weight": 0.6
+},
+"PDM_17787": {
+"art": "0012497_1",
+"name": "Versteifung Rahmen vorne Schaltschrank",
+"weight": 3.1
+},
+"PDM_4657": {
+"art": "0003617_4",
+"name": "Halter Rahmen hinten unten Schaltschrank",
+"weight": 0.9
+},
+"PDM_4662": {
+"art": "0003621_4",
+"name": "Halter Rahmen vorne unten Schaltschrank",
+"weight": 1.9
+},
+"PDM_5984": {
+"art": "0004510_1",
+"name": "Abdeckung Batteriehauptschalter Schaltschrank",
+"weight": 0.1
 }
 }

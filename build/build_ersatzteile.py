@@ -369,12 +369,12 @@ body{font-family:var(--sans);background:var(--paper);color:var(--ink);line-heigh
 .dtbl td.r,.dtbl th.r{text-align:right;font-family:var(--mono)}
 @media (max-width:560px){.drawer{width:100%}.frow{grid-template-columns:1fr}}
 @media print{
-  @page{margin:14mm}
+  @page{margin:0}
   body{background:#fff}
   body>*{display:none!important}
   #doc{display:block!important}
   #doc .topstr{display:flex;height:6px}#doc .topstr span{flex:1}
-  .dpad{padding:0}
+  .dpad{padding:14mm 15mm}
   .dhd{display:flex;justify-content:space-between;align-items:flex-start;gap:20px}
   .dlogo{height:30px}
   .dfirm{font-size:11px;color:#5e6166;line-height:1.5}.dfirm .fnm{font-weight:800;color:#16181a;font-size:13px}
@@ -480,7 +480,7 @@ body{font-family:var(--sans);background:var(--paper);color:var(--ink);line-heigh
   </div>
   <div class="dfoot">
     <button class="btn p" id="sendMail" data-i18n="btn_send_mail">Per E-Mail senden</button>
-    <button class="btn s" id="printReq" data-i18n="btn_print">Anfrage drucken</button>
+    <button class="btn s" id="printReq" data-i18n="btn_save_pdf">Als PDF speichern</button>
     <button class="btn t" id="clearCart" data-i18n="btn_clear">Leeren</button>
   </div>
 </aside>
@@ -808,7 +808,13 @@ const ICONS={
    +'<div class="dfo">'+t("doc_foot")+'</div></div>';
   document.getElementById("doc").innerHTML=doc;
  }
- function printReq(){if(!lines().length){toast(t("alert_empty"));return;}buildDoc();window.print();}
+ function printReq(){if(!lines().length){toast(t("alert_empty"));return;}buildDoc();
+  var prev=document.title;
+  var firm=((fv("c_firma")||"").trim()||"Alzinger").replace(/[^A-Za-z0-9\-_]+/g,"_").replace(/^_+|_+$/g,"")||"Alzinger";
+  document.title="Ersatzteilanfrage_"+firm+"_"+new Date().toISOString().slice(0,10);  // sinnvoller PDF-Dateiname
+  window.print();
+  setTimeout(function(){document.title=prev;},1200);
+ }
  // ---- i18n apply ----
  function applyLang(){
   document.documentElement.lang=lang;
