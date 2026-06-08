@@ -370,5 +370,11 @@
     "en": "Save as PDF",
     "pl": "Zapisz jako PDF",
     "fr": "Enregistrer en PDF"
+  },
+  "col_zoll": {
+    "de": "Zolltarif",
+    "en": "Customs code",
+    "pl": "Kod celny",
+    "fr": "Code douanier"
   }
 }

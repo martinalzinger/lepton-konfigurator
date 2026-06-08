@@ -111,7 +111,7 @@ class App:
 
     def choose(self):
         p=filedialog.askopenfilename(title="STEP-Datei wählen",
-            filetypes=[("STEP","*.stp *.step"),("Alle Dateien","*.*")])
+            filetypes=[("STEP oder ZIP","*.stp *.step *.zip"),("Alle Dateien","*.*")])
         if p: self.set_path(p)
 
     def set_path(self,p):
@@ -132,12 +132,24 @@ class App:
                 self.say("FEHLER beim Installieren von 'cascadio':\n"+err+
                          "\n\nInternet prüfen und erneut starten."); return
             import cascadio
+            src=self.path
+            if self.path.lower().endswith(".zip"):
+                import zipfile, tempfile
+                self.say("Entpacke ZIP …")
+                zf=zipfile.ZipFile(self.path)
+                steps=[n for n in zf.namelist() if n.lower().endswith((".stp",".step"))]
+                if not steps:
+                    self.say("FEHLER: In der ZIP ist keine STEP-Datei (.stp/.step) enthalten."); zf.close(); return
+                src=zf.extract(steps[0], tempfile.mkdtemp()); zf.close()
             out=os.path.splitext(self.path)[0]+".glb"; p=LEVELS[self.level.get()]
-            self.say("Konvertiere:\n"+os.path.basename(self.path)+"\nDetailgrad: "+self.level.get()+
+            self.say("Konvertiere:\n"+os.path.basename(src)+"\nDetailgrad: "+self.level.get()+
                      "\n\nBitte warten – das rechnet (je nach Größe einige Minuten) …")
             t=time.time()
-            cascadio.step_to_glb(self.path,out,tol_linear=p["tol_linear"],tol_angular=p["tol_angular"],
+            cascadio.step_to_glb(src,out,tol_linear=p["tol_linear"],tol_angular=p["tol_angular"],
                                  tol_relative=True,merge_primitives=True,use_parallel=True)
+            if not os.path.exists(out):
+                self.say("FEHLER: Es wurde keine GLB erzeugt.\nIst die gewählte Datei wirklich eine gültige STEP-Datei?\n"
+                         "Bei sehr großen Baugruppen evtl. zu wenig Arbeitsspeicher – dann in Teil-Baugruppen exportieren."); return
             data=open(out,"rb").read(); magic,_v,ln=struct.unpack("<III",data[:12])
             valid=(hex(magic)=="0x46546c67" and ln==len(data)); mb=len(data)/1e6; tris=""
             if ensure("trimesh")[0]:

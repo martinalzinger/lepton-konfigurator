@@ -3,16 +3,23 @@
   "kategorien": [
     {
       "h": "Fahrgestell", "h_en": "Chassis",
-      "teile": []
+      "teile": [
+        { "id": "FG-BASIS", "art": "—", "name": "Basis", "name_en": "Base frame", "desc": "Unter-Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar", "desc_en": "Sub-assembly – pick and order all individual parts in 3D", "price": 0, "model": "fahrgestell-basis.glb", "img": "fahrgestell" }
+      ]
     },
     {
       "h": "Bunker", "h_en": "Hopper",
-      "teile": []
+      "teile": [
+        { "id": "BUNKER-MAIN", "art": "—", "name": "Bunker", "name_en": "Hopper", "desc": "Komplette Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar", "desc_en": "Complete assembly – pick and order all individual parts in 3D", "price": 0, "model": "bunker.glb", "img": "bunker" },
+        { "id": "BUNKER-DOSIERWALZE", "art": "—", "name": "Dosierwalzenmantel 125 mm", "name_en": "Metering roller jacket 125 mm", "desc": "Unter-Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar", "desc_en": "Sub-assembly – pick and order all individual parts in 3D", "price": 0, "model": "dosierwalzenmantel.glb", "img": "dosierwalzenmantel" },
+        { "id": "BUNKER-DOSIERWALZE-QP", "art": "—", "name": "Dosierwalzenmantel mit Querplatten", "name_en": "Metering roller jacket with cross plates", "desc": "Unter-Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar", "desc_en": "Sub-assembly – pick and order all individual parts in 3D", "price": 0, "model": "dosierwalzenmantel-querplatten.glb", "img": "dosierwalzenmantel_qp" }
+      ]
     },
     {
       "h": "Siebdeck 1", "h_en": "Screen deck 1",
       "teile": [
-        { "id": "SD1-BASIS", "art": "—", "name": "Basis", "name_en": "Base frame", "desc": "Grundrahmen Siebdeck 1 – im 3D alle Einzelteile auswählbar und bestellbar", "desc_en": "Screen deck 1 base frame – pick and order all individual parts in 3D", "price": 0, "model": "sd1-basis.glb", "img": "sd1_basis" }
+        { "id": "SD1-BASIS", "art": "—", "name": "Basis", "name_en": "Base frame", "desc": "Grundrahmen Siebdeck 1 – im 3D alle Einzelteile auswählbar und bestellbar", "desc_en": "Screen deck 1 base frame – pick and order all individual parts in 3D", "price": 0, "model": "sd1-basis.glb", "img": "sd1_basis" },
+        { "id": "SD1-BAND-QUER", "art": "—", "name": "Band quer horizontal", "name_en": "Transverse belt horizontal", "desc": "Unter-Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar", "desc_en": "Sub-assembly – pick and order all individual parts in 3D", "price": 0, "model": "sd1-band-quer.glb", "img": "sd1_band_quer" }
       ]
     },
     {
@@ -24,7 +31,7 @@
     {
       "h": "Grobkornband", "h_en": "Coarse-grain conveyor",
       "teile": [
-        { "id": "GKB-GESAMT", "art": "—", "name": "Grobkornband", "name_en": "Coarse-grain conveyor", "desc": "Gesamtbaugruppe – im 3D alle Einzelteile auswählbar und bestellbar", "desc_en": "Complete assembly – pick and order all individual parts in 3D", "price": 0, "model": "gkb1_lang.glb" }
+        { "id": "GKB-GESAMT", "art": "—", "name": "Grobkornband", "name_en": "Coarse-grain conveyor", "desc": "Komplette Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar", "desc_en": "Complete assembly – pick and order all individual parts in 3D", "price": 0, "model": "grobkornband.glb", "img": "grobkornband" }
       ]
     },
     {
@@ -42,7 +49,7 @@
     {
       "h": "Schaltschrank", "h_en": "Control cabinet",
       "teile": [
-        { "id": "ESK-ELEKTROSCHRANK", "art": "004566", "name": "Elektroschrank", "name_en": "Electrical cabinet", "desc": "Komplette Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar", "desc_en": "Complete assembly – pick and order all individual parts in 3D", "price": 0, "model": "elektroschrank.glb" }
+        { "id": "ESK-ELEKTROSCHRANK", "art": "004566", "name": "Elektroschrank", "name_en": "Electrical cabinet", "desc": "Komplette Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar", "desc_en": "Complete assembly – pick and order all individual parts in 3D", "price": 0, "model": "elektroschrank.glb", "img": "elektroschrank" }
       ]
     }
   ]

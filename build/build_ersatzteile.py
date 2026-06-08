@@ -21,6 +21,9 @@ IMG.update(SPA)
 # Zuordnung PDM-Nummer -> echte Artikelnummer + Bezeichnung (für den 3D-Teile-Explorer)
 try: PARTMAP=jload("subparts.json")
 except Exception: PARTMAP={}
+# Zuordnung PDM-Nummer -> Einzelteil-Vorschaubild (partimg/<PDM>.jpg)
+try: PARTIMG=jload("partimg.json")
+except Exception: PARTIMG={}
 I18N_RAW=jload("i18n_ersatzteile.json")
 SP_RAW=jload("spareparts.json")
 LANGS=["de","en","pl","fr"]
@@ -345,6 +348,9 @@ body{font-family:var(--sans);background:var(--paper);color:var(--ink);line-heigh
 .prow .eye svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.7}
 .prow.hidden .eye{color:var(--faint)}
 .prow .pmid{flex:1;min-width:0}
+.prow .pthumbS{width:42px;height:42px;flex-shrink:0;background:#fff;border:1px solid var(--line);border-radius:6px;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.prow .pthumbS img{width:100%;height:100%;object-fit:contain}
+.dtbl .pdfimg{height:26px;width:26px;object-fit:contain;vertical-align:middle;margin-right:7px;border:1px solid #e4e2db;border-radius:3px;background:#fff}
 .prow .pml{font-size:12.5px;font-weight:600;line-height:1.25;word-break:break-word}
 .prow .pma{font-family:var(--mono);font-size:10px;color:var(--faint)}
 .prow .qbadge{font-family:var(--mono);font-size:10px;color:var(--slate);background:var(--field);border:1px solid var(--line);border-radius:5px;padding:1px 5px;flex-shrink:0}
@@ -363,10 +369,12 @@ body{font-family:var(--sans);background:var(--paper);color:var(--ink);line-heigh
 #toast.show{opacity:1;transform:translateX(-50%)}
 /* Print document */
 #doc{display:none}
-.dtbl{width:100%;border-collapse:collapse;margin-top:14px;font-size:12px}
-.dtbl th{text-align:left;font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--ink);padding:6px 8px}
-.dtbl td{padding:7px 8px;border-bottom:1px solid var(--line)}
-.dtbl td.r,.dtbl th.r{text-align:right;font-family:var(--mono)}
+.dtbl{width:100%;border-collapse:collapse;margin-top:14px;font-size:11px;table-layout:auto}
+.dtbl th{text-align:left;font-family:var(--mono);font-size:8.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--ink);padding:6px 6px;white-space:nowrap}
+.dtbl td{padding:6px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+.dtbl td.r,.dtbl th.r{text-align:right;font-family:var(--mono);white-space:nowrap}
+.dtbl td.zoll,.dtbl th.zoll{font-family:var(--mono);white-space:nowrap}
+.dtbl td.nm{white-space:normal}
 @media (max-width:560px){.drawer{width:100%}.frow{grid-template-columns:1fr}}
 @media print{
   @page{margin:0}
@@ -509,7 +517,7 @@ body{font-family:var(--sans);background:var(--paper);color:var(--ink);line-heigh
 <div id="toast"></div>
 <div id="doc"></div>
 <script>
-const IMG=%%IMG%%; const MODELS=%%MODELS%%; const CAT=%%CAT%%; const I18N=%%I18N%%; const PARTMAP=%%PARTMAP%%;
+const IMG=%%IMG%%; const MODELS=%%MODELS%%; const CAT=%%CAT%%; const I18N=%%I18N%%; const PARTMAP=%%PARTMAP%%; const PARTIMG=%%PARTIMG%%;
 const MAIL="%%MAIL%%"; const LOGO_L="%%LOGOL%%"; const LOGO_D="%%LOGOD%%";
 const LOCALE={de:"de-DE",en:"en-GB",pl:"pl-PL",fr:"fr-FR"};
 const LKEY="amb_lepton_lang", CKEY="amb_lepton_cart", FKEY="amb_lepton_et_fields";
@@ -548,6 +556,7 @@ const ICONS={
  var subReg=loadSub();
  function item(id){return byId[id]||subReg[id]||null;}
  function thumbHTML(p,small){
+  if(p.pimg)return '<img src="'+p.pimg+'" loading="lazy" alt="">';
   if(p.img&&IMG[p.img])return '<img src="'+IMG[p.img]+'" alt="">';
   var ic=ICONS[p.modelKind]||ICONS._default;
   return ic;
@@ -600,7 +609,7 @@ const ICONS={
  function addToCart(id){cart[id]=(cart[id]||0)+1;saveCart();updateBadge();renderCatalog();renderCart();toast(t("toast_added"));}
  function fmtKg(w){return (w||0).toLocaleString(LOCALE[lang]||"de-DE",{maximumFractionDigits:2})+" kg";}
  function totalWeight(){var s=0;lines().forEach(function(l){if(typeof l.p.weight==="number")s+=l.p.weight*l.q;});return s;}
- function addSub(art,name,weight){var id="sub:"+art;subReg[id]={art:art,name:name,price:0,weight:(typeof weight==="number"?weight:null)};saveSub();cart[id]=(cart[id]||0)+1;saveCart();updateBadge();renderCart();toast(t("toast_added"));}
+ function addSub(art,name,weight,zoll,pimg){var id="sub:"+art;subReg[id]={art:art,name:name,price:0,weight:(typeof weight==="number"?weight:null),zoll:zoll||null,pimg:pimg||null};saveSub();cart[id]=(cart[id]||0)+1;saveCart();updateBadge();renderCart();toast(t("toast_added"));}
  function setQty(id,q){q=Math.max(0,q|0);if(q===0){delete cart[id];if(subReg[id]){delete subReg[id];saveSub();}}else cart[id]=q;saveCart();updateBadge();renderCatalog();renderCart();}
  function renderCart(){
   var ids=Object.keys(cart).filter(function(id){return item(id);});
@@ -610,7 +619,7 @@ const ICONS={
   document.getElementById("sendMail").disabled=false;document.getElementById("printReq").disabled=false;
   var h="",sub=0,anyPrice=false;
   ids.forEach(function(id){var p=item(id),q=cart[id];if(p.price>0){sub+=p.price*q;anyPrice=true;}
-   h+='<div class="citem"><div class="ci-th">'+thumbHTML(p)+'</div><div class="ci-n"><div class="ci-name">'+esc(pName(p))+'</div><div class="ci-art">'+t("art_prefix")+esc(p.art)+(p.weight>0?'  ·  '+esc(fmtKg(p.weight)):'')+'</div><div class="ci-price">'+priceHTML(p)+'</div>'
+   h+='<div class="citem"><div class="ci-th">'+thumbHTML(p)+'</div><div class="ci-n"><div class="ci-name">'+esc(pName(p))+'</div><div class="ci-art">'+t("art_prefix")+esc(p.art)+(p.weight>0?'  ·  '+esc(fmtKg(p.weight)):'')+(p.zoll?'  ·  '+t("col_zoll")+' '+esc(p.zoll):'')+'</div><div class="ci-price">'+priceHTML(p)+'</div>'
     +'<button class="ci-rm" data-rm="'+esc(id)+'">'+t("cart_remove")+'</button></div>'
     +'<div class="qty"><button data-dec="'+esc(id)+'">−</button><input data-q="'+esc(id)+'" value="'+q+'" inputmode="numeric"><button data-inc="'+esc(id)+'">+</button></div></div>';
   });
@@ -698,7 +707,7 @@ const ICONS={
  function pdmCanon(s){var m=String(s||"").match(/^PDM_0*(\d+)/i);return m?("PDM_"+m[1]):String(s||"");}
  function buildGroups(root){
   var map={},order=[];
-  root.traverse(function(o){if(o.isMesh){var key=normPart(nodeName(o)||"(unbenannt)");var g=map[key];if(!g){var info=PARTMAP[pdmCanon(key)];g={raw:key,label:cleanLabel(key),art:(info&&info.art)||key,name:(info&&info.name)||cleanLabel(key),weight:(info&&typeof info.weight==="number")?info.weight:null,meshes:[],visible:true,count:0};map[key]=g;order.push(g);}g.meshes.push(o);o.userData._g=g;}});
+  root.traverse(function(o){if(o.isMesh){var key=normPart(nodeName(o)||"(unbenannt)");var g=map[key];if(!g){var info=PARTMAP[pdmCanon(key)];g={raw:key,label:cleanLabel(key),art:(info&&info.art)||key,name:(info&&info.name)||cleanLabel(key),weight:(info&&typeof info.weight==="number")?info.weight:null,zoll:(info&&info.zoll)||null,pimg:PARTIMG[pdmCanon(key)]||null,meshes:[],visible:true,count:0};map[key]=g;order.push(g);}g.meshes.push(o);o.userData._g=g;}});
   // echte Stückzahl = Anzahl Instanz-Wurzeln (Knoten mit Artikelname ohne gleichnamigen Vorfahren),
   // NICHT die Mesh-Anzahl (ein Bauteil besteht oft aus mehreren Meshes)
   root.traverse(function(o){if(o.name){var nm=normPart(o.name);var g=map[nm];if(!g)return;var anc=o.parent,isRoot=true;while(anc){if(anc.name&&normPart(anc.name)===nm){isRoot=false;break;}anc=anc.parent;}if(isRoot)g.count++;}});
@@ -728,7 +737,8 @@ const ICONS={
    if(q){if((g.raw+" "+g.name+" "+g.art).toLowerCase().indexOf(q)<0)return;}
    html+='<div class="prow'+(g===activeG?' active':'')+(g.visible?'':' hidden')+'" data-i="'+idx+'">'
     +'<button class="eye" data-eye="'+idx+'" title="'+esc(t("tip_toggle"))+'">'+(g.visible?EYE_ON:EYE_OFF)+'</button>'
-    +'<div class="pmid" data-sel="'+idx+'"><div class="pml">'+esc(g.name)+'</div><div class="pma">'+esc(g.art)+(g.weight>0?' · '+esc(fmtKg(g.weight)):'')+'</div></div>'
+    +'<div class="pthumbS" data-sel="'+idx+'">'+(g.pimg?'<img src="'+g.pimg+'" loading="lazy" alt="">':'')+'</div>'
+    +'<div class="pmid" data-sel="'+idx+'"><div class="pml">'+esc(g.name)+'</div><div class="pma">'+esc(g.art)+(g.weight>0?' · '+esc(fmtKg(g.weight)):'')+(g.zoll?' · '+t("col_zoll")+' '+esc(g.zoll):'')+'</div></div>'
     +(g.count>1?'<span class="qbadge" title="'+esc(t("qty_in_assembly"))+'">×'+g.count+'</span>':'')
     +'<button class="pcartbtn" data-pcart="'+idx+'" title="'+esc(t("btn_add"))+'">'+CART_S+'</button></div>';
   });
@@ -737,7 +747,7 @@ const ICONS={
   list.querySelectorAll(".prow").forEach(function(r){r.__g=groups[+r.getAttribute("data-i")];});
   list.querySelectorAll("[data-sel]").forEach(function(el){el.addEventListener("click",function(){selectGroup(groups[+el.getAttribute("data-sel")],false);});});
   list.querySelectorAll("[data-eye]").forEach(function(b){b.addEventListener("click",function(e){e.stopPropagation();toggleGroup(groups[+b.getAttribute("data-eye")]);});});
-  list.querySelectorAll("[data-pcart]").forEach(function(b){b.addEventListener("click",function(e){e.stopPropagation();var g=groups[+b.getAttribute("data-pcart")];addSub(g.art,g.name,g.weight);});});
+  list.querySelectorAll("[data-pcart]").forEach(function(b){b.addEventListener("click",function(e){e.stopPropagation();var g=groups[+b.getAttribute("data-pcart")];addSub(g.art,g.name,g.weight,g.zoll,g.pimg);});});
  }
  function showNo(msg){document.getElementById("mvLoad").style.display="none";var no=document.getElementById("mvNo");no.style.display="flex";no.textContent=msg||t("no_3d");}
  function open3D(id){
@@ -775,7 +785,7 @@ const ICONS={
  function sendMail(){
   var L=lines();if(!L.length){toast(t("alert_empty"));return;}
   var body=t("mail_intro")+"\n\n";
-  L.forEach(function(l){body+="  "+l.q+"× "+l.p.art+"  "+pName(l.p)+(l.p.weight>0?"   "+fmtKg(l.p.weight*l.q):"")+(l.p.price>0?"   "+money(l.p.price*l.q):"")+"\n";});
+  L.forEach(function(l){body+="  "+l.q+"× "+l.p.art+"  "+pName(l.p)+(l.p.zoll?"   "+t("col_zoll")+" "+l.p.zoll:"")+(l.p.weight>0?"   "+fmtKg(l.p.weight*l.q):"")+(l.p.price>0?"   "+money(l.p.price*l.q):"")+"\n";});
   var tw=totalWeight();if(tw>0)body+="\n"+t("weight_total")+": "+fmtKg(tw)+"\n";
   var sub=subtotal();if(sub>0)body+=t("cart_subtotal")+": "+money(sub)+"\n";
   if(fv("c_masch"))body+="\n"+t("lbl_masch")+": "+fv("c_masch")+"\n";
@@ -792,7 +802,7 @@ const ICONS={
   var date=new Date().toLocaleDateString(LOCALE[lang]||"de-DE",{day:"2-digit",month:"2-digit",year:"numeric"});
   var rows="",sub=0,anyP=false;
   L.forEach(function(l,i){var line=l.p.price>0?l.p.price*l.q:0;if(l.p.price>0){sub+=line;anyP=true;}
-   rows+='<tr><td>'+(i+1)+'</td><td>'+esc(l.p.art)+'</td><td>'+esc(pName(l.p))+'</td><td class="r">'+l.q+'</td><td class="r">'+(l.p.weight>0?esc(fmtKg(l.p.weight*l.q)):"—")+'</td><td class="r">'+(l.p.price>0?money(l.p.price):t("price_request"))+'</td><td class="r">'+(l.p.price>0?money(line):"—")+'</td></tr>';});
+   rows+='<tr><td>'+(i+1)+'</td><td class="zoll">'+esc(l.p.art)+'</td><td class="nm">'+(l.p.pimg?'<img class="pdfimg" src="'+l.p.pimg+'">':'')+esc(pName(l.p))+'</td><td class="zoll">'+esc(l.p.zoll||"—")+'</td><td class="r">'+l.q+'</td><td class="r">'+(l.p.weight>0?esc(fmtKg(l.p.weight*l.q)):"—")+'</td><td class="r">'+(l.p.price>0?money(l.p.price):t("price_request"))+'</td><td class="r">'+(l.p.price>0?money(line):"—")+'</td></tr>';});
   var tw=totalWeight();
   var from=[fv("c_firma"),fv("c_name"),fv("c_mail"),fv("c_tel")].filter(Boolean).map(esc).join("<br>")||'<span style="color:#9a9aa0">—</span>';
   var doc=stripe+'<div class="dpad">'
@@ -801,7 +811,7 @@ const ICONS={
    +'<div class="dtitle">'+esc(t("doc_title"))+'</div>'
    +'<div class="dparties"><div><span class="s">'+t("doc_from")+'</span>'+from+(fv("c_masch")?'<br><span style="color:#9a9aa0;font-size:11px">'+t("doc_machine")+': '+esc(fv("c_masch"))+'</span>':'')+'</div>'
    +'<div><span class="s">'+t("doc_to")+'</span><b>Alzinger Maschinenbau GmbH</b><br>Am Gewerbering 14<br>D-84069 Schierling</div></div>'
-   +'<table class="dtbl"><thead><tr><th>'+t("col_pos")+'</th><th>'+t("col_art")+'</th><th>'+t("col_name")+'</th><th class="r">'+t("col_qty")+'</th><th class="r">'+t("col_weight")+'</th><th class="r">'+t("col_price")+'</th><th class="r">'+t("col_sum")+'</th></tr></thead><tbody>'+rows+'</tbody></table>'
+   +'<table class="dtbl"><thead><tr><th>'+t("col_pos")+'</th><th>'+t("col_art")+'</th><th>'+t("col_name")+'</th><th>'+t("col_zoll")+'</th><th class="r">'+t("col_qty")+'</th><th class="r">'+t("col_weight")+'</th><th class="r">'+t("col_price")+'</th><th class="r">'+t("col_sum")+'</th></tr></thead><tbody>'+rows+'</tbody></table>'
    +(tw>0?'<div class="dtot" style="font-weight:600;color:var(--ink)">'+t("weight_total")+': '+fmtKg(tw)+'</div>':'')
    +(anyP?'<div class="dtot">'+t("doc_total")+': '+money(sub)+'</div>':'')
    +(fv("c_msg")?'<div class="dmsg"><b>'+t("doc_msg")+':</b>\n'+esc(fv("c_msg"))+'</div>':'')
@@ -812,8 +822,11 @@ const ICONS={
   var prev=document.title;
   var firm=((fv("c_firma")||"").trim()||"Alzinger").replace(/[^A-Za-z0-9\-_]+/g,"_").replace(/^_+|_+$/g,"")||"Alzinger";
   document.title="Ersatzteilanfrage_"+firm+"_"+new Date().toISOString().slice(0,10);  // sinnvoller PDF-Dateiname
-  window.print();
-  setTimeout(function(){document.title=prev;},1200);
+  // Teilebilder vor dem Druck vollständig laden, dann drucken
+  var imgs=[].slice.call(document.querySelectorAll("#doc img")),pend=0,fired=false;
+  function go(){if(fired)return;fired=true;window.print();setTimeout(function(){document.title=prev;},1200);}
+  imgs.forEach(function(im){if(!im.complete){pend++;var d=function(){if(--pend<=0)go();};im.addEventListener("load",d);im.addEventListener("error",d);}});
+  if(pend===0)go(); else setTimeout(go,3000);
  }
  // ---- i18n apply ----
  function applyLang(){
@@ -863,8 +876,9 @@ out=out.replace("%%MODELS%%",json.dumps(MODELS))
 out=out.replace("%%CAT%%",json.dumps(CAT,ensure_ascii=False))
 out=out.replace("%%I18N%%",json.dumps(I18N,ensure_ascii=False))
 out=out.replace("%%PARTMAP%%",json.dumps(PARTMAP,ensure_ascii=False))
+out=out.replace("%%PARTIMG%%",json.dumps(PARTIMG,ensure_ascii=False))
 
-for tok in ["%%RED%%","%%RED2%%","%%HERO%%","%%LOGOL%%","%%LOGOD%%","%%MAIL%%","%%IMG%%","%%MODELS%%","%%CAT%%","%%I18N%%","%%PARTMAP%%"]:
+for tok in ["%%RED%%","%%RED2%%","%%HERO%%","%%LOGOL%%","%%LOGOD%%","%%MAIL%%","%%IMG%%","%%MODELS%%","%%CAT%%","%%I18N%%","%%PARTMAP%%","%%PARTIMG%%"]:
     assert tok not in out, "Token übrig: "+tok
 for need in ['id="cartBtn"','id="tcanvas"','id="partList"','renderCatalog','data-lang="pl"','ensureThree','importmap','./vendor/GLTFLoader.js']:
     assert need in out, "fehlt: "+need
