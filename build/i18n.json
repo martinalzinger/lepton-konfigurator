@@ -915,10 +915,10 @@
    "fr": "Châssis de base"
   },
   {
-   "de": "Bunker 8 m³ mit beidseitiger Befüllung",
-   "en": "Hopper 8 m³ with two-side loading",
-   "pl": "Zasobnik 8 m³ z obustronnym załadunkiem",
-   "fr": "Trémie 8 m³ avec chargement bilatéral"
+   "de": "Bunker 8 m³ Volumen mit beidseitiger Befüllung",
+   "en": "Hopper, 8 m³ capacity, with two-side loading",
+   "pl": "Zasobnik o pojemności 8 m³ z obustronnym załadunkiem",
+   "fr": "Trémie d'une capacité de 8 m³ avec chargement bilatéral"
   },
   {
    "de": "Siebdeck 1 mit Neigungsverstellung 3–38°",
@@ -927,10 +927,10 @@
    "fr": "Pont de criblage 1 avec réglage d'inclinaison 3–38°"
   },
   {
-   "de": "Siebdeck 1: 4 Elektromotoren, reversierbar",
-   "en": "Screen deck 1: 4 electric motors, reversible",
-   "pl": "Pokład sitowy 1: 4 silniki elektryczne, rewersyjne",
-   "fr": "Pont de criblage 1 : 4 moteurs électriques, réversibles"
+   "de": "Siebdeck 1: 4 Elektromotoren, variable Drehzahleinstellung und reversierbar",
+   "en": "Screen deck 1: 4 electric motors, variable speed setting and reversible",
+   "pl": "Pokład sitowy 1: 4 silniki elektryczne, regulacja prędkości obrotowej, rewersyjne",
+   "fr": "Pont de criblage 1 : 4 moteurs électriques, réglage de vitesse variable et réversibles"
   },
   {
    "de": "Elektrischer Antrieb aller Bänder",
@@ -939,34 +939,40 @@
    "fr": "Entraînement électrique de toutes les bandes"
   },
   {
-   "de": "Siebdeck 1 Band quer: 910 mm, 2 m/s",
-   "en": "Screen deck 1 belt transverse: 910 mm, 2 m/s",
-   "pl": "Pokład sitowy 1 taśma poprzeczna: 910 mm, 2 m/s",
-   "fr": "Pont de criblage 1 bande transversale : 910 mm, 2 m/s"
+   "de": "Siebdeck 1 Band quer: 910 mm breit, Geschwindigkeit 2 m/s",
+   "en": "Screen deck 1 belt transverse: 910 mm wide, speed 2 m/s",
+   "pl": "Pokład sitowy 1 taśma poprzeczna: szer. 910 mm, prędkość 2 m/s",
+   "fr": "Pont de criblage 1 bande transversale : largeur 910 mm, vitesse 2 m/s"
   },
   {
-   "de": "Feinkornband 1: 1550 mm, 1,4 m/s",
-   "en": "Fine grain belt 1: 1550 mm, 1.4 m/s",
-   "pl": "Taśma frakcji drobnej 1: 1550 mm, 1,4 m/s",
-   "fr": "Bande fines 1 : 1550 mm, 1,4 m/s"
+   "de": "Feinkornband 1: 1550 mm breit, Geschwindigkeit 1,4 m/s",
+   "en": "Fine grain belt 1: 1550 mm wide, speed 1.4 m/s",
+   "pl": "Taśma frakcji drobnej 1: szer. 1550 mm, prędkość 1,4 m/s",
+   "fr": "Bande fines 1 : largeur 1550 mm, vitesse 1,4 m/s"
   },
   {
-   "de": "Feinkornband 2: 800 mm, 1,1 m/s",
-   "en": "Fine grain belt 2: 800 mm, 1.1 m/s",
-   "pl": "Taśma frakcji drobnej 2: 800 mm, 1,1 m/s",
-   "fr": "Bande fines 2 : 800 mm, 1,1 m/s"
+   "de": "Feinkornband 2: 800 mm breit, Geschwindigkeit 1,1 m/s",
+   "en": "Fine grain belt 2: 800 mm wide, speed 1.1 m/s",
+   "pl": "Taśma frakcji drobnej 2: szer. 800 mm, prędkość 1,1 m/s",
+   "fr": "Bande fines 2 : largeur 800 mm, vitesse 1,1 m/s"
   },
   {
-   "de": "Feinkornband 3: 800 mm, 1,9 m/s",
-   "en": "Fine grain belt 3: 800 mm, 1.9 m/s",
-   "pl": "Taśma frakcji drobnej 3: 800 mm, 1,9 m/s",
-   "fr": "Bande fines 3 : 800 mm, 1,9 m/s"
+   "de": "Feinkornband 3: 800 mm breit, Geschwindigkeit 1,9 m/s",
+   "en": "Fine grain belt 3: 800 mm wide, speed 1.9 m/s",
+   "pl": "Taśma frakcji drobnej 3: szer. 800 mm, prędkość 1,9 m/s",
+   "fr": "Bande fines 3 : largeur 800 mm, vitesse 1,9 m/s"
   },
   {
-   "de": "Ohne Siebwalzen · Bunker ohne Vordosierung",
-   "en": "Without screen rollers · hopper without pre-dosing",
-   "pl": "Bez walców sitowych · zasobnik bez wstępnego dozowania",
-   "fr": "Sans rouleaux de criblage · trémie sans pré-dosage"
+   "de": "Ohne Siebwalzen",
+   "en": "Without screen rollers",
+   "pl": "Bez walców sitowych",
+   "fr": "Sans rouleaux de criblage"
+  },
+  {
+   "de": "Bunker ohne Vordosierung",
+   "en": "Hopper without pre-dosing",
+   "pl": "Zasobnik bez wstępnego dozowania",
+   "fr": "Trémie sans pré-dosage"
   }
  ],
  "cat_headers": {
