@@ -254,15 +254,15 @@ body.mode-gebraucht .hero .hsub{display:none}
       </div>
     </div>
     <div class="menu" id="menu">
+      <div class="mh" data-i18n="menu_choose">Dokument wählen</div>
+      <button data-mode="angebot"><span class="lab"><span data-i18n="mode_angebot">Angebot</span><small data-i18n="mode_angebot_sub">Unverbindliches Angebot</small></span><span class="dot"></span></button>
+      <button data-mode="kaufvertrag"><span class="lab"><span data-i18n="mode_kaufvertrag">Kaufvertrag</span><small data-i18n="mode_kaufvertrag_sub">Verbindlicher Kaufvertrag</small></span><span class="dot"></span></button>
+      <button data-mode="gebraucht"><span class="lab"><span data-i18n="mode_gebraucht">Gebrauchtmaschine</span><small data-i18n="mode_gebraucht_sub">Angebot Gebrauchtmaschine</small></span><span class="dot"></span></button>
       <div class="mh" data-i18n="menu_saved">Gespeicherte Dokumente</div>
       <div class="mssec">
         <select id="savedList"><option value="">—</option></select>
         <div class="msbtns"><button id="loadBtn" data-i18n="btn_load">Laden</button><button id="saveBtn" data-i18n="btn_save">Speichern</button><button id="delBtn" data-i18n="btn_delete">Löschen</button></div>
       </div>
-      <div class="mh" data-i18n="menu_choose">Dokument wählen</div>
-      <button data-mode="angebot"><span class="lab"><span data-i18n="mode_angebot">Angebot</span><small data-i18n="mode_angebot_sub">Unverbindliches Angebot</small></span><span class="dot"></span></button>
-      <button data-mode="kaufvertrag"><span class="lab"><span data-i18n="mode_kaufvertrag">Kaufvertrag</span><small data-i18n="mode_kaufvertrag_sub">Verbindlicher Kaufvertrag</small></span><span class="dot"></span></button>
-      <button data-mode="gebraucht"><span class="lab"><span data-i18n="mode_gebraucht">Gebrauchtmaschine</span><small data-i18n="mode_gebraucht_sub">Angebot Gebrauchtmaschine</small></span><span class="dot"></span></button>
     </div>
   </div>
 </header>
