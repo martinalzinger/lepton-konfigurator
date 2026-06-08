@@ -283,7 +283,7 @@ body{font-family:var(--sans);background:var(--paper);color:var(--ink);line-heigh
 .dhead button{background:none;border:0;color:#fff;font-size:26px;line-height:1;cursor:pointer;opacity:.8}.dhead button:hover{opacity:1}
 .dbody{flex:1;overflow:auto;padding:14px 18px}
 .citem{display:flex;gap:11px;padding:11px 0;border-bottom:1px solid var(--line);align-items:center}
-.citem .ci-th{width:52px;height:44px;border-radius:6px;background:#fff;border:1px solid var(--line);flex-shrink:0;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.citem .ci-th{width:66px;height:56px;border-radius:6px;background:#fff;border:1px solid var(--line);flex-shrink:0;display:flex;align-items:center;justify-content:center;overflow:hidden}
 .citem .ci-th img{max-width:100%;max-height:100%;object-fit:contain}
 .citem .ci-th svg{width:30px;height:30px;stroke:#b7b3a8;fill:none;stroke-width:1.4}
 .citem .ci-n{flex:1;min-width:0}
@@ -348,9 +348,9 @@ body{font-family:var(--sans);background:var(--paper);color:var(--ink);line-heigh
 .prow .eye svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.7}
 .prow.hidden .eye{color:var(--faint)}
 .prow .pmid{flex:1;min-width:0}
-.prow .pthumbS{width:42px;height:42px;flex-shrink:0;background:#fff;border:1px solid var(--line);border-radius:6px;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.prow .pthumbS{width:60px;height:60px;flex-shrink:0;background:#fff;border:1px solid var(--line);border-radius:7px;display:flex;align-items:center;justify-content:center;overflow:hidden}
 .prow .pthumbS img{width:100%;height:100%;object-fit:contain}
-.dtbl .pdfimg{height:26px;width:26px;object-fit:contain;vertical-align:middle;margin-right:7px;border:1px solid #e4e2db;border-radius:3px;background:#fff}
+.dtbl .pdfimg{height:36px;width:36px;object-fit:contain;vertical-align:middle;margin-right:8px;border:1px solid #e4e2db;border-radius:3px;background:#fff}
 .prow .pml{font-size:12.5px;font-weight:600;line-height:1.25;word-break:break-word}
 .prow .pma{font-family:var(--mono);font-size:10px;color:var(--faint)}
 .prow .qbadge{font-family:var(--mono);font-size:10px;color:var(--slate);background:var(--field);border:1px solid var(--line);border-radius:5px;padding:1px 5px;flex-shrink:0}
