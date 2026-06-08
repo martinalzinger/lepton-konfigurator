@@ -179,10 +179,12 @@ body{font-family:var(--sans);background:var(--paper);color:var(--ink);line-heigh
 #toast.show{opacity:1;transform:translateX(-50%)}
 /* Print document */
 #doc{display:none}
-.dtbl{width:100%;border-collapse:collapse;margin-top:14px;font-size:12px}
-.dtbl th{text-align:left;font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--ink);padding:6px 8px}
-.dtbl td{padding:7px 8px;border-bottom:1px solid var(--line)}
-.dtbl td.r,.dtbl th.r{text-align:right;font-family:var(--mono)}
+.dtbl{width:100%;border-collapse:collapse;margin-top:14px;font-size:11px;table-layout:auto}
+.dtbl th{text-align:left;font-family:var(--mono);font-size:8.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--ink);padding:6px 6px;white-space:nowrap}
+.dtbl td{padding:6px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+.dtbl td.r,.dtbl th.r{text-align:right;font-family:var(--mono);white-space:nowrap}
+.dtbl td.zoll,.dtbl th.zoll{font-family:var(--mono);white-space:nowrap}
+.dtbl td.nm{white-space:normal}
 @media (max-width:560px){.drawer{width:100%}.frow{grid-template-columns:1fr}}
 @media print{
   @page{margin:0}
@@ -608,7 +610,7 @@ const ICONS={
   var date=new Date().toLocaleDateString(LOCALE[lang]||"de-DE",{day:"2-digit",month:"2-digit",year:"numeric"});
   var rows="",sub=0,anyP=false;
   L.forEach(function(l,i){var line=l.p.price>0?l.p.price*l.q:0;if(l.p.price>0){sub+=line;anyP=true;}
-   rows+='<tr><td>'+(i+1)+'</td><td>'+esc(l.p.art)+'</td><td>'+esc(pName(l.p))+'</td><td>'+esc(l.p.zoll||"—")+'</td><td class="r">'+l.q+'</td><td class="r">'+(l.p.weight>0?esc(fmtKg(l.p.weight*l.q)):"—")+'</td><td class="r">'+(l.p.price>0?money(l.p.price):t("price_request"))+'</td><td class="r">'+(l.p.price>0?money(line):"—")+'</td></tr>';});
+   rows+='<tr><td>'+(i+1)+'</td><td class="zoll">'+esc(l.p.art)+'</td><td class="nm">'+esc(pName(l.p))+'</td><td class="zoll">'+esc(l.p.zoll||"—")+'</td><td class="r">'+l.q+'</td><td class="r">'+(l.p.weight>0?esc(fmtKg(l.p.weight*l.q)):"—")+'</td><td class="r">'+(l.p.price>0?money(l.p.price):t("price_request"))+'</td><td class="r">'+(l.p.price>0?money(line):"—")+'</td></tr>';});
   var tw=totalWeight();
   var from=[fv("c_firma"),fv("c_name"),fv("c_mail"),fv("c_tel")].filter(Boolean).map(esc).join("<br>")||'<span style="color:#9a9aa0">—</span>';
   var doc=stripe+'<div class="dpad">'
