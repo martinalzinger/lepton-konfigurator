@@ -164,6 +164,7 @@ body{font-family:var(--sans);background:var(--paper);color:var(--ink);line-heigh
 .lines .ln{display:flex;justify-content:space-between;gap:14px;padding:9px 0;font-size:12.5px;border-bottom:1.5px solid var(--line-strong);align-items:center}
 .lines .lt{display:flex;align-items:center;gap:13px;min-width:0}
 .lines .th{width:96px;height:64px;border-radius:5px;object-fit:contain;background:#fff;flex-shrink:0;border:1px solid var(--line-strong)}
+.lines .th.th-x{border:0;background:transparent}
 .lines .n .a{font-family:var(--mono);font-size:9.5px;color:var(--faint)}
 .lines .p{font-family:var(--mono);font-weight:500;white-space:nowrap}
 .totals{margin-top:18px;border-top:2px solid var(--ink);padding-top:12px}
@@ -456,7 +457,7 @@ var lang="de";
  function linesHTML(sel,grpLabel,showPrices){
   var lh='<div class="lines"><div class="grp dark">'+esc(grpLabel)+'</div>';
   sel.forEach(function(g){lh+='<div class="grp">'+esc(g.grp)+'</div>';
-   g.items.forEach(function(it){var th=(it.img&&IMG[it.img])?'<img class="th" src="'+IMG[it.img]+'" alt="">':'';
+   g.items.forEach(function(it){var th=(it.img&&IMG[it.img])?'<img class="th" src="'+IMG[it.img]+'" alt="">':'<i class="th th-x"></i>';
     lh+='<div class="ln"><span class="lt">'+th+'<span class="n">'+esc(it.name)+(it.art?' <span class="a">('+it.art+')</span>':'')+'</span></span>'+(showPrices===false?'':'<span class="p">'+(it.price===0?t("incl_long"):money(it.price))+'</span>')+'</div>';});});
   if(!sel.length)lh+='<div style="font-size:12px;color:#9a9aa0;padding:8px 0">'+t("no_options")+'</div>';
   return lh+'</div>';
@@ -620,7 +621,8 @@ var lang="de";
      holder.remove();
      var jsPDF=window.jspdf.jsPDF,pdf=new jsPDF({orientation:"p",unit:"mm",format:"a4"});
      var pw=pdf.internal.pageSize.getWidth(),ph=pdf.internal.pageSize.getHeight();
-     var cw=canvas.width,chT=canvas.height,pxmm=cw/pw,pagePx=Math.floor(ph*pxmm),ctx=canvas.getContext("2d");
+     var mT=10,mB=10,contentMM=ph-mT-mB;
+     var cw=canvas.width,chT=canvas.height,pxmm=cw/pw,pagePx=Math.floor(contentMM*pxmm),ctx=canvas.getContext("2d");
      var y=0,first=true;
      while(y<chT){
       var sliceH=Math.min(pagePx,chT-y);
@@ -628,7 +630,7 @@ var lang="de";
       var tmp=document.createElement("canvas");tmp.width=cw;tmp.height=sliceH;tmp.getContext("2d").drawImage(canvas,0,y,cw,sliceH,0,0,cw,sliceH);
       var img=tmp.toDataURL("image/jpeg",0.92);
       if(!first)pdf.addPage();
-      pdf.addImage(img,"JPEG",0,0,pw,sliceH/pxmm);
+      pdf.addImage(img,"JPEG",0,mT,pw,sliceH/pxmm);
       first=false;y+=sliceH;
      }
      pdf.save(docFilename()+".pdf");fin();
