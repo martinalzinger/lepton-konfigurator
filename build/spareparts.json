@@ -30,7 +30,9 @@
     },
     {
       "h": "Grobkornband", "h_en": "Coarse-grain conveyor",
-      "teile": []
+      "teile": [
+        { "id": "GKB-GESAMT", "art": "—", "name": "Grobkornband", "name_en": "Coarse-grain conveyor", "desc": "Komplette Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar", "desc_en": "Complete assembly – pick and order all individual parts in 3D", "price": 0, "model": "grobkornband.glb", "img": "grobkornband" }
+      ]
     },
     {
       "h": "Feinkornband 1", "h_en": "Fine-grain conveyor 1",
