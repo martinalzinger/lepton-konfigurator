@@ -177,7 +177,7 @@ used_img=set()
 for c in CAT:
     for p in c["items"]:
         if p.get("img"): used_img.add(p["img"])
-IMG={k:IMG[k] for k in used_img if k in IMG}
+IMG={k:v for k,v in IMG.items() if k in used_img}   # stabile Reihenfolge (reproduzierbarer Build)
 
 print("Modelle ausgelagert:",len([k for k in MODELS]),"-> models/   eingebettete Bilder:",len(IMG))
 
