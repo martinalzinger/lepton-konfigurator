@@ -10,7 +10,8 @@
     {
       "h": "Bunker", "h_en": "Hopper",
       "teile": [
-        { "id": "BUNKER-MAIN", "art": "—", "name": "Bunker", "name_en": "Hopper", "desc": "Komplette Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar", "desc_en": "Complete assembly – pick and order all individual parts in 3D", "price": 0, "model": "bunker.glb", "img": "bunker" }
+        { "id": "BUNKER-MAIN", "art": "—", "name": "Bunker", "name_en": "Hopper", "desc": "Komplette Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar", "desc_en": "Complete assembly – pick and order all individual parts in 3D", "price": 0, "model": "bunker.glb", "img": "bunker" },
+        { "id": "BUNKER-DOSIERWALZE", "art": "—", "name": "Dosierwalzenmantel 125 mm", "name_en": "Metering roller jacket 125 mm", "desc": "Unter-Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar", "desc_en": "Sub-assembly – pick and order all individual parts in 3D", "price": 0, "model": "dosierwalzenmantel.glb", "img": "dosierwalzenmantel" }
       ]
     },
     {
