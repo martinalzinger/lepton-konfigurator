@@ -161,9 +161,9 @@ body{font-family:var(--sans);background:var(--paper);color:var(--ink);line-heigh
 .lines{margin-top:18px}
 .lines .grp{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--slate);font-weight:600;margin:14px 0 6px;padding-bottom:4px;border-bottom:1px solid var(--line)}
 .lines .grp.dark{color:var(--ink);border-color:var(--ink)}
-.lines .ln{display:flex;justify-content:space-between;gap:14px;padding:6px 0;font-size:12.5px;border-bottom:1px dotted var(--line);align-items:center}
-.lines .lt{display:flex;align-items:center;gap:11px;min-width:0}
-.lines .th{width:60px;height:42px;border-radius:4px;object-fit:contain;background:#fff;flex-shrink:0;border:1px solid var(--line)}
+.lines .ln{display:flex;justify-content:space-between;gap:14px;padding:9px 0;font-size:12.5px;border-bottom:1.5px solid var(--line-strong);align-items:center}
+.lines .lt{display:flex;align-items:center;gap:13px;min-width:0}
+.lines .th{width:96px;height:64px;border-radius:5px;object-fit:contain;background:#fff;flex-shrink:0;border:1px solid var(--line-strong)}
 .lines .n .a{font-family:var(--mono);font-size:9.5px;color:var(--faint)}
 .lines .p{font-family:var(--mono);font-weight:500;white-space:nowrap}
 .totals{margin-top:18px;border-top:2px solid var(--ink);padding-top:12px}
