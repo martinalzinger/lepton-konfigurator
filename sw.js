@@ -1,7 +1,7 @@
 // Service-Worker des Konfigurators (index.html). Die Ersatzteilseite ist davon
 // vollständig getrennt und hat ihren eigenen SW unter /ersatzteile/sw.js.
-const CACHE="lepton-v7";
-const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png"];
+const CACHE="lepton-v8";
+const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png","./pdfvendor.js"];
 
 self.addEventListener("install",e=>{
   // Einzeln cachen, damit ein einzelner Fehler nicht das ganze Precaching verhindert
