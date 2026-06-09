@@ -16,7 +16,7 @@
 
 const MODEL = "claude-opus-4-8";
 // URL gestückelt, damit sie beim Kopieren nicht automatisch in <…> verlinkt wird.
-const ANTHROPIC_URL = "https://api.anthropic" + ".com" + "/v1/messages";
+const ANTHROPIC_URL = "https" + "://api.anthropic" + ".c" + "om/v1/messages";
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
