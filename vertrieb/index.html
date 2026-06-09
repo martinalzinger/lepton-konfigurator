@@ -840,7 +840,7 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
      .catch(function(e){if(i+1<OVERPASS.length)return osmOverpass(q,i+1);throw e;});
  }
  function osmAddr(t){return {strasse:[t["addr:street"],t["addr:housenumber"]].filter(Boolean).join(" "),plz:t["addr:postcode"]||"",ort:t["addr:city"]||t["addr:town"]||t["addr:village"]||t["addr:municipality"]||""};}
- function osmExisting(){var s={};DB.contacts.forEach(function(c){if(c._osm)s[c._osm]=1;if(c.firma)s[((c.firma||"")+"|"+(c.ort||"")).toLowerCase()]=1;});return s;}
+ function osmExisting(){var s={};DB.contacts.forEach(function(c){if(c._osm)s[c._osm]=c.id;if(c.firma)s[((c.firma||"")+"|"+(c.ort||"")).toLowerCase()]=c.id;});return s;}
  function osmToContact(el){
    var t=el.tags||{},a=osmAddr(t);var lat=el.lat||(el.center&&el.center.lat),lon=el.lon||(el.center&&el.center.lon);
    return {id:uid(),created:Date.now(),updated:Date.now(),status:"lead",
@@ -875,7 +875,7 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
          ((t["contact:phone"]||t.phone)?'<span>'+esc(t["contact:phone"]||t.phone)+'</span>':'')+
          (web?'<span><a href="'+esc(/^https?:/.test(web)?web:"https://"+web)+'" target="_blank" rel="noopener" onclick="event.stopPropagation()">Web</a></span>':'')+
        '</div></div>'+
-       '<div class="right">'+(have?'<span class="pill" style="background:#eef1f4;color:#6b7280">erfasst</span>':'<button class="btn sm primary" data-osm="'+key+'">+ Lead</button>')+'</div>'+
+       '<div class="right">'+(have?'<button class="btn sm" data-openid="'+esc(have)+'">erfasst – öffnen</button>':'<button class="btn sm primary" data-osm="'+key+'">+ Lead</button>')+'</div>'+
      '</div>';
    }).join("")+(anyNew?'<button class="btn block" id="osmAddAll" style="margin-top:8px">Alle neuen als Leads übernehmen</button>':'');
    osmShowMap(els);
@@ -959,6 +959,7 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
  document.getElementById("osmWas").addEventListener("keydown",function(e){if(e.key==="Enter")leadSearch();});
  document.getElementById("osmWo").addEventListener("keydown",function(e){if(e.key==="Enter")leadSearch();});
  document.getElementById("osmResults").addEventListener("click",function(e){
+   var o=e.target.closest("[data-openid]");if(o){openDetail(o.getAttribute("data-openid"));return;}
    var b=e.target.closest("[data-osm]");
    if(b){var c=osmMake(b.getAttribute("data-osm"));if(c)saveContact(c);b.outerHTML='<span class="pill" style="background:#e6f4ea;color:#15803d">✓ Lead</span>';renderLeads();return;}
    if(e.target.id==="osmAddAll"){var ex=osmExisting(),added=[];Object.keys(osmLast).forEach(function(k){var el=osmLast[k],t=el.tags||{},a=osmAddr(t);if(ex[k]||ex[((t.name||"")+"|"+(a.ort||"")).toLowerCase()])return;var c=osmMake(k);if(c)added.push(c);});if(added.length)bulkSave(added,false);renderOsm(osmEls);renderLeads();osmStatus(added.length+" neue Leads übernommen – sie stehen unten in deiner Lead-Liste.");}
