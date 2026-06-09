@@ -662,6 +662,8 @@ var lang="de";
   applyLang();
   applyMode("angebot");
   refreshSaved();
+  // Vorausfüllung aus dem Vertriebs-CRM (gleicher Origin): Kundendaten übernehmen.
+  try{var pf=localStorage.getItem("amb_lepton_prefill");if(pf){localStorage.removeItem("amb_lepton_prefill");var po=JSON.parse(pf);if(po&&po.fields){Object.keys(po.fields).forEach(function(k){var e=document.getElementById(k);if(e&&po.fields[k]!=null&&po.fields[k]!=="")e.value=po.fields[k];});}if(po&&po.mode)applyMode(po.mode);render();}}catch(e){}
   var _sb=document.getElementById("saveBtn");if(_sb)_sb.addEventListener("click",doSave);
   var _lb=document.getElementById("loadBtn");if(_lb)_lb.addEventListener("click",doLoad);
   var _db=document.getElementById("delBtn");if(_db)_db.addEventListener("click",doDelete);
