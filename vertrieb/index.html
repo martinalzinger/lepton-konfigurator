@@ -866,7 +866,8 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
      activities:[],_osm:(el.type+"/"+el.id)};
  }
  // KI-Treffer in dieselbe Element-Form bringen wie OSM (damit Karten/Übernahme identisch funktionieren)
- function aiToEl(o,i){return {type:"ai",id:i,lat:(o.lat!=null?+o.lat:null),lon:(o.lon!=null?+o.lon:null),
+ function aiSlug(o,i){var b=((o.firma||o.name||"")+"-"+(o.ort||"")).toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"");return b||("lead-"+i);}
+ function aiToEl(o,i){return {type:"ai",id:aiSlug(o,i),lat:(o.lat!=null?+o.lat:null),lon:(o.lon!=null?+o.lon:null),
    tags:{name:o.firma||o.name||"","addr:street":o.strasse||"","addr:postcode":o.plz||"","addr:city":o.ort||"","contact:phone":o.tel||"","contact:email":o.email||"",website:o.web||"",_land:(o.land||searchLand||"DE"),_quelle:o.quelle||"",_gf:o.geschaeftsfuehrer||"",_bl:o.betriebsleiter||"",_menge:o.jahresmenge||"",_sieb:o.siebtechnik||"",_news:o.news||""}};}
  function guessLand(wo){var t=(wo||"").toLowerCase();if(/schweiz|switzerland|\bch\b/.test(t))return "CH";if(/österreich|oesterreich|austria|\bat\b/.test(t))return "AT";if(/italien|italy|südtirol|suedtirol/.test(t))return "IT";if(/frankreich|france/.test(t))return "FR";if(/polen|poland/.test(t))return "PL";if(/niederlande|holland/.test(t))return "NL";return "DE";}
  function osmMake(key){var el=osmLast[key];if(!el)return null;var c=osmToContact(el);DB.contacts.push(c);return c;}
