@@ -163,8 +163,16 @@ nachgereicht → funktioniert **online wie offline**. Optionaler Zugriffsschutz 
 Die Datendatei `vertrieb/data/crm.json` ist **nicht eingecheckt** (`.gitignore`);
 `vertrieb/data/.htaccess` sperrt den direkten Web-Zugriff (Apache).
 
-(Automatische Internet-Lead-Suche und automatisches E-Mail-Beantworten brauchen
-zusätzliche Server-Dienste und sind bewusst **nicht** enthalten.)
+**Online-Lead-Suche (Reiter „Leads"):** kostenlose Karten-Suche über
+**OpenStreetMap** – direkt im Browser, **kein Server/API-Schlüssel** nötig (läuft
+nur online). Eingabe „Was?" (z. B. Kompostierung/Recycling/Erdenwerk) + „Wo?"
+(Bundesland/Stadt): geocodet via **Nominatim**, Firmensuche via **Overpass**
+(`osmFilters()` mappt Begriffe auf OSM-Tags wie `industrial=composting`,
+`amenity=recycling`, plus `name~`-Regex). Treffer per Klick als Lead übernehmen
+(`osmToContact()`, Feld `_osm` zur Dedup). Keine amtliche Vollständigkeit. Der SW
+cacht `nominatim`/`overpass` nie. (Eine *vollständige* Branchen-/Registersuche und
+automatisches E-Mail-Beantworten bräuchten einen kostenpflichtigen Server-Dienst
+und sind bewusst **nicht** enthalten.)
 
 **Verknüpfung zum Konfigurator** (gleicher Origin → gemeinsamer `localStorage`):
 - Anmeldung wird geteilt (`amb_lepton_auth`/`amb_lepton_user`, gleiche `USERS`-Liste
