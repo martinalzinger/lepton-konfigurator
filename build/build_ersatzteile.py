@@ -147,6 +147,27 @@ def resolve_model(m):
     if m in AVAIL: return file_model(m), None
     return None,None
 
+# Boilerplate-Beschreibungen zentral übersetzen (de -> en/pl/fr)
+DESCMAP={
+ "Unter-Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar":{
+   "en":"Sub-assembly – pick and order all individual parts in 3D",
+   "pl":"Podzespół – w 3D wszystkie części wybieralne i zamawialne",
+   "fr":"Sous-ensemble – toutes les pièces sélectionnables et commandables en 3D"},
+ "Komplette Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar":{
+   "en":"Complete assembly – pick and order all individual parts in 3D",
+   "pl":"Kompletny zespół – w 3D wszystkie części wybieralne i zamawialne",
+   "fr":"Ensemble complet – toutes les pièces sélectionnables et commandables en 3D"},
+ "Grundrahmen Siebdeck 1 – im 3D alle Einzelteile auswählbar und bestellbar":{
+   "en":"Screen deck 1 base frame – pick and order all individual parts in 3D",
+   "pl":"Rama podstawowa pokładu sitowego 1 – w 3D wszystkie części wybieralne i zamawialne",
+   "fr":"Châssis de base du pont de criblage 1 – toutes les pièces sélectionnables et commandables en 3D"},
+}
+def desc_lang(p,lg):
+    v=p.get("desc_"+lg)
+    if v: return v
+    dm=DESCMAP.get(p.get("desc",""))
+    return dm.get(lg) if dm else None
+
 CAT=[]; seen_art=set(); ref_files=set()
 for cat in SP_RAW["kategorien"]:
     items=[]
@@ -156,12 +177,12 @@ for cat in SP_RAW["kategorien"]:
         mk,kind=resolve_model(p.get("model"))
         items.append({
             "id":p["id"], "art":p["art"],
-            "name":p["name"], "name_en":p.get("name_en"),
-            "desc":p.get("desc",""), "desc_en":p.get("desc_en"),
+            "name":p["name"], "name_en":p.get("name_en"), "name_pl":p.get("name_pl"), "name_fr":p.get("name_fr"),
+            "desc":p.get("desc",""), "desc_en":desc_lang(p,"en"), "desc_pl":desc_lang(p,"pl"), "desc_fr":desc_lang(p,"fr"),
             "price":p.get("price",0),
             "model": mk, "modelKind": kind, "img": p.get("img"), "rot": p.get("rot")
         })
-    CAT.append({"h":cat["h"], "h_en":cat.get("h_en"), "items":items})
+    CAT.append({"h":cat["h"], "h_en":cat.get("h_en"), "h_pl":cat.get("h_pl"), "h_fr":cat.get("h_fr"), "items":items})
 
 auto=[c for c in CAD if c["art"] not in seen_art and (c["model"] is None or c["model"] not in ref_files)]
 if auto:
@@ -170,6 +191,51 @@ if auto:
         "desc":"", "desc_en":None, "price":0,
         "model": (file_model(c["model"]) if c["model"] else None), "modelKind":None, "img":c["img"]
     } for i,c in enumerate(auto)]})
+
+# ---- Such-Index: Einzelteile je Modell (Artikelnr. + Bezeichnung de/en) ----
+def glb_names(path):
+    """Knoten-/Mesh-Namen aus dem JSON-Chunk einer GLB lesen (ohne Fremdpakete)."""
+    try:
+        with open(path,"rb") as fh:
+            head=fh.read(12)
+            if head[:4]!=b"glTF": return []
+            clen=int.from_bytes(fh.read(4),"little"); ctype=fh.read(4)
+            if ctype!=b"JSON": return []
+            j=json.loads(fh.read(clen).decode("utf-8","replace"))
+    except Exception:
+        return []
+    out=[]
+    for key in ("nodes","meshes"):
+        for o in j.get(key,[]) or []:
+            nm=o.get("name")
+            if nm: out.append(nm)
+    return out
+
+def py_normPart(s):
+    s=str(s or ""); m=re.match(r"^(PDM_\d+)",s,re.I)
+    if m: return m.group(1)
+    s=re.sub(r"_-_\d{4}.*$","",s); s=re.sub(r"_oa_\d+$","",s,flags=re.I)
+    s=re.sub(r"_v?\d+(\.\d+)+$","",s,flags=re.I); s=re.sub(r"_\d{1,3}$","",s)
+    s=re.sub(r"_oa$","",s,flags=re.I); return s.strip() or str(s)
+
+def py_pdmCanon(s):
+    m=re.match(r"^PDM_0*(\d+)",str(s or ""),re.I)
+    return ("PDM_"+m.group(1)) if m else str(s or "")
+
+PARTIDX={}
+for mk,rel in list(MODELS.items()):
+    if not (isinstance(mk,str) and mk.startswith("file:")): continue
+    path=rel if os.path.isabs(rel) else os.path.join(OUTDIR, rel)
+    if not os.path.exists(path): path=os.path.join(MODELS_DIR, os.path.basename(rel))
+    toks=set()
+    for nm in glb_names(path):
+        info=PARTMAP.get(py_pdmCanon(py_normPart(nm)))
+        if info:
+            if info.get("art"): toks.add(str(info["art"]).lower())
+            if info.get("name"): toks.add(str(info["name"]).lower())
+            if info.get("name_en"): toks.add(str(info["name_en"]).lower())
+    if toks: PARTIDX[mk]=" ␟ ".join(sorted(toks))
+print("PARTIDX: %d Modelle indexiert (%d Teile-Tokens gesamt)"%(len(PARTIDX),sum(v.count('␟')+1 for v in PARTIDX.values())))
 
 # ---- i18n lang-major ----
 I18N={lg:{k:I18N_RAW[k][lg] for k in I18N_RAW} for lg in LANGS}
@@ -263,6 +329,7 @@ body{font-family:var(--sans);background:var(--paper);color:var(--ink);line-heigh
 .pbody{padding:13px 14px 14px;display:flex;flex-direction:column;gap:5px;flex:1}
 .pname{font-size:14px;font-weight:600;line-height:1.3}
 .pdesc{font-size:11.5px;color:var(--muted);line-height:1.4;flex:1}
+.phit{font-size:11px;font-weight:600;color:var(--red);background:var(--red-soft);border-radius:6px;padding:3px 7px;margin-top:4px;align-self:flex-start;font-family:var(--mono);letter-spacing:.02em}
 .pfoot{display:flex;justify-content:space-between;align-items:center;margin-top:3px;gap:8px}
 .part{font-family:var(--mono);font-size:10px;color:var(--faint)}
 .pprice{font-family:var(--mono);font-weight:600;font-size:14px;color:var(--red);white-space:nowrap}
@@ -528,7 +595,7 @@ body{font-family:var(--sans);background:var(--paper);color:var(--ink);line-heigh
 <div id="toast"></div>
 <div id="doc"></div>
 <script>
-const IMG=%%IMG%%; const MODELS=%%MODELS%%; const CAT=%%CAT%%; const I18N=%%I18N%%; const PARTMAP=%%PARTMAP%%; const PARTIMG=%%PARTIMG%%;
+const IMG=%%IMG%%; const MODELS=%%MODELS%%; const CAT=%%CAT%%; const I18N=%%I18N%%; const PARTMAP=%%PARTMAP%%; const PARTIMG=%%PARTIMG%%; const PARTIDX=%%PARTIDX%%;
 const MAIL="%%MAIL%%"; const LOGO_L="%%LOGOL%%"; const LOGO_D="%%LOGOD%%";
 const LOCALE={de:"de-DE",en:"en-GB",pl:"pl-PL",fr:"fr-FR"};
 const LKEY="amb_lepton_lang", CKEY="amb_lepton_cart", FKEY="amb_lepton_et_fields";
@@ -581,10 +648,12 @@ const ICONS={
   var el=document.getElementById("chips");el.innerHTML=h;
   el.querySelectorAll("button").forEach(function(b){b.addEventListener("click",function(){filter=b.getAttribute("data-f");buildChips();renderCatalog();});});
  }
+ function matchSelf(p,q){return (p.art||"").toLowerCase().indexOf(q)>=0 || pName(p).toLowerCase().indexOf(q)>=0 || pDesc(p).toLowerCase().indexOf(q)>=0;}
+ function matchPart(p,q){var idx=p.model&&PARTIDX[p.model];return !!(idx&&idx.indexOf(q)>=0);}
  function matches(p){
   if(!query)return true;
   var q=query.toLowerCase();
-  return (p.art||"").toLowerCase().indexOf(q)>=0 || pName(p).toLowerCase().indexOf(q)>=0 || pDesc(p).toLowerCase().indexOf(q)>=0;
+  return matchSelf(p,q)||matchPart(p,q);
  }
  function renderCatalog(){
   var html="",any=false;
@@ -602,9 +671,11 @@ const ICONS={
    items.forEach(function(p){
     var has3d=!!(p.model&&MODELS[p.model]);
     var incart=cart[p.id]>0;
+    var viaPart=query&&!matchSelf(p,query.toLowerCase())&&matchPart(p,query.toLowerCase());
     html+='<article class="pcard'+(incart?' incart':'')+'" data-id="'+esc(p.id)+'">'
        +'<div class="pthumb" data-3d="'+esc(p.id)+'">'+(has3d?'<div class="badge3d"><svg viewBox="0 0 24 24" fill="none"><path d="M12 2l9 5v10l-9 5-9-5V7z"/></svg>3D</div>':'')+thumbHTML(p)+'</div>'
        +'<div class="pbody"><div class="pname">'+esc(pName(p))+'</div><div class="pdesc">'+esc(pDesc(p))+'</div>'
+       +(viaPart?'<div class="phit">'+t("contains_part")+'</div>':'')
        +'<div class="pfoot"><span class="part">'+t("art_prefix")+esc(p.art)+'</span><span class="pprice">'+priceHTML(p)+'</span></div>'
        +'<div class="pacts"><button class="b3d" data-3d="'+esc(p.id)+'"'+(has3d?'':' disabled')+'>'+t("btn_3d")+'</button>'
        +'<button class="badd" data-add="'+esc(p.id)+'">'+(incart?t("in_cart"):t("btn_add"))+'</button></div></div></article>';
@@ -614,7 +685,7 @@ const ICONS={
   document.getElementById("catalog").innerHTML=html;
   document.getElementById("empty").style.display=any?"none":"block";
   document.querySelectorAll("[data-add]").forEach(function(b){b.addEventListener("click",function(){addToCart(b.getAttribute("data-add"));});});
-  document.querySelectorAll("[data-3d]").forEach(function(b){b.addEventListener("click",function(){var id=b.getAttribute("data-3d");var p=byId[id];if(p&&p.model&&MODELS[p.model])open3D(id);});});
+  document.querySelectorAll("[data-3d]").forEach(function(b){b.addEventListener("click",function(){var id=b.getAttribute("data-3d");var p=byId[id];if(p&&p.model&&MODELS[p.model])open3D(id,(query&&matchPart(p,query.toLowerCase())&&!matchSelf(p,query.toLowerCase()))?query:"");});});
  }
  // ---- Cart ----
  function addToCart(id){cart[id]=(cart[id]||0)+1;saveCart();updateBadge();renderCatalog();renderCart();toast(t("toast_added"));}
@@ -646,7 +717,7 @@ const ICONS={
  function closeCart(){document.getElementById("drawer").classList.remove("open");document.getElementById("backdrop").classList.remove("open");}
  // ===== 3D-Explorer (three.js wird BEI BEDARF dynamisch geladen) =====
  var THREE,GLTFLoader,OrbitControls,RoomEnvironment,loader,hlMat;
- var renderer,scene,camera,controls,raycaster,curRoot=null,pivot=null,autoSpin=true,baseQuat=null,camDist=1,curModelRot=null,groups=[],activeG=null,fitR=1,vinit=false,viewerActive=false,threeReady=false;
+ var renderer,scene,camera,controls,raycaster,curRoot=null,pivot=null,autoSpin=true,baseQuat=null,camDist=1,curModelRot=null,curFocusQ="",groups=[],activeG=null,fitR=1,vinit=false,viewerActive=false,threeReady=false;
  function ensureThree(){
   if(threeReady)return Promise.resolve(true);
   return Promise.all([import("./vendor/three.module.min.js"),import("./vendor/GLTFLoader.js"),import("./vendor/OrbitControls.js"),import("./vendor/RoomEnvironment.js")]).then(function(m){
@@ -718,7 +789,7 @@ const ICONS={
  function pdmCanon(s){var m=String(s||"").match(/^PDM_0*(\d+)/i);return m?("PDM_"+m[1]):String(s||"");}
  function buildGroups(root){
   var map={},order=[];
-  root.traverse(function(o){if(o.isMesh){var key=normPart(nodeName(o)||"(unbenannt)");var g=map[key];if(!g){var info=PARTMAP[pdmCanon(key)];g={raw:key,label:cleanLabel(key),art:(info&&info.art)||key,name:(info&&info.name)||cleanLabel(key),weight:(info&&typeof info.weight==="number")?info.weight:null,zoll:(info&&info.zoll)||null,pimg:PARTIMG[pdmCanon(key)]||null,meshes:[],visible:true,count:0};map[key]=g;order.push(g);}g.meshes.push(o);o.userData._g=g;}});
+  root.traverse(function(o){if(o.isMesh){var key=normPart(nodeName(o)||"(unbenannt)");var g=map[key];if(!g){var info=PARTMAP[pdmCanon(key)];g={raw:key,label:cleanLabel(key),art:(info&&info.art)||key,name:(info&&((lang!=="de"&&info["name_"+lang])||info.name))||cleanLabel(key),weight:(info&&typeof info.weight==="number")?info.weight:null,zoll:(info&&info.zoll)||null,pimg:PARTIMG[pdmCanon(key)]||null,meshes:[],visible:true,count:0};map[key]=g;order.push(g);}g.meshes.push(o);o.userData._g=g;}});
   // echte Stückzahl = Anzahl Instanz-Wurzeln (Knoten mit Artikelname ohne gleichnamigen Vorfahren),
   // NICHT die Mesh-Anzahl (ein Bauteil besteht oft aus mehreren Meshes)
   root.traverse(function(o){if(o.name){var nm=normPart(o.name);var g=map[nm];if(!g)return;var anc=o.parent,isRoot=true;while(anc){if(anc.name&&normPart(anc.name)===nm){isRoot=false;break;}anc=anc.parent;}if(isRoot)g.count++;}});
@@ -781,9 +852,16 @@ const ICONS={
   list.querySelectorAll("[data-pcart]").forEach(function(b){b.addEventListener("click",function(e){e.stopPropagation();var g=groups[+b.getAttribute("data-pcart")];addSub(g.art,g.name,g.weight,g.zoll,g.pimg);});});
  }
  function showNo(msg){document.getElementById("mvLoad").style.display="none";var no=document.getElementById("mvNo");no.style.display="flex";no.textContent=msg||t("no_3d");}
- function open3D(id){
+ function focusPart(q){
+  if(!q)return;var fq=q.toLowerCase();
+  for(var i=0;i<groups.length;i++){var g=groups[i];
+   if((g.art+" "+g.name+" "+g.raw).toLowerCase().indexOf(fq)>=0){
+    var ps=document.getElementById("partSearch");if(ps)ps.value=q;
+    renderPartList(fq);selectGroup(g,true);return;}}
+ }
+ function open3D(id,focusQ){
   var p=byId[id];document.getElementById("mvName").textContent=pName(p);document.getElementById("mvArt").textContent=t("art_prefix")+p.art;
-  curModelRot=p.rot||null;
+  curModelRot=p.rot||null;curFocusQ=focusQ||"";
   document.getElementById("mvModal").classList.add("open");viewerActive=true;
   document.getElementById("mvNo").style.display="none";
   document.getElementById("partList").innerHTML="";document.getElementById("partCount").textContent="0";
@@ -798,6 +876,7 @@ const ICONS={
     // Umgebungslicht je Material verstärken -> Teile auch im Schatten gut sichtbar
     curRoot.traverse(function(o){if(o.isMesh&&o.material){(Array.isArray(o.material)?o.material:[o.material]).forEach(function(mt){if("envMapIntensity" in mt){mt.envMapIntensity=1.3;mt.needsUpdate=true;}});}});
     buildGroups(curRoot);frameModel();resizeViewer();renderPartList("");
+    if(curFocusQ)focusPart(curFocusQ);
     document.getElementById("mvLoad").style.display="none";
    },undefined,function(){showNo();});
   }).catch(function(){showNo(t("three_fail"));});
@@ -911,9 +990,10 @@ out=out.replace("%%MODELS%%",json.dumps(MODELS))
 out=out.replace("%%CAT%%",json.dumps(CAT,ensure_ascii=False))
 out=out.replace("%%I18N%%",json.dumps(I18N,ensure_ascii=False))
 out=out.replace("%%PARTMAP%%",json.dumps(PARTMAP,ensure_ascii=False))
+out=out.replace("%%PARTIDX%%",json.dumps(PARTIDX,ensure_ascii=False))
 out=out.replace("%%PARTIMG%%",json.dumps(PARTIMG,ensure_ascii=False))
 
-for tok in ["%%RED%%","%%RED2%%","%%HERO%%","%%LOGOL%%","%%LOGOD%%","%%MAIL%%","%%IMG%%","%%MODELS%%","%%CAT%%","%%I18N%%","%%PARTMAP%%","%%PARTIMG%%"]:
+for tok in ["%%RED%%","%%RED2%%","%%HERO%%","%%LOGOL%%","%%LOGOD%%","%%MAIL%%","%%IMG%%","%%MODELS%%","%%CAT%%","%%I18N%%","%%PARTMAP%%","%%PARTIMG%%","%%PARTIDX%%"]:
     assert tok not in out, "Token übrig: "+tok
 for need in ['id="cartBtn"','id="tcanvas"','id="partList"','renderCatalog','data-lang="pl"','ensureThree','importmap','./vendor/GLTFLoader.js']:
     assert need in out, "fehlt: "+need

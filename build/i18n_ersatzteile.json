@@ -1,398 +1,404 @@
 {
-  "page_title": {
-    "de": "Ersatzteilkatalog · Lepton 5100",
-    "en": "Spare parts catalogue · Lepton 5100",
-    "pl": "Katalog części zamiennych · Lepton 5100",
-    "fr": "Catalogue de pièces · Lepton 5100"
-  },
-  "nav_back": {
-    "de": "Konfigurator",
-    "en": "Configurator",
-    "pl": "Konfigurator",
-    "fr": "Configurateur"
-  },
-  "hero_kick": {
-    "de": "Ersatzteile · 3D-Katalog",
-    "en": "Spare parts · 3D catalogue",
-    "pl": "Części zamienne · katalog 3D",
-    "fr": "Pièces · catalogue 3D"
-  },
-  "hero_title": {
-    "de": "Ersatzteilkatalog",
-    "en": "Spare parts catalogue",
-    "pl": "Katalog części zamiennych",
-    "fr": "Catalogue de pièces détachées"
-  },
-  "hero_sub": {
-    "de": "Mobile Sternsiebanlage LEPTON 5100 · mit 3D-Ansicht",
-    "en": "Mobile star screen LEPTON 5100 · with 3D view",
-    "pl": "Mobilne przesiewacze gwiazdowe LEPTON 5100 · z widokiem 3D",
-    "fr": "Crible à étoiles mobile LEPTON 5100 · avec vue 3D"
-  },
-  "search_ph": {
-    "de": "Artikelnummer oder Bezeichnung suchen …",
-    "en": "Search article number or name …",
-    "pl": "Szukaj numeru lub nazwy …",
-    "fr": "Rechercher référence ou désignation …"
-  },
-  "filter_all": {
-    "de": "Alle",
-    "en": "All",
-    "pl": "Wszystkie",
-    "fr": "Toutes"
-  },
-  "no_results": {
-    "de": "Keine Teile gefunden.",
-    "en": "No parts found.",
-    "pl": "Nie znaleziono części.",
-    "fr": "Aucune pièce trouvée."
-  },
-  "btn_3d": {
-    "de": "3D ansehen",
-    "en": "View 3D",
-    "pl": "Zobacz 3D",
-    "fr": "Voir en 3D"
-  },
-  "btn_add": {
-    "de": "In den Warenkorb",
-    "en": "Add to cart",
-    "pl": "Do koszyka",
-    "fr": "Ajouter au panier"
-  },
-  "in_cart": {
-    "de": "Im Warenkorb",
-    "en": "In cart",
-    "pl": "W koszyku",
-    "fr": "Dans le panier"
-  },
-  "price_request": {
-    "de": "auf Anfrage",
-    "en": "on request",
-    "pl": "na zapytanie",
-    "fr": "sur demande"
-  },
-  "art_prefix": {
-    "de": "Art.-Nr. ",
-    "en": "Art. no. ",
-    "pl": "Nr art. ",
-    "fr": "Réf. "
-  },
-  "cart_title": {
-    "de": "Warenkorb",
-    "en": "Cart",
-    "pl": "Koszyk",
-    "fr": "Panier"
-  },
-  "cart_empty": {
-    "de": "Ihr Warenkorb ist leer.",
-    "en": "Your cart is empty.",
-    "pl": "Twój koszyk jest pusty.",
-    "fr": "Votre panier est vide."
-  },
-  "cart_remove": {
-    "de": "Entfernen",
-    "en": "Remove",
-    "pl": "Usuń",
-    "fr": "Retirer"
-  },
-  "cart_subtotal": {
-    "de": "Zwischensumme netto",
-    "en": "Subtotal net",
-    "pl": "Suma netto",
-    "fr": "Sous-total net"
-  },
-  "cart_note": {
-    "de": "Preise unverbindlich, zzgl. USt. und Versand. Endgültiges Angebot nach Prüfung.",
-    "en": "Prices non-binding, plus VAT and shipping. Final quote after review.",
-    "pl": "Ceny niewiążące, plus VAT i wysyłka. Oferta ostateczna po weryfikacji.",
-    "fr": "Prix sans engagement, hors TVA et port. Offre définitive après vérification."
-  },
-  "cust_title": {
-    "de": "Ihre Kontaktdaten",
-    "en": "Your contact details",
-    "pl": "Twoje dane kontaktowe",
-    "fr": "Vos coordonnées"
-  },
-  "lbl_firma": {
-    "de": "Firma",
-    "en": "Company",
-    "pl": "Firma",
-    "fr": "Société"
-  },
-  "lbl_name": {
-    "de": "Ansprechpartner",
-    "en": "Contact person",
-    "pl": "Osoba kontaktowa",
-    "fr": "Interlocuteur"
-  },
-  "lbl_mail": {
-    "de": "E-Mail",
-    "en": "E-mail",
-    "pl": "E-mail",
-    "fr": "E-mail"
-  },
-  "lbl_tel": {
-    "de": "Telefon",
-    "en": "Phone",
-    "pl": "Telefon",
-    "fr": "Téléphone"
-  },
-  "lbl_masch": {
-    "de": "Maschinen-Nr. / Baujahr",
-    "en": "Machine no. / year",
-    "pl": "Nr maszyny / rok",
-    "fr": "N° machine / année"
-  },
-  "lbl_msg": {
-    "de": "Nachricht",
-    "en": "Message",
-    "pl": "Wiadomość",
-    "fr": "Message"
-  },
-  "ph_optional": {
-    "de": "optional",
-    "en": "optional",
-    "pl": "opcjonalnie",
-    "fr": "facultatif"
-  },
-  "btn_send_mail": {
-    "de": "Per E-Mail senden",
-    "en": "Send by e-mail",
-    "pl": "Wyślij e-mailem",
-    "fr": "Envoyer par e-mail"
-  },
-  "btn_print": {
-    "de": "Anfrage drucken",
-    "en": "Print request",
-    "pl": "Drukuj zapytanie",
-    "fr": "Imprimer la demande"
-  },
-  "btn_clear": {
-    "de": "Leeren",
-    "en": "Clear",
-    "pl": "Wyczyść",
-    "fr": "Vider"
-  },
-  "viewer_hint": {
-    "de": "1 Finger = drehen · 2 Finger = Zoom & verschieben · Tippen = Teil wählen",
-    "en": "1 finger = rotate · 2 fingers = zoom & pan · tap = select part",
-    "pl": "1 palec = obrót · 2 palce = zoom i przesuwanie · dotknij = wybór części",
-    "fr": "1 doigt = tourner · 2 doigts = zoom & déplacer · toucher = sélectionner"
-  },
-  "parts_title": {
-    "de": "Einzelteile",
-    "en": "Individual parts",
-    "pl": "Części",
-    "fr": "Pièces"
-  },
-  "parts_search": {
-    "de": "Bauteil suchen …",
-    "en": "Search part …",
-    "pl": "Szukaj części …",
-    "fr": "Rechercher une pièce …"
-  },
-  "show_all": {
-    "de": "Alle einblenden",
-    "en": "Show all",
-    "pl": "Pokaż wszystkie",
-    "fr": "Tout afficher"
-  },
-  "view_reset": {
-    "de": "Ansicht",
-    "en": "Reset view",
-    "pl": "Widok",
-    "fr": "Vue"
-  },
-  "tip_toggle": {
-    "de": "Ein-/ausblenden",
-    "en": "Show/hide",
-    "pl": "Pokaż/ukryj",
-    "fr": "Afficher/masquer"
-  },
-  "qty_in_assembly": {
-    "de": "Anzahl in dieser Baugruppe",
-    "en": "Quantity in this assembly",
-    "pl": "Ilość w tym zespole",
-    "fr": "Quantité dans cet ensemble"
-  },
-  "no_3d": {
-    "de": "Für dieses Teil ist noch kein 3D-Modell hinterlegt.",
-    "en": "No 3D model available for this part yet.",
-    "pl": "Brak modelu 3D dla tej części.",
-    "fr": "Aucun modèle 3D disponible pour cette pièce."
-  },
-  "three_fail": {
-    "de": "3D-Viewer konnte nicht geladen werden (online erneut versuchen).",
-    "en": "3D viewer could not be loaded (try again online).",
-    "pl": "Nie udało się załadować widoku 3D (spróbuj ponownie online).",
-    "fr": "Impossible de charger la vue 3D (réessayez en ligne)."
-  },
-  "toast_added": {
-    "de": "Zum Warenkorb hinzugefügt",
-    "en": "Added to cart",
-    "pl": "Dodano do koszyka",
-    "fr": "Ajouté au panier"
-  },
-  "alert_empty": {
-    "de": "Bitte legen Sie zuerst Teile in den Warenkorb.",
-    "en": "Please add parts to the cart first.",
-    "pl": "Najpierw dodaj części do koszyka.",
-    "fr": "Veuillez d'abord ajouter des pièces au panier."
-  },
-  "doc_title": {
-    "de": "Ersatzteil-Anfrage",
-    "en": "Spare parts request",
-    "pl": "Zapytanie o części",
-    "fr": "Demande de pièces"
-  },
-  "doc_from": {
-    "de": "Anfrage von",
-    "en": "Request from",
-    "pl": "Zapytanie od",
-    "fr": "Demande de"
-  },
-  "doc_to": {
-    "de": "An",
-    "en": "To",
-    "pl": "Do",
-    "fr": "À"
-  },
-  "doc_date": {
-    "de": "Datum",
-    "en": "Date",
-    "pl": "Data",
-    "fr": "Date"
-  },
-  "doc_machine": {
-    "de": "Maschine",
-    "en": "Machine",
-    "pl": "Maszyna",
-    "fr": "Machine"
-  },
-  "col_pos": {
-    "de": "Pos.",
-    "en": "Item",
-    "pl": "Poz.",
-    "fr": "Pos."
-  },
-  "col_art": {
-    "de": "Art.-Nr.",
-    "en": "Art. no.",
-    "pl": "Nr art.",
-    "fr": "Réf."
-  },
-  "col_name": {
-    "de": "Bezeichnung",
-    "en": "Description",
-    "pl": "Nazwa",
-    "fr": "Désignation"
-  },
-  "col_qty": {
-    "de": "Menge",
-    "en": "Qty",
-    "pl": "Ilość",
-    "fr": "Qté"
-  },
-  "col_price": {
-    "de": "Einzelpreis",
-    "en": "Unit price",
-    "pl": "Cena jedn.",
-    "fr": "Prix unit."
-  },
-  "col_sum": {
-    "de": "Summe",
-    "en": "Total",
-    "pl": "Suma",
-    "fr": "Total"
-  },
-  "doc_total": {
-    "de": "Summe netto",
-    "en": "Total net",
-    "pl": "Suma netto",
-    "fr": "Total net"
-  },
-  "doc_msg": {
-    "de": "Nachricht",
-    "en": "Message",
-    "pl": "Wiadomość",
-    "fr": "Message"
-  },
-  "doc_foot": {
-    "de": "Unverbindliche Anfrage · Preise zzgl. USt. und Versand · gültig vorbehaltlich Verfügbarkeit.",
-    "en": "Non-binding request · prices plus VAT and shipping · subject to availability.",
-    "pl": "Zapytanie niewiążące · ceny plus VAT i wysyłka · w zależności od dostępności.",
-    "fr": "Demande sans engagement · prix hors TVA et port · sous réserve de disponibilité."
-  },
-  "mail_subject": {
-    "de": "Ersatzteil-Anfrage Lepton 5100",
-    "en": "Spare parts request Lepton 5100",
-    "pl": "Zapytanie o części Lepton 5100",
-    "fr": "Demande de pièces Lepton 5100"
-  },
-  "mail_intro": {
-    "de": "Sehr geehrtes Alzinger-Team,\n\nwir bitten um ein Angebot für folgende Ersatzteile der Lepton 5100:",
-    "en": "Dear Alzinger team,\n\nwe would like a quote for the following Lepton 5100 spare parts:",
-    "pl": "Szanowny zespole Alzinger,\n\nprosimy o ofertę na następujące części Lepton 5100:",
-    "fr": "Chère équipe Alzinger,\n\nnous souhaitons un devis pour les pièces Lepton 5100 suivantes :"
-  },
-  "mail_regards": {
-    "de": "Mit freundlichen Grüßen",
-    "en": "Kind regards",
-    "pl": "Z poważaniem",
-    "fr": "Cordialement"
-  },
-  "menu_lang": {
-    "de": "Sprache",
-    "en": "Language",
-    "pl": "Język",
-    "fr": "Langue"
-  },
-  "sub_soon": {
-    "de": "Unter-Baugruppen folgen – 3D wird ergänzt",
-    "en": "Sub-assemblies to follow – 3D coming soon",
-    "pl": "Podzespoły w przygotowaniu – 3D wkrótce",
-    "fr": "Sous-ensembles à venir – 3D bientôt"
-  },
-  "col_weight": {
-    "de": "Gewicht",
-    "en": "Weight",
-    "pl": "Waga",
-    "fr": "Poids"
-  },
-  "weight_total": {
-    "de": "Gesamtgewicht",
-    "en": "Total weight",
-    "pl": "Waga całkowita",
-    "fr": "Poids total"
-  },
-  "btn_save_pdf": {
-    "de": "Als PDF speichern",
-    "en": "Save as PDF",
-    "pl": "Zapisz jako PDF",
-    "fr": "Enregistrer en PDF"
-  },
-  "col_zoll": {
-    "de": "Zolltarif",
-    "en": "Customs code",
-    "pl": "Kod celny",
-    "fr": "Code douanier"
-  },
-  "lbl_liefer": {
-    "de": "Lieferart",
-    "en": "Delivery",
-    "pl": "Sposób dostawy",
-    "fr": "Livraison"
-  },
-  "liefer_standard": {
-    "de": "Normaler Versand",
-    "en": "Standard shipping",
-    "pl": "Wysyłka standardowa",
-    "fr": "Envoi standard"
-  },
-  "liefer_express": {
-    "de": "Nachtexpress",
-    "en": "Overnight express",
-    "pl": "Ekspres nocny",
-    "fr": "Express de nuit"
-  }
+ "page_title": {
+  "de": "Ersatzteilkatalog · Lepton 5100",
+  "en": "Spare parts catalogue · Lepton 5100",
+  "pl": "Katalog części zamiennych · Lepton 5100",
+  "fr": "Catalogue de pièces · Lepton 5100"
+ },
+ "nav_back": {
+  "de": "Konfigurator",
+  "en": "Configurator",
+  "pl": "Konfigurator",
+  "fr": "Configurateur"
+ },
+ "hero_kick": {
+  "de": "Ersatzteile · 3D-Katalog",
+  "en": "Spare parts · 3D catalogue",
+  "pl": "Części zamienne · katalog 3D",
+  "fr": "Pièces · catalogue 3D"
+ },
+ "hero_title": {
+  "de": "Ersatzteilkatalog",
+  "en": "Spare parts catalogue",
+  "pl": "Katalog części zamiennych",
+  "fr": "Catalogue de pièces détachées"
+ },
+ "hero_sub": {
+  "de": "Mobile Sternsiebanlage LEPTON 5100 · mit 3D-Ansicht",
+  "en": "Mobile star screen LEPTON 5100 · with 3D view",
+  "pl": "Mobilne przesiewacze gwiazdowe LEPTON 5100 · z widokiem 3D",
+  "fr": "Crible à étoiles mobile LEPTON 5100 · avec vue 3D"
+ },
+ "search_ph": {
+  "de": "Artikelnummer oder Bezeichnung suchen …",
+  "en": "Search article number or name …",
+  "pl": "Szukaj numeru lub nazwy …",
+  "fr": "Rechercher référence ou désignation …"
+ },
+ "filter_all": {
+  "de": "Alle",
+  "en": "All",
+  "pl": "Wszystkie",
+  "fr": "Toutes"
+ },
+ "no_results": {
+  "de": "Keine Teile gefunden.",
+  "en": "No parts found.",
+  "pl": "Nie znaleziono części.",
+  "fr": "Aucune pièce trouvée."
+ },
+ "btn_3d": {
+  "de": "3D ansehen",
+  "en": "View 3D",
+  "pl": "Zobacz 3D",
+  "fr": "Voir en 3D"
+ },
+ "btn_add": {
+  "de": "In den Warenkorb",
+  "en": "Add to cart",
+  "pl": "Do koszyka",
+  "fr": "Ajouter au panier"
+ },
+ "in_cart": {
+  "de": "Im Warenkorb",
+  "en": "In cart",
+  "pl": "W koszyku",
+  "fr": "Dans le panier"
+ },
+ "price_request": {
+  "de": "auf Anfrage",
+  "en": "on request",
+  "pl": "na zapytanie",
+  "fr": "sur demande"
+ },
+ "art_prefix": {
+  "de": "Art.-Nr. ",
+  "en": "Art. no. ",
+  "pl": "Nr art. ",
+  "fr": "Réf. "
+ },
+ "cart_title": {
+  "de": "Warenkorb",
+  "en": "Cart",
+  "pl": "Koszyk",
+  "fr": "Panier"
+ },
+ "cart_empty": {
+  "de": "Ihr Warenkorb ist leer.",
+  "en": "Your cart is empty.",
+  "pl": "Twój koszyk jest pusty.",
+  "fr": "Votre panier est vide."
+ },
+ "cart_remove": {
+  "de": "Entfernen",
+  "en": "Remove",
+  "pl": "Usuń",
+  "fr": "Retirer"
+ },
+ "cart_subtotal": {
+  "de": "Zwischensumme netto",
+  "en": "Subtotal net",
+  "pl": "Suma netto",
+  "fr": "Sous-total net"
+ },
+ "cart_note": {
+  "de": "Preise unverbindlich, zzgl. USt. und Versand. Endgültiges Angebot nach Prüfung.",
+  "en": "Prices non-binding, plus VAT and shipping. Final quote after review.",
+  "pl": "Ceny niewiążące, plus VAT i wysyłka. Oferta ostateczna po weryfikacji.",
+  "fr": "Prix sans engagement, hors TVA et port. Offre définitive après vérification."
+ },
+ "cust_title": {
+  "de": "Ihre Kontaktdaten",
+  "en": "Your contact details",
+  "pl": "Twoje dane kontaktowe",
+  "fr": "Vos coordonnées"
+ },
+ "lbl_firma": {
+  "de": "Firma",
+  "en": "Company",
+  "pl": "Firma",
+  "fr": "Société"
+ },
+ "lbl_name": {
+  "de": "Ansprechpartner",
+  "en": "Contact person",
+  "pl": "Osoba kontaktowa",
+  "fr": "Interlocuteur"
+ },
+ "lbl_mail": {
+  "de": "E-Mail",
+  "en": "E-mail",
+  "pl": "E-mail",
+  "fr": "E-mail"
+ },
+ "lbl_tel": {
+  "de": "Telefon",
+  "en": "Phone",
+  "pl": "Telefon",
+  "fr": "Téléphone"
+ },
+ "lbl_masch": {
+  "de": "Maschinen-Nr. / Baujahr",
+  "en": "Machine no. / year",
+  "pl": "Nr maszyny / rok",
+  "fr": "N° machine / année"
+ },
+ "lbl_msg": {
+  "de": "Nachricht",
+  "en": "Message",
+  "pl": "Wiadomość",
+  "fr": "Message"
+ },
+ "ph_optional": {
+  "de": "optional",
+  "en": "optional",
+  "pl": "opcjonalnie",
+  "fr": "facultatif"
+ },
+ "btn_send_mail": {
+  "de": "Per E-Mail senden",
+  "en": "Send by e-mail",
+  "pl": "Wyślij e-mailem",
+  "fr": "Envoyer par e-mail"
+ },
+ "btn_print": {
+  "de": "Anfrage drucken",
+  "en": "Print request",
+  "pl": "Drukuj zapytanie",
+  "fr": "Imprimer la demande"
+ },
+ "btn_clear": {
+  "de": "Leeren",
+  "en": "Clear",
+  "pl": "Wyczyść",
+  "fr": "Vider"
+ },
+ "viewer_hint": {
+  "de": "1 Finger = drehen · 2 Finger = Zoom & verschieben · Tippen = Teil wählen",
+  "en": "1 finger = rotate · 2 fingers = zoom & pan · tap = select part",
+  "pl": "1 palec = obrót · 2 palce = zoom i przesuwanie · dotknij = wybór części",
+  "fr": "1 doigt = tourner · 2 doigts = zoom & déplacer · toucher = sélectionner"
+ },
+ "parts_title": {
+  "de": "Einzelteile",
+  "en": "Individual parts",
+  "pl": "Części",
+  "fr": "Pièces"
+ },
+ "parts_search": {
+  "de": "Bauteil suchen …",
+  "en": "Search part …",
+  "pl": "Szukaj części …",
+  "fr": "Rechercher une pièce …"
+ },
+ "show_all": {
+  "de": "Alle einblenden",
+  "en": "Show all",
+  "pl": "Pokaż wszystkie",
+  "fr": "Tout afficher"
+ },
+ "view_reset": {
+  "de": "Ansicht",
+  "en": "Reset view",
+  "pl": "Widok",
+  "fr": "Vue"
+ },
+ "tip_toggle": {
+  "de": "Ein-/ausblenden",
+  "en": "Show/hide",
+  "pl": "Pokaż/ukryj",
+  "fr": "Afficher/masquer"
+ },
+ "qty_in_assembly": {
+  "de": "Anzahl in dieser Baugruppe",
+  "en": "Quantity in this assembly",
+  "pl": "Ilość w tym zespole",
+  "fr": "Quantité dans cet ensemble"
+ },
+ "no_3d": {
+  "de": "Für dieses Teil ist noch kein 3D-Modell hinterlegt.",
+  "en": "No 3D model available for this part yet.",
+  "pl": "Brak modelu 3D dla tej części.",
+  "fr": "Aucun modèle 3D disponible pour cette pièce."
+ },
+ "three_fail": {
+  "de": "3D-Viewer konnte nicht geladen werden (online erneut versuchen).",
+  "en": "3D viewer could not be loaded (try again online).",
+  "pl": "Nie udało się załadować widoku 3D (spróbuj ponownie online).",
+  "fr": "Impossible de charger la vue 3D (réessayez en ligne)."
+ },
+ "toast_added": {
+  "de": "Zum Warenkorb hinzugefügt",
+  "en": "Added to cart",
+  "pl": "Dodano do koszyka",
+  "fr": "Ajouté au panier"
+ },
+ "alert_empty": {
+  "de": "Bitte legen Sie zuerst Teile in den Warenkorb.",
+  "en": "Please add parts to the cart first.",
+  "pl": "Najpierw dodaj części do koszyka.",
+  "fr": "Veuillez d'abord ajouter des pièces au panier."
+ },
+ "doc_title": {
+  "de": "Ersatzteil-Anfrage",
+  "en": "Spare parts request",
+  "pl": "Zapytanie o części",
+  "fr": "Demande de pièces"
+ },
+ "doc_from": {
+  "de": "Anfrage von",
+  "en": "Request from",
+  "pl": "Zapytanie od",
+  "fr": "Demande de"
+ },
+ "doc_to": {
+  "de": "An",
+  "en": "To",
+  "pl": "Do",
+  "fr": "À"
+ },
+ "doc_date": {
+  "de": "Datum",
+  "en": "Date",
+  "pl": "Data",
+  "fr": "Date"
+ },
+ "doc_machine": {
+  "de": "Maschine",
+  "en": "Machine",
+  "pl": "Maszyna",
+  "fr": "Machine"
+ },
+ "col_pos": {
+  "de": "Pos.",
+  "en": "Item",
+  "pl": "Poz.",
+  "fr": "Pos."
+ },
+ "col_art": {
+  "de": "Art.-Nr.",
+  "en": "Art. no.",
+  "pl": "Nr art.",
+  "fr": "Réf."
+ },
+ "col_name": {
+  "de": "Bezeichnung",
+  "en": "Description",
+  "pl": "Nazwa",
+  "fr": "Désignation"
+ },
+ "col_qty": {
+  "de": "Menge",
+  "en": "Qty",
+  "pl": "Ilość",
+  "fr": "Qté"
+ },
+ "col_price": {
+  "de": "Einzelpreis",
+  "en": "Unit price",
+  "pl": "Cena jedn.",
+  "fr": "Prix unit."
+ },
+ "col_sum": {
+  "de": "Summe",
+  "en": "Total",
+  "pl": "Suma",
+  "fr": "Total"
+ },
+ "doc_total": {
+  "de": "Summe netto",
+  "en": "Total net",
+  "pl": "Suma netto",
+  "fr": "Total net"
+ },
+ "doc_msg": {
+  "de": "Nachricht",
+  "en": "Message",
+  "pl": "Wiadomość",
+  "fr": "Message"
+ },
+ "doc_foot": {
+  "de": "Unverbindliche Anfrage · Preise zzgl. USt. und Versand · gültig vorbehaltlich Verfügbarkeit.",
+  "en": "Non-binding request · prices plus VAT and shipping · subject to availability.",
+  "pl": "Zapytanie niewiążące · ceny plus VAT i wysyłka · w zależności od dostępności.",
+  "fr": "Demande sans engagement · prix hors TVA et port · sous réserve de disponibilité."
+ },
+ "mail_subject": {
+  "de": "Ersatzteil-Anfrage Lepton 5100",
+  "en": "Spare parts request Lepton 5100",
+  "pl": "Zapytanie o części Lepton 5100",
+  "fr": "Demande de pièces Lepton 5100"
+ },
+ "mail_intro": {
+  "de": "Sehr geehrtes Alzinger-Team,\n\nwir bitten um ein Angebot für folgende Ersatzteile der Lepton 5100:",
+  "en": "Dear Alzinger team,\n\nwe would like a quote for the following Lepton 5100 spare parts:",
+  "pl": "Szanowny zespole Alzinger,\n\nprosimy o ofertę na następujące części Lepton 5100:",
+  "fr": "Chère équipe Alzinger,\n\nnous souhaitons un devis pour les pièces Lepton 5100 suivantes :"
+ },
+ "mail_regards": {
+  "de": "Mit freundlichen Grüßen",
+  "en": "Kind regards",
+  "pl": "Z poważaniem",
+  "fr": "Cordialement"
+ },
+ "menu_lang": {
+  "de": "Sprache",
+  "en": "Language",
+  "pl": "Język",
+  "fr": "Langue"
+ },
+ "sub_soon": {
+  "de": "Unter-Baugruppen folgen – 3D wird ergänzt",
+  "en": "Sub-assemblies to follow – 3D coming soon",
+  "pl": "Podzespoły w przygotowaniu – 3D wkrótce",
+  "fr": "Sous-ensembles à venir – 3D bientôt"
+ },
+ "col_weight": {
+  "de": "Gewicht",
+  "en": "Weight",
+  "pl": "Waga",
+  "fr": "Poids"
+ },
+ "weight_total": {
+  "de": "Gesamtgewicht",
+  "en": "Total weight",
+  "pl": "Waga całkowita",
+  "fr": "Poids total"
+ },
+ "btn_save_pdf": {
+  "de": "Als PDF speichern",
+  "en": "Save as PDF",
+  "pl": "Zapisz jako PDF",
+  "fr": "Enregistrer en PDF"
+ },
+ "col_zoll": {
+  "de": "Zolltarif",
+  "en": "Customs code",
+  "pl": "Kod celny",
+  "fr": "Code douanier"
+ },
+ "lbl_liefer": {
+  "de": "Lieferart",
+  "en": "Delivery",
+  "pl": "Sposób dostawy",
+  "fr": "Livraison"
+ },
+ "liefer_standard": {
+  "de": "Normaler Versand",
+  "en": "Standard shipping",
+  "pl": "Wysyłka standardowa",
+  "fr": "Envoi standard"
+ },
+ "liefer_express": {
+  "de": "Nachtexpress",
+  "en": "Overnight express",
+  "pl": "Ekspres nocny",
+  "fr": "Express de nuit"
+ },
+ "contains_part": {
+  "de": "enthält gesuchtes Teil",
+  "en": "contains the searched part",
+  "pl": "zawiera szukaną część",
+  "fr": "contient la pièce recherchée"
+ }
 }
