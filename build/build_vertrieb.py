@@ -570,7 +570,7 @@ var USERS=%%USERS%%;
  function aiReady(){return !!(SB&&SB.url&&SB.key&&AISECRET);}
  function aiPost(name,was,wo){
    var ctl=("AbortController" in window)?new AbortController():null;
-   var to=ctl?setTimeout(function(){try{ctl.abort();}catch(_){}},75000):0;
+   var to=ctl?setTimeout(function(){try{ctl.abort();}catch(_){}},120000):0;
    var done=function(){if(to)clearTimeout(to);};
    return fetch(SB.url.replace(/\/+$/,"")+"/functions/v1/"+name,{method:"POST",headers:{"Authorization":"Bearer "+SB.key,"apikey":SB.key,"Content-Type":"application/json","x-crm-secret":AISECRET},body:JSON.stringify({was:was,wo:wo}),signal:ctl?ctl.signal:undefined})
      .then(function(r){if(!r.ok)return r.json().catch(function(){return {};}).then(function(e){var err=new Error("ai "+r.status+(e&&e.error?(": "+e.error):""));err.status=r.status;throw err;});return r.json();})
@@ -989,7 +989,7 @@ var USERS=%%USERS%%;
    _aiErr="";
    if(!aiReady()){osmRun();return;}
    lastQuery=was+" in "+wo;searchLand=guessLand(wo);
-   osmLoading('KI durchsucht das Web nach „'+esc(lastQuery)+'“ … (kann ein paar Sekunden dauern)');
+   osmLoading('KI durchsucht das Web nach „'+esc(lastQuery)+'“ … <b>gründliche Recherche – das dauert bis zu ~2 Minuten</b>, bitte warten.');
    apiAi(was,wo).then(function(leads){
      if(!leads.length){osmClearResults();osmStatus('Die KI hat für „'+esc(lastQuery)+'“ keine Firmen gefunden. Tipp: anderen Begriff (z. B. „Kompostierung", „Recycling", „Erdenwerk") oder ein größeres Gebiet (z. B. „Bayern" statt nur einer Stadt) versuchen.');return;}
      _searchSrc="KI";renderOsm(leads.map(aiToEl));
