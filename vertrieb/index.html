@@ -288,13 +288,13 @@ textarea.field{min-height:74px;resize:vertical;line-height:1.5}
       <h3><svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:var(--red);fill:none;stroke-width:1.8"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 010 18M12 3a15 15 0 000 18"/></svg> Neue Leads im Internet finden</h3>
       <div style="display:flex;flex-wrap:wrap;gap:8px">
         <input class="field" id="osmWas" placeholder="Was? z. B. Kompostierung, Recycling, Erdenwerk" style="flex:2;min-width:200px">
-        <input class="field" id="osmWo" placeholder="Wo? z. B. Bayern, München" style="flex:1;min-width:140px">
+        <input class="field" id="osmWo" placeholder="Wo? z. B. Deutschland, Bayern, München" style="flex:1;min-width:140px">
         <button class="btn primary" id="osmSearch" type="button"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>Suchen</button>
       </div>
       <div id="osmStatus" style="font-size:13px;color:var(--muted);margin-top:10px"></div>
       <div class="clist" id="osmResults" style="margin-top:10px"></div>
       <p style="font-size:11px;color:var(--faint);margin-top:10px;line-height:1.6">
-        Quelle: © OpenStreetMap-Mitwirkende. Findet erfasste Betriebe – <b>keine amtliche Vollständigkeit</b>; Treffer kurz prüfen, dann als Lead übernehmen. Nur online. Tipp: bei zu vielen/zu wenigen Treffern Begriff oder Region anpassen (Stadt statt Bundesland).<br>
+        Quelle: © OpenStreetMap-Mitwirkende. Findet erfasste Betriebe – <b>keine amtliche Vollständigkeit</b>; Treffer kurz prüfen, dann als Lead übernehmen. Nur online. Funktioniert <b>bundesland- und landesweit</b> (z. B. „Bayern" oder „Deutschland") – sehr große Gebiete können einige Sekunden dauern.<br>
         Vollständige Branchen-/Registerlisten und automatische E-Mail-Antworten brauchen einen Server-Dienst und sind hier (noch) nicht enthalten.
       </p>
     </div>
@@ -646,27 +646,35 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
    if(g.osm_type==="way")return {area:2400000000+(+g.osm_id)};
    return {around:[20000,g.lat,g.lon]};
  }
+ // Begriff -> OSM-Filter. Schnelle TAG-Filter zuerst (laufen auch landesweit flott),
+ // langsame Namens-Regex nur EINMAL gebündelt am Ende.
  function osmFilters(term){
-   var t=(term||"").toLowerCase(),f=[];
-   var word=(t.replace(/[^a-zäöüß ]/g," ").trim().split(/\s+/)[0]||"");
-   if(word.length>=3)f.push('nwr["name"~"'+word+'",i]');
-   if(/kompost/.test(t)){f.push('nwr["industrial"="composting"]');f.push('nwr["landuse"="industrial"]["name"~"kompost",i]');}
-   if(/recycl|entsorg|abfall|wertstoff|müll|mull/.test(t)){f.push('nwr["amenity"="recycling"]["recycling_type"="centre"]');f.push('nwr["industrial"="scrap_yard"]');}
-   if(/erden|substrat|humus|mutterboden/.test(t)){f.push('nwr["name"~"erden|substrat|humus",i]');}
-   if(/steinbruch|schotter|kies|sand|quarry|brech/.test(t)){f.push('nwr["landuse"="quarry"]');}
-   if(/biogas|gärrest|garrest/.test(t)){f.push('nwr["name"~"biogas",i]');}
-   if(/garten|landschaft|galabau/.test(t)){f.push('nwr["name"~"garten|landschaft",i]');f.push('nwr["shop"="garden_centre"]');}
-   if(/container/.test(t))f.push('nwr["name"~"container",i]');
-   if(!f.length)f.push('nwr["name"~"'+(word||"x")+'",i]');
-   return f;
+   var t=(term||"").toLowerCase(),tags=[],names=[];
+   if(/kompost/.test(t)){tags.push('nwr["industrial"="composting"]');tags.push('nwr["amenity"="recycling"]["recycling:organic"="yes"]');names.push("kompost");}
+   if(/recycl|wertstoff|wertstoffhof/.test(t)){tags.push('nwr["amenity"="recycling"]["recycling_type"="centre"]');}
+   if(/entsorg|abfall|müll|mull|deponie|landfill/.test(t)){tags.push('nwr["landuse"="landfill"]');tags.push('nwr["amenity"="waste_transfer_station"]');tags.push('nwr["amenity"="waste_disposal"]');names.push("entsorg");}
+   if(/schrott|scrap|metall/.test(t)){tags.push('nwr["industrial"="scrap_yard"]');}
+   if(/erden|substrat|humus|mutterboden|blumenerde/.test(t)){names.push("erden");names.push("substrat");names.push("humus");}
+   if(/steinbruch|schotter|kies|sand|quarry|brech|baustoff/.test(t)){tags.push('nwr["landuse"="quarry"]');names.push("schotter");}
+   if(/biogas|gärrest|garrest/.test(t)){names.push("biogas");}
+   if(/garten|landschaft|galabau/.test(t)){tags.push('nwr["shop"="garden_centre"]');names.push("garten");names.push("landschaft");}
+   if(/container/.test(t)){names.push("container");}
+   if(!tags.length&&!names.length){var word=(t.replace(/[^a-zäöüß ]/g," ").trim().split(/\s+/)[0]||"");if(word.length>=3)names.push(word);}
+   var f=tags.slice();
+   if(names.length)f.push('nwr["name"~"'+names.join("|")+'",i]');
+   return f.length?f:['nwr["name"~"x",i]'];
  }
  function osmBuildQuery(ref,filters){
    var lines=filters.map(function(fl){return ref.area?(fl+"(area.a);"):(fl+"(around:"+ref.around[0]+","+ref.around[1]+","+ref.around[2]+");");}).join("\n  ");
-   return "[out:json][timeout:30];\n"+(ref.area?("area("+ref.area+")->.a;\n"):"")+"(\n  "+lines+"\n);\nout center 120;";
+   return "[out:json][timeout:90];\n"+(ref.area?("area("+ref.area+")->.a;\n"):"")+"(\n  "+lines+"\n);\nout center 400;";
  }
- function osmOverpass(q){
-   return fetch("https://overpass-api.de/api/interpreter",{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:"data="+encodeURIComponent(q)})
-     .then(function(r){if(!r.ok)throw new Error("overpass "+r.status);return r.json();}).then(function(j){return j.elements||[];});
+ // Zwei Overpass-Server: bei Fehler/Überlast automatisch auf den zweiten ausweichen.
+ var OVERPASS=["https://overpass-api.de/api/interpreter","https://overpass.kumi.systems/api/interpreter"];
+ function osmOverpass(q,i){
+   i=i||0;
+   return fetch(OVERPASS[i],{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:"data="+encodeURIComponent(q)})
+     .then(function(r){if(!r.ok)throw new Error("overpass "+r.status);return r.json();}).then(function(j){return j.elements||[];})
+     .catch(function(e){if(i+1<OVERPASS.length)return osmOverpass(q,i+1);throw e;});
  }
  function osmAddr(t){return {strasse:[t["addr:street"],t["addr:housenumber"]].filter(Boolean).join(" "),plz:t["addr:postcode"]||"",ort:t["addr:city"]||t["addr:town"]||t["addr:village"]||t["addr:municipality"]||""};}
  function osmExisting(){var s={};DB.contacts.forEach(function(c){if(c._osm)s[c._osm]=1;if(c.firma)s[((c.firma||"")+"|"+(c.ort||"")).toLowerCase()]=1;});return s;}
