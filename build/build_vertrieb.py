@@ -839,7 +839,7 @@ var USERS=%%USERS%%;
      tel:t["contact:phone"]||t.phone||"",mobil:"",mail:t["contact:email"]||t.email||"",
      web:t["contact:website"]||t.website||"",ustid:"",owner:(CUR&&CUR.n)||"",
      quelle:"Karten-Suche: "+lastQuery,
-     notiz:(lat?("Auf Karte: https://www.openstreetmap.org/?mlat="+lat+"&mlon="+lon+"#map=18/"+lat+"/"+lon):""),
+     notiz:(t.operator?("Betreiber: "+t.operator):""),
      activities:[],_osm:(el.type+"/"+el.id)};
  }
  function osmMake(key){var el=osmLast[key];if(!el)return null;var c=osmToContact(el);DB.contacts.push(c);return c;}
@@ -950,6 +950,8 @@ var USERS=%%USERS%%;
    var c=byId(id);if(!c)return;curId=id;
    var loc=[c.str,[c.plz,c.ort].filter(Boolean).join(" ")].filter(Boolean);
    var addr=[c.strasse,[c.plz,c.ort].filter(Boolean).join(" "),landLabel(c.land)].filter(Boolean).join(", ");
+   var ll=contactLatLon(c);
+   var notizClean=(c.notiz||"").replace(/^\s*Auf Karte:.*$/gim,"").trim();
    var acts=(c.activities||[]).slice().sort(function(a,b){return b.date-a.date;});
    var fu=c.followup&&!c.followup.done&&c.followup.due?c.followup:null;
    var html=''+
@@ -984,7 +986,11 @@ var USERS=%%USERS%%;
      (c.quelle?'<dt>Quelle</dt><dd>'+esc(c.quelle)+'</dd>':'')+
      (c.owner?'<dt>Betreuer</dt><dd>'+esc(c.owner)+'</dd>':'')+
    '</dl>'+
-   (c.notiz?'<div class="card" style="background:var(--field)"><div style="white-space:pre-wrap;font-size:14px">'+esc(c.notiz)+'</div></div>':'')+
+   (notizClean?'<div class="card" style="background:var(--field)"><div style="white-space:pre-wrap;font-size:14px">'+esc(notizClean)+'</div></div>':'')+
+   // Standort-Karte des Kontakts
+   (ll?('<div style="position:relative;margin:8px 0"><div id="detMap" style="height:200px;border-radius:12px;border:1px solid var(--line)"></div>'+
+        '<a class="btn sm" style="position:absolute;right:8px;top:8px;z-index:500" href="https://www.google.com/maps?q='+ll.lat+','+ll.lon+'" target="_blank" rel="noopener">In Google Maps</a></div>')
+      :((addr)?'<div style="margin:8px 0"><button class="btn sm" id="geoBtn"><svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.7"><path d="M12 21s-7-5.2-7-11a7 7 0 0114 0c0 5.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>Auf Karte zeigen</button></div>':''))+
    // Wiedervorlage
    '<div class="fu-box'+(fu?' active-fu':'')+'" id="fuBox">'+
      '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><b style="font-size:13px">Wiedervorlage / Rückruf</b>'+
@@ -1010,6 +1016,25 @@ var USERS=%%USERS%%;
    document.getElementById("fuSet").onclick=function(){var d=document.getElementById("fuDate").value;if(!d){alert("Bitte ein Datum wählen.");return;}c.followup={due:new Date(d+"T09:00").getTime(),note:document.getElementById("fuNote").value.trim(),done:false};c.updated=Date.now();saveContact(c);openDetail(curId);};
    var fd=document.getElementById("fuDone");if(fd)fd.onclick=function(){if(c.followup)c.followup.done=true;c.updated=Date.now();saveContact(c);openDetail(curId);};
    document.getElementById("delBtn").onclick=function(){if(confirm("Diesen Kontakt mit gesamtem Verlauf endgültig löschen?")){removeContact(curId);renderList();show("list");}};
+   if(ll)renderDetMap(ll);
+   var gb=document.getElementById("geoBtn");if(gb)gb.onclick=function(){var b=this;b.textContent="Suche Standort…";geocodeContact(c).then(function(p){c.lat=p.lat;c.lon=p.lon;c.updated=Date.now();saveContact(c);openDetail(curId);}).catch(function(){b.textContent="Standort nicht gefunden";});};
+ }
+ function contactLatLon(c){
+   if(c.lat!=null&&c.lon!=null&&!isNaN(c.lat)&&!isNaN(c.lon))return {lat:+c.lat,lon:+c.lon};
+   var m=(c.notiz||"").match(/mlat=([-0-9.]+)&mlon=([-0-9.]+)/);
+   if(m)return {lat:+m[1],lon:+m[2]};
+   return null;
+ }
+ var _detMap=null;
+ function renderDetMap(ll){
+   ensureLeaflet().then(function(L){
+     var div=document.getElementById("detMap");if(!div)return;
+     if(_detMap){try{_detMap.remove();}catch(e){}_detMap=null;}
+     _detMap=L.map(div,{scrollWheelZoom:false}).setView([ll.lat,ll.lon],14);
+     L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"© OpenStreetMap-Mitwirkende"}).addTo(_detMap);
+     L.marker([ll.lat,ll.lon],{icon:flagIcon(L)}).addTo(_detMap);
+     setTimeout(function(){try{_detMap.invalidateSize();}catch(e){}},150);
+   }).catch(function(){});
  }
  function actItem(a){
    var cls="t-"+a.type;
@@ -1433,7 +1458,7 @@ out=out.replace("%%USERS%%",USERS_JS)
 
 for tok in ["%%RED%%","%%RED2%%","%%LOGOL%%","%%LOGOD%%","%%USERS%%"]:
     assert tok not in out, "Token übrig: "+tok
-for need in ['id="gateForm"','id="clist"','id="actModal"','renderDashboard','amb_lepton_crm','amb_lepton_configs','checkReminders','initBackend','api.php','id="connState"','id="osmSearch"','overpass-api.de','osmToContact','id="osmMap"','ensureLeaflet','tile.openstreetmap','id="sbUrl"','sbUpsert','supabase.co','id="cMap"','showContactsMap','id="actBetrag"','flagIcon']:
+for need in ['id="gateForm"','id="clist"','id="actModal"','renderDashboard','amb_lepton_crm','amb_lepton_configs','checkReminders','initBackend','api.php','id="connState"','id="osmSearch"','overpass-api.de','osmToContact','id="osmMap"','ensureLeaflet','tile.openstreetmap','id="sbUrl"','sbUpsert','supabase.co','id="cMap"','showContactsMap','id="actBetrag"','flagIcon','id="detMap"','contactLatLon']:
     assert need in out, "Pflicht-Markierung fehlt: "+need
 # Leaflet (Karten-Bibliothek) muss lokal vorhanden sein (Laufzeit-Abhängigkeit der Standort-Karte)
 for vf in ["leaflet.js","leaflet.css","images/marker-icon.png","images/marker-shadow.png"]:
