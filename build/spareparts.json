@@ -136,24 +136,6 @@
           "name_fr": "Base"
         },
         {
-          "id": "SD2-ABSAUGUNG",
-          "art": "—",
-          "name": "Absaugung Siebdeck 2",
-          "name_en": "Suction screen deck 2",
-          "desc": "Unter-Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar",
-          "desc_en": "Sub-assembly – pick and order all individual parts in 3D",
-          "price": 0,
-          "model": "absaugung-sd2.glb",
-          "img": "absaugung_sd2",
-          "rot": [
-            -90,
-            0,
-            0
-          ],
-          "name_pl": "Odsysanie pokładu sitowego 2",
-          "name_fr": "Aspiration pont de criblage 2"
-        },
-        {
           "id": "SD2-BAND-GERADE-ABS",
           "art": "—",
           "name": "Band gerade – mit Absaugung, ohne Magnetabscheider",
