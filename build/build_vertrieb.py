@@ -515,7 +515,7 @@ var USERS=%%USERS%%;
  var KEY="amb_lepton_crm";
  var CFG_KEY="amb_lepton_configs"; // gespeicherte Angebote des Konfigurators (gleicher Origin)
  var STATUS=[["lead","Lead"],["interessent","Interessent"],["angebot","Angebot offen"],["kunde","Kunde"],["verloren","Verloren"]];
- var LANDS=[["DE","Deutschland"],["AT","Österreich"],["CH","Schweiz"],["IT","Italien"],["FR","Frankreich"],["PL","Polen"],["NL","Niederlande"],["BE","Belgien"],["LU","Luxemburg"],["CZ","Tschechien"],["DK","Dänemark"],["SE","Schweden"],["ES","Spanien"],["GB","Großbritannien"],["XX","Sonstige"]];
+ var LANDS=[["DE","Deutschland"],["AT","Österreich"],["CH","Schweiz"],["IT","Italien"],["FR","Frankreich"],["PL","Polen"],["NL","Niederlande"],["BE","Belgien"],["LU","Luxemburg"],["CZ","Tschechien"],["DK","Dänemark"],["SE","Schweden"],["NO","Norwegen"],["FI","Finnland"],["ES","Spanien"],["PT","Portugal"],["GB","Großbritannien"],["IE","Irland"],["SK","Slowakei"],["SI","Slowenien"],["HU","Ungarn"],["HR","Kroatien"],["RO","Rumänien"],["GR","Griechenland"],["US","USA"],["CA","Kanada"],["XX","Sonstige"]];
  var ACT=[["anruf","Anruf"],["mailout","E-Mail (raus)"],["mailin","E-Mail (rein)"],["angebot","Angebot gesendet"],["besuch","Besuch"],["notiz","Notiz"]];
  function statusLabel(s){for(var i=0;i<STATUS.length;i++)if(STATUS[i][0]===s)return STATUS[i][1];return "Lead";}
  function landLabel(c){for(var i=0;i<LANDS.length;i++)if(LANDS[i][0]===c)return LANDS[i][1];return c||"";}
@@ -552,7 +552,16 @@ var USERS=%%USERS%%;
  function sbReady(){return !!(SB&&SB.url&&SB.key);}
  function sbBase(){return SB.url.replace(/\/+$/,"")+"/rest/v1/contacts";}
  function sbHeaders(extra){var h={"apikey":SB.key,"Authorization":"Bearer "+SB.key,"Content-Type":"application/json"};if(extra)for(var k in extra)h[k]=extra[k];return h;}
- function sbGet(){return fetch(sbBase()+"?select=data",{cache:"no-store",headers:sbHeaders()}).then(function(r){if(!r.ok)throw new Error("sb "+r.status);return r.json();}).then(function(rows){return rows.map(function(x){return x.data;}).filter(Boolean);});}
+ // Supabase liefert pro Anfrage max. 1000 Zeilen -> seitenweise alle holen.
+ function sbGet(){
+   var all=[];
+   function page(off){
+     return fetch(sbBase()+"?select=data&limit=1000&offset="+off,{cache:"no-store",headers:sbHeaders()})
+       .then(function(r){if(!r.ok)throw new Error("sb "+r.status);return r.json();})
+       .then(function(rows){for(var i=0;i<rows.length;i++)if(rows[i]&&rows[i].data)all.push(rows[i].data);if(rows.length>=1000)return page(off+1000);return all;});
+   }
+   return page(0);
+ }
  function sbUpsert(list){if(!list||!list.length)return Promise.resolve();var body=list.map(function(c){return {id:c.id,data:c};});return fetch(sbBase(),{method:"POST",headers:sbHeaders({"Prefer":"resolution=merge-duplicates,return=minimal"}),body:JSON.stringify(body)}).then(function(r){if(!r.ok)throw new Error("sb "+r.status);});}
  function sbDelete(id){return fetch(sbBase()+"?id=eq."+encodeURIComponent(id),{method:"DELETE",headers:sbHeaders({"Prefer":"return=minimal"})}).then(function(r){if(!r.ok)throw new Error("sb "+r.status);});}
  function sbDeleteAll(){return fetch(sbBase()+"?id=neq.__none__",{method:"DELETE",headers:sbHeaders({"Prefer":"return=minimal"})}).then(function(r){if(!r.ok)throw new Error("sb "+r.status);});}
@@ -723,11 +732,13 @@ var USERS=%%USERS%%;
  /* ---------- Kontaktliste ---------- */
  function fillSelect(sel,opts,all){sel.innerHTML='<option value="">'+all+'</option>'+opts.map(function(o){return '<option value="'+o[0]+'">'+esc(o[1])+'</option>';}).join("");}
  function ownerOpts(){var seen={},out=[];DB.contacts.forEach(function(c){if(c.owner&&!seen[c.owner]){seen[c.owner]=1;out.push([c.owner,c.owner]);}});return out;}
+ // Länder-Filter = bekannte Liste + alle in den Kontakten tatsächlich vorkommenden Codes
+ function landOpts(){var seen={},out=[];LANDS.forEach(function(l){seen[l[0]]=1;out.push(l);});DB.contacts.forEach(function(c){var cc=(c.land||"").toUpperCase();if(cc&&!seen[cc]){seen[cc]=1;out.push([cc,landLabel(cc)]);}});return out;}
  function initFilters(){
    fillSelect(document.getElementById("fStatus"),STATUS,"Alle Status");
-   fillSelect(document.getElementById("fLand"),LANDS,"Alle Länder");
+   fillSelect(document.getElementById("fLand"),landOpts(),"Alle Länder");
    fillSelect(document.getElementById("fOwner"),ownerOpts(),"Alle Vertriebler");
-   fillSelect(document.getElementById("fLeadLand"),LANDS,"Alle Länder");
+   fillSelect(document.getElementById("fLeadLand"),landOpts(),"Alle Länder");
  }
  function matchQ(c,q){if(!q)return true;q=q.toLowerCase();var hay=[c.firma,c.firma2,c.vorname,c.nachname,c.ort,c.plz,c.tel,c.mobil,c.mail,c.quelle,c.notiz].join(" ").toLowerCase();return hay.indexOf(q)>=0;}
  function contactRow(c){
@@ -877,13 +888,14 @@ var USERS=%%USERS%%;
      strasse:a.strasse,plz:a.plz,ort:a.ort,land:(t._land||searchLand),
      tel:t["contact:phone"]||t.phone||"",mobil:"",mail:t["contact:email"]||t.email||"",
      web:t["contact:website"]||t.website||"",ustid:"",owner:(CUR&&CUR.n)||"",
+     gf:t._gf||"",bl:t._bl||"",menge:t._menge||"",sieb:t._sieb||"",news:t._news||"",
      quelle:(el.type==="ai"?"KI-Suche: ":"Karten-Suche: ")+lastQuery+(t._quelle?(" – "+t._quelle):""),
      notiz:(t.operator?("Betreiber: "+t.operator):""),
      activities:[],_osm:(el.type+"/"+el.id)};
  }
  // KI-Treffer in dieselbe Element-Form bringen wie OSM (damit Karten/Übernahme identisch funktionieren)
  function aiToEl(o,i){return {type:"ai",id:i,lat:(o.lat!=null?+o.lat:null),lon:(o.lon!=null?+o.lon:null),
-   tags:{name:o.firma||o.name||"","addr:street":o.strasse||"","addr:postcode":o.plz||"","addr:city":o.ort||"","contact:phone":o.tel||"",website:o.web||"",_land:(o.land||searchLand||"DE"),_quelle:o.quelle||""}};}
+   tags:{name:o.firma||o.name||"","addr:street":o.strasse||"","addr:postcode":o.plz||"","addr:city":o.ort||"","contact:phone":o.tel||"","contact:email":o.email||"",website:o.web||"",_land:(o.land||searchLand||"DE"),_quelle:o.quelle||"",_gf:o.geschaeftsfuehrer||"",_bl:o.betriebsleiter||"",_menge:o.jahresmenge||"",_sieb:o.siebtechnik||"",_news:o.news||""}};}
  function guessLand(wo){var t=(wo||"").toLowerCase();if(/schweiz|switzerland|\bch\b/.test(t))return "CH";if(/österreich|oesterreich|austria|\bat\b/.test(t))return "AT";if(/italien|italy|südtirol|suedtirol/.test(t))return "IT";if(/frankreich|france/.test(t))return "FR";if(/polen|poland/.test(t))return "PL";if(/niederlande|holland/.test(t))return "NL";return "DE";}
  function osmMake(key){var el=osmLast[key];if(!el)return null;var c=osmToContact(el);DB.contacts.push(c);return c;}
  function renderOsm(els){
@@ -1044,9 +1056,14 @@ var USERS=%%USERS%%;
      (c.mail?'<dt>E-Mail</dt><dd><a href="mailto:'+esc(c.mail)+'">'+esc(c.mail)+'</a></dd>':'')+
      (c.web?'<dt>Web</dt><dd><a href="'+esc(/^https?:/.test(c.web)?c.web:"https://"+c.web)+'" target="_blank" rel="noopener">'+esc(c.web)+'</a></dd>':'')+
      (c.ustid?'<dt>USt-IdNr.</dt><dd>'+esc(c.ustid)+'</dd>':'')+
+     (c.gf?'<dt>Geschäftsf.</dt><dd>'+esc(c.gf)+'</dd>':'')+
+     (c.bl?'<dt>Betriebsl.</dt><dd>'+esc(c.bl)+'</dd>':'')+
+     (c.menge?'<dt>Jahresmenge</dt><dd>'+esc(c.menge)+'</dd>':'')+
+     (c.sieb?'<dt>Siebtechnik</dt><dd>'+esc(c.sieb)+'</dd>':'')+
      (c.quelle?'<dt>Quelle</dt><dd>'+esc(c.quelle)+'</dd>':'')+
      (c.owner?'<dt>Betreuer</dt><dd>'+esc(c.owner)+'</dd>':'')+
    '</dl>'+
+   (c.news?'<div class="card" style="background:#eef4ff;border-color:#cfe0ff"><div style="font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#1d4ed8;margin-bottom:4px">News</div><div style="white-space:pre-wrap;font-size:14px">'+esc(c.news)+'</div></div>':'')+
    (notizClean?'<div class="card" style="background:var(--field)"><div style="white-space:pre-wrap;font-size:14px">'+esc(notizClean)+'</div></div>':'')+
    // Standort-Karte des Kontakts
    (ll?('<div style="position:relative;margin:8px 0"><div id="detMap" style="height:200px;border-radius:12px;border:1px solid var(--line)"></div>'+
@@ -1198,8 +1215,14 @@ var USERS=%%USERS%%;
      fInput("mail","E-Mail",c.mail,"email")+
      fInput("web","Webseite",c.web)+
      fInput("ustid","USt-IdNr.",c.ustid)+
+     fInput("gf","Geschäftsführer",c.gf)+
+     fInput("bl","Betriebsleiter",c.bl)+
+     fInput("menge","Jahresmenge (z. B. 30.000 t/Jahr)",c.menge)+
+     '<div class="fg"><label>Siebtechnik</label><select class="field" id="f_sieb">'+
+       ["","Sternsieb","Trommelsieb","Sonstige/unbekannt"].map(function(s){return '<option'+((c.sieb||"")===s?' selected':'')+'>'+esc(s)+'</option>';}).join("")+'</select></div>'+
      fInput("quelle","Quelle (Messe, Empfehlung…)",c.quelle)+
      ownerSel+
+     '<div class="fg full"><label>News (aktuell)</label><textarea class="field" id="f_news" placeholder="z. B. Erweiterung 2026, neue Anlage…">'+esc(c.news||"")+'</textarea></div>'+
      '<div class="fg full"><label>Notizen</label><textarea class="field" id="f_notiz" placeholder="Bedarf, Maschinen, Besonderheiten…">'+esc(c.notiz||"")+'</textarea></div>'+
    '</div>'+
    '<div class="form-actions">'+
@@ -1213,7 +1236,7 @@ var USERS=%%USERS%%;
    document.getElementById("fSave").onclick=function(){
      function g(k){var e=document.getElementById("f_"+k);return e?e.value.trim():"";}
      var rec=c.id?c:{id:uid(),created:Date.now(),activities:[]};
-     ["firma","firma2","anrede","vorname","nachname","strasse","plz","ort","land","status","tel","mobil","mail","web","ustid","quelle","owner","notiz"].forEach(function(k){rec[k]=g(k);});
+     ["firma","firma2","anrede","vorname","nachname","strasse","plz","ort","land","status","tel","mobil","mail","web","ustid","gf","bl","menge","sieb","news","quelle","owner","notiz"].forEach(function(k){rec[k]=g(k);});
      if(!rec.firma&&!rec.vorname&&!rec.nachname){alert("Bitte mindestens eine Firma oder einen Namen angeben.");return;}
      rec.updated=Date.now();
      if(!c.id)DB.contacts.push(rec);
