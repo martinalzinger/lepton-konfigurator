@@ -818,7 +818,7 @@ var USERS=%%USERS%%;
  }
 
  /* ---------- Online-Lead-Suche (OpenStreetMap – kostenlos, kein Server, nur online) ---------- */
- var lastQuery="", searchLand="DE", osmEls=[], osmLast={};
+ var lastQuery="", searchLand="DE", osmEls=[], osmLast={}, _aiErr="";
  function osmStatus(html){var e=document.getElementById("osmStatus");if(e)e.innerHTML=html;}
  function osmLoading(msg){osmStatus('<span class="spin"></span>'+msg);var m=document.getElementById("osmMap");if(m)m.style.display="none";var b=document.getElementById("osmResults");if(b)b.innerHTML='<div class="skel"></div><div class="skel" style="opacity:.7"></div><div class="skel" style="opacity:.45"></div>';}
  function osmClearResults(){var b=document.getElementById("osmResults");if(b)b.innerHTML="";var m=document.getElementById("osmMap");if(m)m.style.display="none";}
@@ -956,9 +956,10 @@ var USERS=%%USERS%%;
    }).catch(function(e){
      osmClearResults();
      var m=String((e&&e.message)||e);
-     if(/noplace/.test(m))osmStatus('Region „'+esc(wo)+'“ nicht gefunden. Anders schreiben (z. B. „Bayern“, „München“).');
-     else if(/overpass/.test(m))osmStatus("Suche fehlgeschlagen oder Region zu groß. Bitte enger eingrenzen (z. B. Stadt statt Bundesland) und erneut versuchen.");
-     else osmStatus("Suche gerade nicht möglich (offline oder Kartendienst nicht erreichbar). Später erneut versuchen.");
+     var pre=_aiErr?("KI-Suche fehlgeschlagen: "+esc(_aiErr)+". Auch die Karten-Suche ist gerade nicht erreichbar. "):"";
+     if(/noplace/.test(m))osmStatus(pre+'Region „'+esc(wo)+'“ nicht gefunden. Anders schreiben (z. B. „Bayern“, „München“).');
+     else if(/overpass/.test(m))osmStatus(pre+"Suche fehlgeschlagen oder Region zu groß. Bitte enger eingrenzen (z. B. Stadt statt Bundesland) und erneut versuchen.");
+     else osmStatus(pre||"Suche gerade nicht möglich (offline oder Kartendienst nicht erreichbar). Später erneut versuchen.");
    });
  }
  // Haupt-Einstieg der Lead-Suche: KI (falls eingerichtet) zuerst, sonst/als Fallback OSM-Karten-Suche.
@@ -967,13 +968,14 @@ var USERS=%%USERS%%;
    if(!was){osmStatus("Bitte eingeben, wonach gesucht werden soll (z. B. Kompostierung).");return;}
    if(!wo){osmStatus("Bitte eine Region angeben (z. B. Bayern oder eine Stadt).");return;}
    if(navigator.onLine===false){osmStatus("Keine Internetverbindung – die Lead-Suche funktioniert nur online.");return;}
+   _aiErr="";
    if(!aiReady()){osmRun();return;}
    lastQuery=was+" in "+wo;searchLand=guessLand(wo);
    osmLoading('KI durchsucht das Web nach „'+esc(lastQuery)+'“ … (kann ein paar Sekunden dauern)');
    apiAi(was,wo).then(function(leads){
      if(!leads.length){osmStatus("KI fand nichts Passendes – ich versuche die Karten-Suche …");return osmRun();}
-     renderOsm(leads.map(aiToEl));
-   }).catch(function(e){osmStatus("KI-Suche nicht möglich ("+esc(String(e&&e.message||e))+") – ich versuche die Karten-Suche …");osmRun();});
+     _aiErr="";renderOsm(leads.map(aiToEl));
+   }).catch(function(e){_aiErr=String((e&&e.message)||e);osmStatus("KI-Suche fehlgeschlagen: "+esc(_aiErr)+" — ich versuche ersatzweise die Karten-Suche …");osmRun();});
  }
  document.getElementById("osmSearch").onclick=leadSearch;
  document.getElementById("osmWas").addEventListener("keydown",function(e){if(e.key==="Enter")leadSearch();});
