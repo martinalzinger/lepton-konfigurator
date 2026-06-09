@@ -108,6 +108,24 @@
           "img": "sd1_band_quer",
           "name_pl": "Taśma poprzeczna pozioma",
           "name_fr": "Bande transversale horizontale"
+        },
+        {
+          "id": "SD1-BAND-GERADE",
+          "art": "—",
+          "name": "Band gerade",
+          "name_en": "Belt straight",
+          "desc": "Komplette Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar",
+          "desc_en": "Complete assembly – pick and order all individual parts in 3D",
+          "price": 0,
+          "model": "sd1-band-gerade.glb",
+          "img": "sd1_band_gerade",
+          "rot": [
+            -90,
+            0,
+            0
+          ],
+          "name_pl": "Taśma prosta",
+          "name_fr": "Bande droite"
         }
       ],
       "h_pl": "Pokład sitowy 1",
