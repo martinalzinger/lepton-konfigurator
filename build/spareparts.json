@@ -31,7 +31,8 @@
     {
       "h": "Grobkornband", "h_en": "Coarse-grain conveyor",
       "teile": [
-        { "id": "GKB-GESAMT", "art": "—", "name": "Grobkornband 1 und 2", "name_en": "Coarse-grain conveyor 1 and 2", "desc": "Komplette Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar", "desc_en": "Complete assembly – pick and order all individual parts in 3D", "price": 0, "model": "grobkornband.glb", "img": "grobkornband" }
+        { "id": "GKB-GESAMT", "art": "—", "name": "Grobkornband 1 und 2", "name_en": "Coarse-grain conveyor 1 and 2", "desc": "Komplette Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar", "desc_en": "Complete assembly – pick and order all individual parts in 3D", "price": 0, "model": "grobkornband.glb", "img": "grobkornband" },
+        { "id": "GKB-1-OHNE-2", "art": "—", "name": "Grobkornband 1 ohne Grobkornband 2", "name_en": "Coarse-grain conveyor 1 without coarse-grain conveyor 2", "desc": "Komplette Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar", "desc_en": "Complete assembly – pick and order all individual parts in 3D", "price": 0, "model": "grobkornband-1-ohne-2.glb", "img": "grobkornband_1_ohne_2" }
       ]
     },
     {
