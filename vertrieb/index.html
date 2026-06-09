@@ -807,7 +807,7 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
  }
 
  /* ---------- Online-Lead-Suche (OpenStreetMap – kostenlos, kein Server, nur online) ---------- */
- var lastQuery="", searchLand="DE", osmEls=[], osmLast={}, _aiErr="";
+ var lastQuery="", searchLand="DE", osmEls=[], osmLast={}, _aiErr="", _searchSrc="";
  function osmStatus(html){var e=document.getElementById("osmStatus");if(e)e.innerHTML=html;}
  function osmLoading(msg){osmStatus('<span class="spin"></span>'+msg);var m=document.getElementById("osmMap");if(m)m.style.display="none";var b=document.getElementById("osmResults");if(b)b.innerHTML='<div class="skel"></div><div class="skel" style="opacity:.7"></div><div class="skel" style="opacity:.45"></div>';}
  function osmClearResults(){var b=document.getElementById("osmResults");if(b)b.innerHTML="";var m=document.getElementById("osmMap");if(m)m.style.display="none";}
@@ -875,7 +875,7 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
    var box=document.getElementById("osmResults");
    if(!els.length){osmStatus('Keine Treffer für „'+esc(lastQuery)+'“. Anderen Begriff (z. B. „Recycling“, „Erden“) oder andere Region versuchen.');box.innerHTML="";return;}
    var ex=osmExisting(),anyNew=false;
-   osmStatus(els.length+' Treffer für „'+esc(lastQuery)+'“ – prüfen und übernehmen:');
+   osmStatus(els.length+' Treffer'+(_searchSrc?(' <b>('+_searchSrc+')</b>'):'')+' für „'+esc(lastQuery)+'“ – prüfen und übernehmen:');
    box.innerHTML=els.map(function(el){
      var t=el.tags||{},a=osmAddr(t),loc=[a.plz,a.ort].filter(Boolean).join(" ");
      var key=el.type+"/"+el.id,have=ex[key]||ex[((t.name||"")+"|"+(a.ort||"")).toLowerCase()];if(!have)anyNew=true;
@@ -942,7 +942,7 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
      return osmOverpass(osmBuildQuery(osmAreaRef(g),osmFilters(was)));
    }).then(function(els){
      var seen={},out=[];els.forEach(function(el){var t=el.tags||{};if(!t.name)return;var k=el.type+"/"+el.id;if(seen[k])return;seen[k]=1;out.push(el);});
-     renderOsm(out);
+     _searchSrc="Karten-Suche";renderOsm(out);
    }).catch(function(e){
      osmClearResults();
      var m=String((e&&e.message)||e);
@@ -964,7 +964,7 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
    osmLoading('KI durchsucht das Web nach „'+esc(lastQuery)+'“ … (kann ein paar Sekunden dauern)');
    apiAi(was,wo).then(function(leads){
      if(!leads.length){osmStatus("KI fand nichts Passendes – ich versuche die Karten-Suche …");return osmRun();}
-     _aiErr="";renderOsm(leads.map(aiToEl));
+     _aiErr="";_searchSrc="KI";renderOsm(leads.map(aiToEl));
    }).catch(function(e){_aiErr=String((e&&e.message)||e);osmStatus("KI-Suche fehlgeschlagen: "+esc(_aiErr)+" — ich versuche ersatzweise die Karten-Suche …");osmRun();});
  }
  document.getElementById("osmSearch").onclick=leadSearch;
