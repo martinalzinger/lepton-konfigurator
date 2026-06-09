@@ -59,7 +59,7 @@ input,select,textarea{font-family:var(--sans);font-size:15px}
 .tb-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .tb-brand{display:flex;flex-direction:column;align-items:flex-start;gap:3px;min-width:0}
 .tb-brand img{height:30px;display:block}
-.tb-sub{font-family:var(--mono);font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:#fff;opacity:.95;font-weight:600}
+.tb-sub{font-family:var(--mono);font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:#fff;opacity:.95;font-weight:600;margin-top:10px}
 .conn{font-family:var(--mono);font-size:9.5px;letter-spacing:.02em;white-space:nowrap}
 .conn.on{color:#bbf7d0}.conn.off{color:rgba(255,255,255,.72)}
 .tb-user{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600}
@@ -246,10 +246,7 @@ textarea.field{min-height:74px;resize:vertical;line-height:1.5}
       </div>
       <div class="tb-user">
         <span class="av" id="uAv">–</span>
-        <div style="display:flex;flex-direction:column;line-height:1.2">
-          <span id="uName">—</span>
-          <button id="logoutBtn" type="button">Abmelden</button>
-        </div>
+        <button id="logoutBtn" type="button">Abmelden</button>
       </div>
     </div>
   </div>
@@ -310,7 +307,7 @@ textarea.field{min-height:74px;resize:vertical;line-height:1.5}
       <select class="filter" id="fSort"><option value="updated">Zuletzt aktiv</option><option value="name">Name A–Z</option><option value="created">Neueste</option><option value="due">Wiedervorlage</option></select>
       <button class="btn sm" id="mapToggle" type="button"><svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.7"><path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"/><path d="M9 4v14M15 6v14"/></svg>Karte</button>
     </div>
-    <div id="cMap" style="height:360px;border:1px solid var(--line);border-radius:12px;margin-bottom:12px;display:none"></div>
+    <div id="cMap" style="height:70vh;min-height:380px;border:1px solid var(--line);border-radius:12px;margin-bottom:12px;display:none"></div>
     <div class="clist" id="clist"></div>
   </section>
 
@@ -487,8 +484,8 @@ var USERS=%%USERS%%;
  var CUR=null; // eingeloggter Vertriebler {n,tel,mail}
  var gate=document.getElementById("gate");
  function setUser(u){CUR=u||{n:""};try{localStorage.setItem(UKEY,JSON.stringify({n:u.n||"",tel:u.tel||"",mail:u.mail||""}));}catch(_){}
-   document.getElementById("uName").textContent=u.n||"Vertrieb";
-   document.getElementById("uAv").textContent=initials(u.n||"?");}
+   var un=document.getElementById("uName");if(un)un.textContent=u.n||"Vertrieb";
+   var av=document.getElementById("uAv");if(av){av.textContent=initials(u.n||"?");av.title=u.n||"";}}
  function pass(u){setUser(u);gate.classList.add("hidden");boot();}
  // Auto-Login wird am ENDE der IIFE ausgelöst (erst dann sind alle Daten/Funktionen definiert).
  document.getElementById("gateForm").addEventListener("submit",function(ev){ev.preventDefault();
@@ -774,7 +771,11 @@ var USERS=%%USERS%%;
  document.getElementById("mapToggle").onclick=function(){
    cMapOpen=!cMapOpen;
    document.getElementById("cMap").style.display=cMapOpen?"block":"none";
+   document.getElementById("clist").style.display=cMapOpen?"none":"";
    this.classList.toggle("primary",cMapOpen);
+   this.innerHTML=cMapOpen
+     ?'<svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.7"><path d="M4 6h16M4 12h16M4 18h16"/></svg>Liste'
+     :'<svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.7"><path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"/><path d="M9 4v14M15 6v14"/></svg>Karte';
    if(cMapOpen)showContactsMap();
  };
  document.getElementById("cMap").addEventListener("click",function(e){var b=e.target.closest("[data-cid]");if(b)openDetail(b.getAttribute("data-cid"));});
