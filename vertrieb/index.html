@@ -1143,7 +1143,9 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
    if(bits.length){var _osvg='<svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/><path d="M14 3v5h5"/></svg>';var openable=!!(a.config||a.offer);
      if(openable)offer='<a class="tl-offer" href="../index.html" data-actid="'+a.id+'"'+(a.offer?(' data-loadoffer="'+esc(a.offer)+'"'):'')+' title="Angebot im Konfigurator öffnen">'+_osvg+bits.join(" · ")+' ↗</a>';
      else offer='<span class="tl-offer" style="cursor:default">'+_osvg+bits.join(" · ")+'</span>';}
-   if(a.pdf){var _psvg='<svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/><path d="M14 3v5h5"/></svg>';offer+='<button class="tl-offer" data-pdfact="'+a.id+'" title="Fertiges PDF ansehen (ohne Konfigurator)">'+_psvg+'PDF ansehen</button>';}
+   var _psvg='<svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/><path d="M14 3v5h5"/></svg>';
+   if(a.pdf)offer+='<button class="tl-offer" data-pdfact="'+a.id+'" title="Fertiges PDF ansehen (ohne Konfigurator)">'+_psvg+'PDF ansehen</button>';
+   else if(a.config)offer+='<button class="tl-offer" data-makepdf="'+a.id+'" title="PDF aus der gespeicherten Konfiguration erzeugen und hier ablegen">'+_psvg+'PDF erstellen</button>';
    return '<div class="tl-item '+cls+'">'+
      '<div class="tl-dot"><svg viewBox="0 0 24 24">'+icon+'</svg></div>'+
      '<div class="tl-top"><span class="tl-type">'+esc(actLabel(a.type))+'</span>'+
@@ -1156,6 +1158,7 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
  // Aktivität löschen
  document.getElementById("view-detail").addEventListener("click",function(e){
    var pb=e.target.closest("[data-pdfact]");if(pb){e.preventDefault();var pid=pb.getAttribute("data-pdfact");var pc=byId(curId);var pa=pc&&(pc.activities||[]).filter(function(x){return x.id===pid;})[0];if(pa&&pa.pdf)openPdfUri(pa.pdf);return;}
+   var mb=e.target.closest("[data-makepdf]");if(mb){e.preventDefault();var mid=mb.getAttribute("data-makepdf");var mc=byId(curId);var ma=mc&&(mc.activities||[]).filter(function(x){return x.id===mid;})[0];if(ma&&ma.config){try{localStorage.setItem("amb_lepton_loadoffer_data",JSON.stringify(ma.config));localStorage.setItem("amb_lepton_offer_makepdf",JSON.stringify({contactId:curId,actId:mid}));}catch(_){}location.href="../index.html";}return;}
    var lo=e.target.closest("[data-actid]");if(lo){var aid=lo.getAttribute("data-actid");var cc=byId(curId);var act=cc&&(cc.activities||[]).filter(function(x){return x.id===aid;})[0];try{if(act&&act.config)localStorage.setItem("amb_lepton_loadoffer_data",JSON.stringify(act.config));else if(act&&act.offer)localStorage.setItem("amb_lepton_loadoffer",act.offer);}catch(_){}return;} // Link navigiert selbst zum Konfigurator
    var d=e.target.closest(".tl-del");if(!d)return;var aid=d.getAttribute("data-act");var c=byId(curId);if(!c)return;
    c.activities=(c.activities||[]).filter(function(x){return x.id!==aid;});c.updated=Date.now();saveContact(c);openDetail(curId);
@@ -1190,6 +1193,12 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
  function checkOfferReturn(){
    try{var d=localStorage.getItem("amb_lepton_offer_done");if(!d)return;localStorage.removeItem("amb_lepton_offer_done");
      var o=JSON.parse(d);if(!o||!o.contactId)return;var c=byId(o.contactId);if(!c)return;
+     // Nachträglich erzeugtes PDF für ein bestehendes Angebot -> direkt an der Aktivität ablegen.
+     if(o.makepdfActId){var ma=(c.activities||[]).filter(function(x){return x.id===o.makepdfActId;})[0];
+       if(ma&&o.pdf){ma.pdf=o.pdf;c.updated=Date.now();saveContact(c);}
+       openDetail(o.contactId);
+       if(!o.pdf)setTimeout(function(){alert("Das PDF konnte nicht erzeugt werden. Bitte einmal online versuchen.");},100);
+       return;}
      openDetail(o.contactId);openActModal(o.contactId);
      _offerReturnState=o.state||null; // volle Angebots-Konfiguration -> wird in der Aktivität gespeichert
      _offerReturnPdf=o.pdf||null;     // fertiges PDF (data-URI) -> ohne Konfigurator ansehbar
