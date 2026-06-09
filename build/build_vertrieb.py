@@ -991,9 +991,9 @@ var USERS=%%USERS%%;
    lastQuery=was+" in "+wo;searchLand=guessLand(wo);
    osmLoading('KI durchsucht das Web nach „'+esc(lastQuery)+'“ … (kann ein paar Sekunden dauern)');
    apiAi(was,wo).then(function(leads){
-     if(!leads.length){osmStatus("KI fand nichts Passendes – ich versuche die Karten-Suche …");return osmRun();}
-     _aiErr="";_searchSrc="KI";renderOsm(leads.map(aiToEl));
-   }).catch(function(e){_aiErr=String((e&&e.message)||e);osmStatus("KI-Suche fehlgeschlagen: "+esc(_aiErr)+" — ich versuche ersatzweise die Karten-Suche …");osmRun();});
+     if(!leads.length){osmClearResults();osmStatus('Die KI hat für „'+esc(lastQuery)+'“ keine Firmen gefunden. Tipp: anderen Begriff (z. B. „Kompostierung", „Recycling", „Erdenwerk") oder ein größeres Gebiet (z. B. „Bayern" statt nur einer Stadt) versuchen.');return;}
+     _searchSrc="KI";renderOsm(leads.map(aiToEl));
+   }).catch(function(e){osmClearResults();osmStatus('KI-Suche fehlgeschlagen: '+esc(String((e&&e.message)||e))+'. Bitte erneut versuchen.');});
  }
  document.getElementById("osmSearch").onclick=leadSearch;
  document.getElementById("osmWas").addEventListener("keydown",function(e){if(e.key==="Enter")leadSearch();});
