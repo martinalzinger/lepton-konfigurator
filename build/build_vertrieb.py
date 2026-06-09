@@ -58,6 +58,8 @@ input,select,textarea{font-family:var(--sans);font-size:15px}
 .tb-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .tb-logo img{height:30px;display:block}
 .tb-title{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;opacity:.92}
+.conn{font-family:var(--mono);font-size:9.5px;letter-spacing:.02em;margin-top:2px;white-space:nowrap}
+.conn.on{color:#bbf7d0}.conn.off{color:rgba(255,255,255,.7)}
 .tb-user{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600}
 .tb-user .av{width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.18);display:inline-flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:12px;font-weight:600}
 .tb-user button{background:none;border:0;color:rgba(255,255,255,.85);font-size:11px;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
@@ -233,7 +235,10 @@ textarea.field{min-height:74px;resize:vertical;line-height:1.5}
     <div class="tb-row">
       <div style="display:flex;align-items:center;gap:12px;min-width:0">
         <div class="tb-logo"><img src="%%LOGOL%%" alt="Alzinger"></div>
-        <div class="tb-title">Vertrieb&nbsp;·&nbsp;CRM</div>
+        <div style="display:flex;flex-direction:column;min-width:0">
+          <div class="tb-title">Vertrieb&nbsp;·&nbsp;CRM</div>
+          <span id="connState" class="conn off" title="">● Lokal – dieses Gerät</span>
+        </div>
       </div>
       <div class="tb-user">
         <span class="av" id="uAv">–</span>
@@ -325,7 +330,22 @@ textarea.field{min-height:74px;resize:vertical;line-height:1.5}
   <!-- DATEN -->
   <section class="view" id="view-data">
     <h2 class="vh">Daten</h2>
-    <div class="sub">Sichern, übertragen und importieren. Alles bleibt offline auf diesem Gerät.</div>
+    <div class="sub">Server-Verbindung, Sichern, Übertragen und Importieren.</div>
+    <div class="card" id="connData">
+      <h3>Geteilte Daten / Server</h3>
+      <div id="connDataBody"></div>
+      <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <button class="btn sm" id="reconnBtn" type="button">Verbindung prüfen</button>
+        <details style="flex:1;min-width:200px">
+          <summary style="cursor:pointer;font-size:12px;color:var(--muted)">Zugriffsschutz (optional, Token)</summary>
+          <div style="display:flex;gap:8px;margin-top:8px;align-items:center">
+            <input class="field" id="tokenInp" placeholder="geheimer Token (wie in api.php)" style="flex:1">
+            <button class="btn sm" id="tokenSave" type="button">Speichern</button>
+          </div>
+          <p style="font-size:11px;color:var(--muted);margin-top:6px">Nur nötig, wenn in <span class="mono">api.php</span> ein <span class="mono">$TOKEN</span> gesetzt wurde. Muss exakt übereinstimmen.</p>
+        </details>
+      </div>
+    </div>
     <div class="card">
       <h3>Sichern &amp; Übertragen</h3>
       <p style="font-size:13px;color:var(--muted);margin-bottom:12px">Exportiere alle Kontakte &amp; Aktivitäten als Datei – zur Sicherung oder um sie auf ein anderes Gerät / zu Kollegen zu übertragen.</p>
@@ -424,7 +444,7 @@ var USERS=%%USERS%%;
    document.getElementById("uName").textContent=u.n||"Vertrieb";
    document.getElementById("uAv").textContent=initials(u.n||"?");}
  function pass(u){setUser(u);gate.classList.add("hidden");boot();}
- try{var existing=findUser(localStorage.getItem(AKEY));if(existing)pass(existing);}catch(e){}
+ // Auto-Login wird am ENDE der IIFE ausgelöst (erst dann sind alle Daten/Funktionen definiert).
  document.getElementById("gateForm").addEventListener("submit",function(ev){ev.preventDefault();
   var u=(document.getElementById("gu").value||"").trim().toLowerCase(),p=(document.getElementById("gp").value||"");
   var hit=findUser(sha256(u+":"+p));
@@ -443,13 +463,69 @@ var USERS=%%USERS%%;
  function landLabel(c){for(var i=0;i<LANDS.length;i++)if(LANDS[i][0]===c)return LANDS[i][1];return c||"";}
  function actLabel(t){for(var i=0;i<ACT.length;i++)if(ACT[i][0]===t)return ACT[i][1];return t;}
 
- /* ---------- Store ---------- */
- function load(){try{var o=JSON.parse(localStorage.getItem(KEY)||"{}");if(!o.contacts)o.contacts=[];return o;}catch(e){return {contacts:[]};}}
- function save(o){try{localStorage.setItem(KEY,JSON.stringify(o));return true;}catch(e){alert("Speichern fehlgeschlagen (Speicher voll oder gesperrt).");return false;}}
- var DB=load();
+ /* ---------- Store + Sync ----------
+    Zwei Betriebsarten, automatisch erkannt:
+     - MODE="server": api.php erreichbar -> zentrale, GETEILTE Datei am Server.
+       Jede Änderung geht pro Kontakt (upsert/delete) als Op in eine Warteschlange
+       und wird per Batch an den Server geschickt (dort unter Datei-Sperre gemerged).
+       localStorage dient als Offline-Spiegel; offline gemachte Änderungen werden
+       bei nächster Verbindung nachgereicht.
+     - MODE="local": kein Server -> nur localStorage (pro Gerät), wie bisher. */
+ var MODE="local";
+ var API="api.php";
+ var QKEY="amb_lepton_crm_queue";
+ var TKEY="amb_crm_token";
+ var TOKEN=""; try{TOKEN=localStorage.getItem(TKEY)||"";}catch(e){}
+ function cacheRead(){try{var o=JSON.parse(localStorage.getItem(KEY)||"{}");if(!o.contacts)o.contacts=[];return o;}catch(e){return {contacts:[]};}}
+ function cacheSave(){try{localStorage.setItem(KEY,JSON.stringify(DB));}catch(e){}}
+ var DB=cacheRead();
  function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
  function byId(id){for(var i=0;i<DB.contacts.length;i++)if(DB.contacts[i].id===id)return DB.contacts[i];return null;}
- function persist(){save(DB);}
+
+ /* --- API --- */
+ function apiGet(){return fetch(API+"?action=all",{cache:"no-store",headers:TOKEN?{"X-CRM-Token":TOKEN}:{}}).then(function(r){if(!r.ok)throw new Error("http "+r.status);return r.json();});}
+ function apiPost(action,body){var h={"Content-Type":"application/json"};if(TOKEN)h["X-CRM-Token"]=TOKEN;return fetch(API+"?action="+action,{method:"POST",headers:h,body:JSON.stringify(body)}).then(function(r){if(!r.ok)throw new Error("http "+r.status);return r.json();});}
+
+ /* --- Op-Warteschlange (für Offline/Server) --- */
+ function queueRead(){try{return JSON.parse(localStorage.getItem(QKEY)||"[]");}catch(e){return [];}}
+ function queueWrite(q){try{localStorage.setItem(QKEY,JSON.stringify(q));}catch(e){}}
+ function enqueue(op){var q=queueRead();q.push(op);queueWrite(q);}
+ function flush(){if(MODE!=="server")return Promise.resolve();var q=queueRead();if(!q.length)return Promise.resolve();
+   return apiPost("batch",{ops:q}).then(function(res){queueWrite([]);if(res&&res.rev!=null)DB.rev=res.rev;}).catch(function(){/* Server offline: behalten, später erneut versuchen */});}
+
+ /* --- Mutationen: lokal optimistisch + (im Server-Modus) an den Server --- */
+ function persist(){cacheSave();} /* nur lokaler Spiegel */
+ function saveContact(c){cacheSave();if(MODE==="server"){enqueue({op:"upsert",contact:c});flush();}}
+ function removeContact(id){DB.contacts=DB.contacts.filter(function(x){return x.id!==id;});cacheSave();if(MODE==="server"){enqueue({op:"delete",id:id});flush();}}
+ function bulkSave(list,replace){cacheSave();if(MODE==="server"){enqueue({op:"bulk",contacts:list,replace:!!replace});flush();}}
+
+ /* --- Server-Sync --- */
+ function pull(){return apiGet().then(function(d){DB.contacts=d.contacts||[];DB.rev=d.rev||0;cacheSave();rerenderCurrent();});}
+ function syncFromServer(){if(MODE!=="server")return;flush().then(pull).catch(function(){});}
+ function initServer(){
+   apiGet().then(function(data){
+     MODE="server";setConn(true);DB.rev=data.rev||0;
+     var serverEmpty=!(data.contacts&&data.contacts.length);
+     if(serverEmpty&&DB.contacts&&DB.contacts.length){enqueue({op:"bulk",contacts:DB.contacts,replace:false});}
+     flush().then(function(){return apiGet();}).then(function(d){DB.contacts=d.contacts||[];DB.rev=d.rev||0;cacheSave();rerenderCurrent();}).catch(function(){});
+   }).catch(function(){MODE="local";setConn(false);});
+ }
+ function setConn(ok){
+   var el=document.getElementById("connState");if(el){el.className="conn "+(ok?"on":"off");el.textContent=ok?"● Server – geteilt":"● Lokal – dieses Gerät";el.title=ok?"Mit dem Firmenserver verbunden. Daten werden für alle geteilt.":"Kein Server gefunden. Daten nur auf diesem Gerät (Austausch per Export/Import).";}
+   var d=document.getElementById("connData");if(d)renderDataConn();
+ }
+ function rerenderCurrent(){
+   updateBadge();
+   if(curView==="dashboard")renderDashboard();
+   else if(curView==="list")renderList();
+   else if(curView==="leads")renderLeads();
+   else if(curView==="detail"&&curId&&byId(curId)){
+     if(modal&&modal.classList.contains("open"))return;
+     if(document.activeElement&&document.activeElement.closest&&document.activeElement.closest("#view-detail"))return;
+     openDetail(curId);
+   }
+   if(curView==="data")renderDataConn();
+ }
 
  /* gespeicherte Angebote des Konfigurators lesen (read-only) */
  function loadOffers(){try{var o=JSON.parse(localStorage.getItem(CFG_KEY)||"{}");return o||{};}catch(e){return {};}}
@@ -648,10 +724,10 @@ var USERS=%%USERS%%;
    document.getElementById("backBtn").onclick=function(){renderList();show("list");};
    document.getElementById("editBtn").onclick=function(){openForm(curId);};
    document.getElementById("addActBtn").onclick=function(){openActModal(curId);};
-   document.getElementById("dStatus").onchange=function(){c.status=this.value;c.updated=Date.now();persist();openDetail(curId);};
-   document.getElementById("fuSet").onclick=function(){var d=document.getElementById("fuDate").value;if(!d){alert("Bitte ein Datum wählen.");return;}c.followup={due:new Date(d+"T09:00").getTime(),note:document.getElementById("fuNote").value.trim(),done:false};c.updated=Date.now();persist();openDetail(curId);};
-   var fd=document.getElementById("fuDone");if(fd)fd.onclick=function(){if(c.followup)c.followup.done=true;c.updated=Date.now();persist();openDetail(curId);};
-   document.getElementById("delBtn").onclick=function(){if(confirm("Diesen Kontakt mit gesamtem Verlauf endgültig löschen?")){DB.contacts=DB.contacts.filter(function(x){return x.id!==curId;});persist();renderList();show("list");}};
+   document.getElementById("dStatus").onchange=function(){c.status=this.value;c.updated=Date.now();saveContact(c);openDetail(curId);};
+   document.getElementById("fuSet").onclick=function(){var d=document.getElementById("fuDate").value;if(!d){alert("Bitte ein Datum wählen.");return;}c.followup={due:new Date(d+"T09:00").getTime(),note:document.getElementById("fuNote").value.trim(),done:false};c.updated=Date.now();saveContact(c);openDetail(curId);};
+   var fd=document.getElementById("fuDone");if(fd)fd.onclick=function(){if(c.followup)c.followup.done=true;c.updated=Date.now();saveContact(c);openDetail(curId);};
+   document.getElementById("delBtn").onclick=function(){if(confirm("Diesen Kontakt mit gesamtem Verlauf endgültig löschen?")){removeContact(curId);renderList();show("list");}};
  }
  function actItem(a){
    var cls="t-"+a.type;
@@ -672,7 +748,7 @@ var USERS=%%USERS%%;
  // Aktivität löschen
  document.getElementById("view-detail").addEventListener("click",function(e){
    var d=e.target.closest(".tl-del");if(!d)return;var aid=d.getAttribute("data-act");var c=byId(curId);if(!c)return;
-   c.activities=(c.activities||[]).filter(function(x){return x.id!==aid;});c.updated=Date.now();persist();openDetail(curId);
+   c.activities=(c.activities||[]).filter(function(x){return x.id!==aid;});c.updated=Date.now();saveContact(c);openDetail(curId);
  });
 
  /* ---------- Aktivität-Modal ---------- */
@@ -714,7 +790,7 @@ var USERS=%%USERS%%;
      var note=actType==="angebot"?"Angebot nachfassen":(actType==="anruf"?"Erneut anrufen":"Nachfassen");
      c.followup={due:due,note:note,done:false};
    }
-   c.updated=Date.now();persist();modal.classList.remove("open");openDetail(actForId);
+   c.updated=Date.now();saveContact(c);modal.classList.remove("open");openDetail(actForId);
  };
 
  /* ---------- Formular (Neu/Bearbeiten) ---------- */
@@ -764,7 +840,7 @@ var USERS=%%USERS%%;
      if(!rec.firma&&!rec.vorname&&!rec.nachname){alert("Bitte mindestens eine Firma oder einen Namen angeben.");return;}
      rec.updated=Date.now();
      if(!c.id)DB.contacts.push(rec);
-     persist();openDetail(rec.id);
+     saveContact(rec);openDetail(rec.id);
    };
  }
 
@@ -788,9 +864,9 @@ var USERS=%%USERS%%;
    var f=e.target.files[0];if(!f)return;var rd=new FileReader();
    rd.onload=function(){try{var inc=JSON.parse(rd.result);var list=inc.contacts||inc;if(!Array.isArray(list))throw 0;
      var mode=confirm("Importierte Kontakte ZUSAMMENFÜHREN (OK) oder bestehende ERSETZEN (Abbrechen)?");
-     if(mode){var have={};DB.contacts.forEach(function(c){have[c.id]=c;});list.forEach(function(c){if(c.id&&have[c.id]){}else{if(!c.id)c.id=uid();DB.contacts.push(c);}});}
-     else{DB.contacts=list.map(function(c){if(!c.id)c.id=uid();if(!c.activities)c.activities=[];return c;});}
-     persist();alert("Import abgeschlossen: "+list.length+" Kontakte verarbeitet.");renderList();renderDashboard();show("list");
+     if(mode){var have={};DB.contacts.forEach(function(c){have[c.id]=c;});var added=[];list.forEach(function(c){if(c.id&&have[c.id]){}else{if(!c.id)c.id=uid();if(!c.activities)c.activities=[];DB.contacts.push(c);added.push(c);}});bulkSave(added,false);}
+     else{DB.contacts=list.map(function(c){if(!c.id)c.id=uid();if(!c.activities)c.activities=[];return c;});bulkSave(DB.contacts,true);}
+     alert("Import abgeschlossen: "+list.length+" Kontakte verarbeitet.");renderList();renderDashboard();show("list");
    }catch(err){alert("Datei konnte nicht gelesen werden (kein gültiges CRM-JSON).");}};
    rd.readAsText(f);e.target.value="";
  };
@@ -803,18 +879,34 @@ var USERS=%%USERS%%;
    text=text.replace(/^﻿/,"");var lines=text.split(/\r?\n/).filter(function(l){return l.trim();});if(lines.length<2)return 0;
    var sep=(lines[0].split(";").length>lines[0].split(",").length)?";":",";
    var head=splitCSVLine(lines[0],sep).map(function(h){return CSV_COLS[h.trim().toLowerCase()]||null;});
-   var n=0;
+   var n=0,added=[];
    for(var r=1;r<lines.length;r++){var cells=splitCSVLine(lines[r],sep);var rec={id:uid(),created:Date.now(),updated:Date.now(),status:"lead",land:"DE",activities:[]};var has=false;
      for(var c=0;c<head.length;c++){if(head[c]&&cells[c]!=null){var val=cells[c].trim();if(val){rec[head[c]]=val;has=true;}}}
      if(!has)continue;if(rec.land)rec.land=rec.land.toUpperCase().slice(0,2)||"DE";if(!findStatus(rec.status))rec.status="lead";
-     DB.contacts.push(rec);n++;}
-   persist();return n;
+     DB.contacts.push(rec);added.push(rec);n++;}
+   bulkSave(added,false);return n;
  }
  function findStatus(s){for(var i=0;i<STATUS.length;i++)if(STATUS[i][0]===s)return true;return false;}
  (function(){var tpl="firma;anrede;vorname;nachname;strasse;plz;ort;land;tel;mobil;mail;web;quelle;notiz\n"+
    "Mustermann GmbH;Herr;Max;Mustermann;Industriestr. 1;80331;München;DE;+49 89 123456;;info@mustermann.de;mustermann.de;Messe Bauma;Interesse Lepton 5100\n";
    document.getElementById("csvTpl").href="data:text/csv;charset=utf-8,"+encodeURIComponent(tpl);})();
- document.getElementById("wipeBtn").onclick=function(){if(confirm("Wirklich ALLE CRM-Daten auf diesem Gerät löschen? Das kann nicht rückgängig gemacht werden.")){if(confirm("Sicher? Letzte Warnung.")){DB={contacts:[]};persist();renderDashboard();renderList();show("dashboard");}}};
+ document.getElementById("wipeBtn").onclick=function(){if(confirm("Wirklich ALLE CRM-Daten auf diesem Gerät löschen? Das kann nicht rückgängig gemacht werden.")){if(confirm("Sicher? Letzte Warnung.")){DB={contacts:[]};bulkSave([],true);renderDashboard();renderList();show("dashboard");}}};
+
+ /* ---------- Daten-Reiter: Server-Status ---------- */
+ function renderDataConn(){
+   var body=document.getElementById("connDataBody");if(!body)return;
+   var q=queueRead().length;
+   if(MODE==="server"){
+     body.innerHTML='<div style="font-size:14px;color:var(--pos);font-weight:700">✓ Mit dem Server verbunden – Daten werden für alle geteilt.</div>'+
+       '<div style="font-size:12px;color:var(--muted);margin-top:4px">'+DB.contacts.length+' Kontakte · Stand '+(DB.rev||0)+(q?(' · '+q+' Änderung(en) warten auf Übertragung'):' · alles synchron')+'</div>';
+   } else {
+     body.innerHTML='<div style="font-size:14px;font-weight:700">Lokaler Modus – Daten nur auf diesem Gerät.</div>'+
+       '<div style="font-size:12px;color:var(--muted);margin-top:4px">Kein Server gefunden. Für <b>geteilte Daten</b> den Ordner <span class="mono">vertrieb/</span> samt <span class="mono">api.php</span> auf einen Server mit PHP legen und dort aufrufen. Sonst Austausch per Export/Import.'+(q?(' ('+q+' lokale Änderung(en) bereit zur Übertragung, sobald ein Server da ist.)'):'')+'</div>';
+   }
+   var ti=document.getElementById("tokenInp");if(ti&&document.activeElement!==ti)ti.value=TOKEN;
+ }
+ document.getElementById("reconnBtn").onclick=function(){var b=this;b.textContent="Prüfe…";initServer();setTimeout(function(){b.textContent="Verbindung prüfen";renderDataConn();},900);};
+ document.getElementById("tokenSave").onclick=function(){TOKEN=document.getElementById("tokenInp").value.trim();try{localStorage.setItem(TKEY,TOKEN);}catch(e){}initServer();setTimeout(renderDataConn,700);};
 
  /* ---------- Erinnerungen (Browser-Benachrichtigungen) ---------- */
  var NKEY="amb_crm_notified";
@@ -843,12 +935,18 @@ var USERS=%%USERS%%;
  function boot(){
    if(booted)return;booted=true;
    initFilters();renderDashboard();renderList();show("dashboard");
-   refreshNotifBtn();checkReminders();
-   setInterval(function(){checkReminders();if(curView==="dashboard")updateBadge();},5*60*1000);
-   document.addEventListener("visibilitychange",function(){if(!document.hidden){checkReminders();if(curView==="dashboard")renderDashboard();}});
+   refreshNotifBtn();renderDataConn();
+   initServer();                 // Server erkennen + geteilte Daten laden (sonst lokal)
+   checkReminders();
+   setInterval(function(){syncFromServer();checkReminders();if(curView==="dashboard")updateBadge();},30*1000);
+   document.addEventListener("visibilitychange",function(){if(!document.hidden){syncFromServer();checkReminders();}});
+   window.addEventListener("online",function(){if(MODE==="local")initServer();else syncFromServer();});
  }
 
  if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){});});}
+
+ // Auto-Login: jetzt sind alle Konstanten/Funktionen definiert -> sicher boot() auslösen.
+ try{var existing=findUser(localStorage.getItem(AKEY));if(existing)pass(existing);}catch(e){}
 })();
 </script>
 </body>
@@ -875,7 +973,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v1";
+const CACHE="vertrieb-v2";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png"];
 
 self.addEventListener("install",e=>{
@@ -898,6 +996,7 @@ self.addEventListener("activate",e=>{
 self.addEventListener("fetch",e=>{
   const req=e.request;
   if(req.method!=="GET")return;
+  if(req.url.indexOf("api.php")>=0)return;   // dynamische API immer direkt ans Netz, nie cachen
   const isHTML=req.mode==="navigate"||(req.headers.get("accept")||"").includes("text/html");
   if(isHTML){
     e.respondWith(
@@ -921,6 +1020,99 @@ self.addEventListener("fetch",e=>{
 });
 '''
 
+# Zentrales, dateibasiertes PHP-Backend (geteilte Daten im Firmennetz).
+# Eine Datei, keine Datenbank. Liegt neben index.html und wird von der App
+# automatisch erkannt (sonst läuft die App im lokalen Modus weiter).
+API_PHP = r'''<?php
+/* Zentrale Datenhaltung für das Alzinger Vertriebs-CRM (geteilt).
+   - Single-File, dateibasiert: Daten in ./data/crm.json (kein DB-Server nötig).
+   - Drop-in: diese Datei + index.html etc. in einen Web-Ordner mit PHP legen
+     (IIS+PHP, Apache, nginx+php-fpm, Synology/QNAP …) und im Browser aufrufen.
+   - Der Ordner ./data muss vom Webserver beschreibbar sein.
+   Optionaler Zugriffsschutz: $TOKEN setzen und denselben Wert in der App
+   (Reiter „Daten“ → Zugriffsschutz) hinterlegen. */
+
+header('Content-Type: application/json; charset=utf-8');
+header('Cache-Control: no-store');
+
+$TOKEN = '';   // leer = kein Schutz. Sonst geheimer Wert, identisch in der App.
+
+if ($TOKEN !== '') {
+  $sent = isset($_SERVER['HTTP_X_CRM_TOKEN']) ? $_SERVER['HTTP_X_CRM_TOKEN']
+        : (isset($_GET['token']) ? $_GET['token'] : '');
+  if (!hash_equals($TOKEN, (string)$sent)) {
+    http_response_code(401); echo json_encode(array('error'=>'unauthorized')); exit;
+  }
+}
+
+$DIR  = __DIR__ . '/data';
+$FILE = $DIR . '/crm.json';
+if (!is_dir($DIR)) @mkdir($DIR, 0775, true);
+
+function read_db($FILE){
+  if (!file_exists($FILE)) return array('rev'=>0,'contacts'=>array());
+  $d = json_decode((string)file_get_contents($FILE), true);
+  if (!is_array($d)) $d = array();
+  if (!isset($d['contacts']) || !is_array($d['contacts'])) $d['contacts'] = array();
+  if (!isset($d['rev'])) $d['rev'] = 0;
+  return $d;
+}
+function write_db($FILE,$d){
+  $tmp = $FILE . '.tmp';
+  file_put_contents($tmp, json_encode($d, JSON_UNESCAPED_UNICODE|JSON_PRETTY_PRINT));
+  @rename($tmp, $FILE);
+}
+function reindex($db){ $i=array(); foreach($db['contacts'] as $k=>$c){ if(isset($c['id'])) $i[$c['id']]=$k; } return $i; }
+
+$action = isset($_GET['action']) ? $_GET['action'] : '';
+$method = $_SERVER['REQUEST_METHOD'];
+
+if ($method === 'GET' && ($action === 'all' || $action === '')) {
+  echo json_encode(read_db($FILE), JSON_UNESCAPED_UNICODE); exit;
+}
+
+if ($method === 'POST' && $action === 'batch') {
+  $body = json_decode((string)file_get_contents('php://input'), true);
+  $ops  = (isset($body['ops']) && is_array($body['ops'])) ? $body['ops'] : array();
+
+  $lf = fopen($FILE.'.lock','c');                 // exklusive Sperre über Lesen-Ändern-Schreiben
+  if ($lf) flock($lf, LOCK_EX);
+  $db  = read_db($FILE);
+  $idx = reindex($db);
+  foreach ($ops as $op) {
+    $type = isset($op['op']) ? $op['op'] : '';
+    if ($type === 'upsert' && isset($op['contact']['id'])) {
+      $c = $op['contact']; $id = $c['id'];
+      if (isset($idx[$id])) $db['contacts'][$idx[$id]] = $c;
+      else { $idx[$id] = count($db['contacts']); $db['contacts'][] = $c; }
+    } else if ($type === 'delete' && isset($op['id'])) {
+      $id = $op['id'];
+      if (isset($idx[$id])) { array_splice($db['contacts'], $idx[$id], 1); $idx = reindex($db); }
+    } else if ($type === 'bulk') {
+      $list = (isset($op['contacts']) && is_array($op['contacts'])) ? $op['contacts'] : array();
+      if (!empty($op['replace'])) { $db['contacts'] = $list; $idx = reindex($db); }
+      else {
+        foreach ($list as $c) {
+          if (!isset($c['id'])) continue; $id = $c['id'];
+          if (isset($idx[$id])) $db['contacts'][$idx[$id]] = $c;
+          else { $idx[$id] = count($db['contacts']); $db['contacts'][] = $c; }
+        }
+      }
+    }
+  }
+  $db['rev'] = intval($db['rev']) + 1;
+  write_db($FILE, $db);
+  if ($lf) { flock($lf, LOCK_UN); fclose($lf); }
+  echo json_encode(array('ok'=>true,'rev'=>$db['rev'],'count'=>count($db['contacts']))); exit;
+}
+
+http_response_code(400);
+echo json_encode(array('error'=>'bad request'));
+'''
+
+# Schützt den Datenordner zusätzlich gegen direkten Web-Zugriff (Apache).
+HTACCESS_DATA = "Require all denied\nDeny from all\n"
+
 # ---- Ausgabe schreiben ----
 out=TPL
 out=out.replace("%%RED%%",RED).replace("%%RED2%%",RED2)
@@ -929,16 +1121,20 @@ out=out.replace("%%USERS%%",USERS_JS)
 
 for tok in ["%%RED%%","%%RED2%%","%%LOGOL%%","%%LOGOD%%","%%USERS%%"]:
     assert tok not in out, "Token übrig: "+tok
-for need in ['id="gateForm"','id="clist"','id="actModal"','renderDashboard','amb_lepton_crm','amb_lepton_configs','checkReminders']:
+for need in ['id="gateForm"','id="clist"','id="actModal"','renderDashboard','amb_lepton_crm','amb_lepton_configs','checkReminders','initServer','api.php','id="connState"']:
     assert need in out, "Pflicht-Markierung fehlt: "+need
 
 open(os.path.join(OUTDIR,"index.html"),"w",encoding="utf8").write(out)
 open(os.path.join(OUTDIR,"manifest.webmanifest"),"w",encoding="utf8").write(json.dumps(MANIFEST,ensure_ascii=False,indent=2))
 open(os.path.join(OUTDIR,"sw.js"),"w",encoding="utf8").write(SW)
+open(os.path.join(OUTDIR,"api.php"),"w",encoding="utf8").write(API_PHP)
+# Datenordner anlegen + gegen direkten Web-Zugriff schützen (Apache). Inhalt nicht eingecheckt.
+DATA_DIR=os.path.join(OUTDIR,"data"); os.makedirs(DATA_DIR,exist_ok=True)
+open(os.path.join(DATA_DIR,".htaccess"),"w",encoding="utf8").write(HTACCESS_DATA)
 # Icons aus dem Wurzelverzeichnis übernehmen (gleiche Marke)
 for ic in ["icon-192.png","icon-512.png"]:
     src=os.path.join(ROOT,ic)
     if os.path.exists(src): shutil.copyfile(src,os.path.join(OUTDIR,ic))
 
 print("vertrieb/index.html erzeugt – bytes",len(out.encode("utf8")))
-print("vertrieb/manifest.webmanifest, vertrieb/sw.js, Icons geschrieben")
+print("vertrieb/manifest.webmanifest, sw.js, api.php, data/.htaccess, Icons geschrieben")
