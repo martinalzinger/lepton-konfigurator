@@ -59,6 +59,8 @@ Antworte AUSSCHLIESSLICH mit einem JSON-Array (kein Fließtext, kein Markdown, k
 Jedes Element exakt so:
 {"firma":"","strasse":"","plz":"","ort":"","land":"DE","web":"","tel":"","email":"","geschaeftsfuehrer":"","betriebsleiter":"","jahresmenge":"","siebtechnik":"","news":"","quelle":""}
 - land als Ländercode (DE/AT/CH/...).
+- ort und plz sind WICHTIG: ort (Stadt/Gemeinde) IMMER ausfüllen; plz möglichst
+  immer mitliefern (aus Impressum/Adresse). Lieber Ort ohne PLZ als gar nichts.
 - email: allgemeine Kontakt-/Info-Adresse, wenn auffindbar (z.B. aus dem Impressum).
 - geschaeftsfuehrer / betriebsleiter: Namen, wenn auffindbar (Impressum/Handelsregister/LinkedIn).
 - jahresmenge: verarbeitete Menge pro Jahr mit Einheit, falls öffentlich (z.B. "ca. 30.000 t/Jahr"), sonst "".
