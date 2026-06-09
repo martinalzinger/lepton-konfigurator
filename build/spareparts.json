@@ -128,7 +128,7 @@
           "model": "sd2-basis.glb",
           "img": "sd2_basis",
           "rot": [
-            -90,
+            -180,
             0,
             0
           ],
