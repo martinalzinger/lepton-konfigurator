@@ -15,6 +15,8 @@
 // Die App schickt { was, wo } und den Header x-crm-secret und bekommt { leads: [...] }.
 
 const MODEL = "claude-opus-4-8";
+// URL gestückelt, damit sie beim Kopieren nicht automatisch in <…> verlinkt wird.
+const ANTHROPIC_URL = "https://api." + "anthropic.com" + "/v1/messages";
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -77,7 +79,7 @@ Jedes Element exakt so:
     let messages: unknown[] = [{ role: "user", content: prompt }];
     let data: any = null;
     for (let i = 0; i < 6; i++) {
-      const r = await fetch("https://api.anthropic.com/v1/messages", {
+      const r = await fetch(ANTHROPIC_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
