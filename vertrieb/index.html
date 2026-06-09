@@ -1102,6 +1102,17 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
      setTimeout(function(){try{_detMap.invalidateSize();}catch(e){}},150);
    }).catch(function(){});
  }
+ // PDF (data-URI) in neuem Tab öffnen – als Blob, da reine data-URIs oft blockiert werden.
+ function openPdfUri(uri){
+   try{
+     var parts=String(uri).split(",");var meta=parts[0]||"";var b64=parts.slice(1).join(",");
+     var bin=atob(b64);var len=bin.length;var arr=new Uint8Array(len);for(var i=0;i<len;i++)arr[i]=bin.charCodeAt(i);
+     var mime=(meta.match(/data:([^;]+)/)||[,"application/pdf"])[1];
+     var blob=new Blob([arr],{type:mime});var url=URL.createObjectURL(blob);
+     var w=window.open(url,"_blank");if(!w)location.href=url;
+     setTimeout(function(){URL.revokeObjectURL(url);},60000);
+   }catch(e){try{window.open(uri,"_blank");}catch(_){}}
+ }
  function actItem(a){
    var cls="t-"+a.type;
    var icon={anruf:'<path d="M5 4h4l2 5-3 2a13 13 0 006 6l2-3 5 2v4a2 2 0 01-2 2A17 17 0 013 6a2 2 0 012-2"/>',
@@ -1116,6 +1127,7 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
    if(bits.length){var _osvg='<svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/><path d="M14 3v5h5"/></svg>';var openable=!!(a.config||a.offer);
      if(openable)offer='<a class="tl-offer" href="../index.html" data-actid="'+a.id+'"'+(a.offer?(' data-loadoffer="'+esc(a.offer)+'"'):'')+' title="Angebot im Konfigurator öffnen">'+_osvg+bits.join(" · ")+' ↗</a>';
      else offer='<span class="tl-offer" style="cursor:default">'+_osvg+bits.join(" · ")+'</span>';}
+   if(a.pdf){var _psvg='<svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/><path d="M14 3v5h5"/></svg>';offer+='<button class="tl-offer" data-pdfact="'+a.id+'" title="Fertiges PDF ansehen (ohne Konfigurator)">'+_psvg+'PDF ansehen</button>';}
    return '<div class="tl-item '+cls+'">'+
      '<div class="tl-dot"><svg viewBox="0 0 24 24">'+icon+'</svg></div>'+
      '<div class="tl-top"><span class="tl-type">'+esc(actLabel(a.type))+'</span>'+
@@ -1127,18 +1139,19 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
  function fmtEur(v){var n=parseFloat(String(v).replace(/[^0-9.,-]/g,"").replace(/\./g,"").replace(",","."));if(isNaN(n))return String(v);return n.toLocaleString("de-DE")+" €";}
  // Aktivität löschen
  document.getElementById("view-detail").addEventListener("click",function(e){
+   var pb=e.target.closest("[data-pdfact]");if(pb){e.preventDefault();var pid=pb.getAttribute("data-pdfact");var pc=byId(curId);var pa=pc&&(pc.activities||[]).filter(function(x){return x.id===pid;})[0];if(pa&&pa.pdf)openPdfUri(pa.pdf);return;}
    var lo=e.target.closest("[data-actid]");if(lo){var aid=lo.getAttribute("data-actid");var cc=byId(curId);var act=cc&&(cc.activities||[]).filter(function(x){return x.id===aid;})[0];try{if(act&&act.config)localStorage.setItem("amb_lepton_loadoffer_data",JSON.stringify(act.config));else if(act&&act.offer)localStorage.setItem("amb_lepton_loadoffer",act.offer);}catch(_){}return;} // Link navigiert selbst zum Konfigurator
    var d=e.target.closest(".tl-del");if(!d)return;var aid=d.getAttribute("data-act");var c=byId(curId);if(!c)return;
    c.activities=(c.activities||[]).filter(function(x){return x.id!==aid;});c.updated=Date.now();saveContact(c);openDetail(curId);
  });
 
  /* ---------- Aktivität-Modal ---------- */
- var actType="anruf",actForId=null,_offerReturnState=null;
+ var actType="anruf",actForId=null,_offerReturnState=null,_offerReturnPdf=null;
  var modal=document.getElementById("actModal");
  document.getElementById("actSeg").addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;actType=b.getAttribute("data-t");var bs=this.querySelectorAll("button");for(var i=0;i<bs.length;i++)bs[i].classList.toggle("on",bs[i]===b);toggleOfferField();});
  function toggleOfferField(){document.getElementById("actOfferWrap").style.display=(actType==="angebot")?"":"none";}
  function openActModal(id){
-   actForId=id;actType="anruf";_offerReturnState=null;
+   actForId=id;actType="anruf";_offerReturnState=null;_offerReturnPdf=null;
    var bs=document.querySelectorAll("#actSeg button");for(var i=0;i<bs.length;i++)bs[i].classList.toggle("on",bs[i].getAttribute("data-t")==="anruf");
    document.getElementById("actDate").value=nowLocalInput();
    document.getElementById("actNote").value="";
@@ -1163,6 +1176,7 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
      var o=JSON.parse(d);if(!o||!o.contactId)return;var c=byId(o.contactId);if(!c)return;
      openDetail(o.contactId);openActModal(o.contactId);
      _offerReturnState=o.state||null; // volle Angebots-Konfiguration -> wird in der Aktivität gespeichert
+     _offerReturnPdf=o.pdf||null;     // fertiges PDF (data-URI) -> ohne Konfigurator ansehbar
      actType="angebot";var bs=document.querySelectorAll("#actSeg button");for(var i=0;i<bs.length;i++)bs[i].classList.toggle("on",bs[i].getAttribute("data-t")==="angebot");
      toggleOfferField();
      var sel=document.getElementById("actOffer");if(sel){var has=false;for(var j=0;j<sel.options.length;j++)if(sel.options[j].value===o.name)has=true;if(!has){var op=document.createElement("option");op.value=o.name;op.textContent=o.name;sel.appendChild(op);}sel.value=o.name;}
@@ -1179,7 +1193,8 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
      // Wenn ein Konfigurator-Angebot gewählt wurde, Nr automatisch übernehmen
      var offs=loadOffers();if(off&&!a.offerNr){var o=offs[off];if(o&&o.fields&&o.fields.m_nr)a.offerNr=o.fields.m_nr;}
      // Volle Angebots-Konfiguration in der Aktivität ablegen -> liegt im CRM, geräteübergreifend.
-     var cfg=_offerReturnState||(off&&offs[off])||null;if(cfg)a.config=cfg;}
+     var cfg=_offerReturnState||(off&&offs[off])||null;if(cfg)a.config=cfg;
+     if(_offerReturnPdf)a.pdf=_offerReturnPdf;}
    c.activities=c.activities||[];c.activities.push(a);
    // Status automatisch hochstufen
    if(actType==="angebot"&&(c.status==="lead"||c.status==="interessent"))c.status="angebot";

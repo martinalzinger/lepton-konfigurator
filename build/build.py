@@ -593,8 +593,13 @@ var lang="de";
  function suggestName(){var who=[v("k_firma"),v("k_nach")].filter(Boolean).join(" ");return t("pill_"+state.mode)+(who?" "+who:"")+(v("m_nr")?" ("+v("m_nr")+")":"");}
  function refreshSaved(){var sel=document.getElementById("savedList");if(!sel)return;var o=loadAll(),names=Object.keys(o).sort();var cur=sel.value;sel.innerHTML='<option value="">'+(names.length?tf("saved_count",{n:names.length}):t("saved_none"))+'</option>'+names.map(function(n){return '<option value="'+esc(n)+'">'+esc(n)+'</option>';}).join("");if(cur)sel.value=cur;}
  function doSave(){var name=window.prompt(t("prompt_save_name"),suggestName());if(name===null)return;name=name.trim();if(!name)return;var o=loadAll();o[name]=gatherState();if(!saveAll(o)){window.alert(t("alert_save_fail"));return;}refreshSaved();document.getElementById("savedList").value=name;
-  // Aus dem Vertriebs-CRM gekommen? -> mit Angebots-Infos zurückspringen.
-  try{var ret=localStorage.getItem("amb_lepton_offer_return");if(ret){localStorage.removeItem("amb_lepton_offer_return");var rc=JSON.parse(ret);var cc=compute();localStorage.setItem("amb_lepton_offer_done",JSON.stringify({contactId:(rc&&rc.contactId)||"",name:name,nr:v("m_nr")||"",betrag:(cc&&cc.na)||0,state:o[name],ts:Date.now()}));location.href="vertrieb/";}}catch(e){}}
+  // Aus dem Vertriebs-CRM gekommen? -> mit Angebots-Infos (+ PDF) zurückspringen.
+  try{var ret=localStorage.getItem("amb_lepton_offer_return");if(ret){localStorage.removeItem("amb_lepton_offer_return");var rc=JSON.parse(ret);var cc=compute();
+   var done={contactId:(rc&&rc.contactId)||"",name:name,nr:v("m_nr")||"",betrag:(cc&&cc.na)||0,state:o[name],ts:Date.now()};
+   function go(){try{localStorage.setItem("amb_lepton_offer_done",JSON.stringify(done));}catch(e){delete done.pdf;try{localStorage.setItem("amb_lepton_offer_done",JSON.stringify(done));}catch(_){}}location.href="vertrieb/";}
+   // PDF erzeugen und mitschicken (damit es ohne Konfigurator ansehbar ist). Zu groß -> weglassen.
+   buildPdf(function(pdf){try{var uri=pdf.output("datauristring");if(uri&&uri.length<3500000)done.pdf=uri;}catch(e){}go();},go);
+  }}catch(e){}}
  function doLoad(){var n=document.getElementById("savedList").value;if(!n)return;var o=loadAll();if(o[n])applyState(o[n]);}
  function doDelete(){var n=document.getElementById("savedList").value;if(!n)return;if(!window.confirm(tf("confirm_delete",{n:n})))return;var o=loadAll();delete o[n];saveAll(o);refreshSaved();}
  function docFilename(){var who=v("k_firma")||pers()||"",nr=v("m_nr")||"";var parts=[t("pill_"+state.mode),who,nr].filter(Boolean);var name=parts.join(" ").replace(/[\/\\:*?"<>|#]/g,"").trim().replace(/\s+/g,"_");return name||t("pill_"+state.mode);}
@@ -614,10 +619,8 @@ var lang="de";
   for(var yy=H-1;yy>0;yy--){var off=yy*w*4,white=true;for(var x=0;x<w;x+=24){var i=off+x*4;if(data[i]<248||data[i+1]<248||data[i+2]<248){white=false;break;}}if(white)return minY+yy;}
   return from;
  }
- function doPdf(){
-  var btn=document.getElementById("pdfBtn"),old=btn?btn.textContent:"";if(btn){btn.disabled=true;btn.textContent="…";}
-  function fin(){if(btn){btn.disabled=false;btn.textContent=old;}}
-  function fail(){fin();window.alert("PDF konnte nicht erstellt werden. Bitte einmal online öffnen und erneut versuchen.");}
+ // Baut das PDF (jsPDF-Objekt) aus #doc und ruft done(pdf) auf. err() bei Fehler.
+ function buildPdf(done,err){
   loadPdfLib(function(){
    try{
     var src=document.getElementById("doc");
@@ -641,10 +644,16 @@ var lang="de";
       pdf.addImage(img,"JPEG",0,mT,pw,sliceH/pxmm);
       first=false;y+=sliceH;
      }
-     pdf.save(docFilename()+".pdf");fin();
-    }).catch(function(){try{holder.remove();}catch(_){}fail();});
-   }catch(e){fail();}
-  },fail);
+     done(pdf);
+    }).catch(function(){try{holder.remove();}catch(_){}if(err)err();});
+   }catch(e){if(err)err();}
+  },err);
+ }
+ function doPdf(){
+  var btn=document.getElementById("pdfBtn"),old=btn?btn.textContent:"";if(btn){btn.disabled=true;btn.textContent="…";}
+  function fin(){if(btn){btn.disabled=false;btn.textContent=old;}}
+  function fail(){fin();window.alert("PDF konnte nicht erstellt werden. Bitte einmal online öffnen und erneut versuchen.");}
+  buildPdf(function(pdf){pdf.save(docFilename()+".pdf");fin();},fail);
  }
  function init(){
   try{var sl=localStorage.getItem(LKEY);if(sl&&I18N[sl])lang=sl;}catch(e){}
