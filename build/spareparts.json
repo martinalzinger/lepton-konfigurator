@@ -118,6 +118,24 @@
       "h_en": "Screen deck 2",
       "teile": [
         {
+          "id": "SD2-BASIS",
+          "art": "—",
+          "name": "Basis",
+          "name_en": "Base frame",
+          "desc": "Komplette Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar",
+          "desc_en": "Complete assembly – pick and order all individual parts in 3D",
+          "price": 0,
+          "model": "sd2-basis.glb",
+          "img": "sd2_basis",
+          "rot": [
+            -90,
+            0,
+            0
+          ],
+          "name_pl": "Podstawa",
+          "name_fr": "Base"
+        },
+        {
           "id": "SD2-ABSAUGUNG",
           "art": "—",
           "name": "Absaugung Siebdeck 2",
