@@ -37,7 +37,7 @@
     {
       "h": "Feinkornband 1", "h_en": "Fine-grain conveyor 1",
       "teile": [
-        { "id": "FKB1-MAIN", "art": "—", "name": "Feinkornband 1", "name_en": "Fine-grain conveyor 1", "desc": "Komplette Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar", "desc_en": "Complete assembly – pick and order all individual parts in 3D", "price": 0, "model": "feinkornband-1.glb", "img": "feinkornband_1" }
+        { "id": "FKB1-MAIN", "art": "—", "name": "Feinkornband 1", "name_en": "Fine-grain conveyor 1", "desc": "Komplette Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar", "desc_en": "Complete assembly – pick and order all individual parts in 3D", "price": 0, "model": "feinkornband-1.glb", "img": "feinkornband_1", "rot": [90, 0, 0] }
       ]
     },
     {
