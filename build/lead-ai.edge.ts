@@ -50,18 +50,26 @@ Deno.serve(async (req: Request) => {
 Sternsiebanlage Lepton 5100 – ideale Kunden sind Betriebe in Kompostierung, Recycling/
 Entsorgung, Erden-/Substratwerke, Steinbruch/Schotter, Garten-/Landschaftsbau, Biogas.
 
-Suche im Web nach REALEN Firmen, die zu "${was}" in der Region "${wo}" passen.
+Suche im Web nach REALEN Firmen, die zu "${was}" in der Region "${wo}" passen, und
+recherchiere pro Firma so viel wie möglich (Website/Impressum, Handelsregister,
+Branchenverzeichnisse, Presse/News).
 Antworte AUSSCHLIESSLICH mit einem JSON-Array (kein Fließtext, kein Markdown, keine \`\`\`).
 Jedes Element exakt so:
-{"firma":"","strasse":"","plz":"","ort":"","land":"DE","web":"","tel":"","quelle":""}
+{"firma":"","strasse":"","plz":"","ort":"","land":"DE","web":"","tel":"","email":"","geschaeftsfuehrer":"","betriebsleiter":"","jahresmenge":"","siebtechnik":"","news":"","quelle":""}
 - land als Ländercode (DE/AT/CH/...).
-- Unbekannte Felder als leerer String "".
-- quelle = kurz, woher die Info stammt (z.B. Website, Branchenverzeichnis).
-- Höchstens 25 Firmen. Nur echte, im Web auffindbare Betriebe – nichts erfinden.`;
+- email: allgemeine Kontakt-/Info-Adresse, wenn auffindbar (z.B. aus dem Impressum).
+- geschaeftsfuehrer / betriebsleiter: Namen, wenn auffindbar (Impressum/Handelsregister/LinkedIn).
+- jahresmenge: verarbeitete Menge pro Jahr mit Einheit, falls öffentlich (z.B. "ca. 30.000 t/Jahr"), sonst "".
+- siebtechnik: welche Siebanlage der Betrieb einsetzt – NUR "Trommelsieb" oder "Sternsieb",
+  wenn es klar aus Website/News/Bildern hervorgeht; sonst "" (nicht raten!).
+- news: ein relevanter aktueller Punkt mit Jahr (z.B. Erweiterung, Investition, neue Anlage), sonst "".
+- quelle: kurz, woher die Infos stammen (z.B. Website, Handelsregister, Presseartikel).
+- WICHTIG: Unbekannte Felder als leerer String "". Nichts erfinden – lieber leer lassen.
+- Höchstens 15 Firmen, dafür gründlich recherchiert. Nur echte, im Web auffindbare Betriebe.`;
 
     const base = {
       model: MODEL,
-      max_tokens: 8000,
+      max_tokens: 12000,
       tools: [{ type: "web_search_20260209", name: "web_search" }],
     };
 
