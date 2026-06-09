@@ -170,6 +170,24 @@
           ],
           "name_pl": "Taśma prosta – z odsysaniem, z separatorem magnetycznym",
           "name_fr": "Bande droite – avec aspiration, avec séparateur magnétique"
+        },
+        {
+          "id": "SD2-BAND-QUER",
+          "art": "—",
+          "name": "Band quer",
+          "name_en": "Transverse belt",
+          "desc": "Komplette Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar",
+          "desc_en": "Complete assembly – pick and order all individual parts in 3D",
+          "price": 0,
+          "model": "sd2-band-quer.glb",
+          "img": "sd2_band_quer",
+          "rot": [
+            -90,
+            0,
+            0
+          ],
+          "name_pl": "Taśma poprzeczna",
+          "name_fr": "Bande transversale"
         }
       ],
       "h_pl": "Pokład sitowy 2",
