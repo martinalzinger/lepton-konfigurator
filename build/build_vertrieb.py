@@ -1141,8 +1141,8 @@ var USERS=%%USERS%%;
    if(a.offerNr)bits.push("Nr "+esc(a.offerNr));
    if(a.betrag)bits.push(esc(fmtEur(a.betrag)));
    if(a.offer)bits.push("Konfig: "+esc(a.offer));
-   if(bits.length){offer='<a class="tl-offer" href="../index.html" title="Angebot">'+
-     '<svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/><path d="M14 3v5h5"/></svg>'+bits.join(" · ")+'</a>';}
+   if(bits.length){offer='<a class="tl-offer" href="../index.html"'+(a.offer?(' data-loadoffer="'+esc(a.offer)+'"'):'')+' title="'+(a.offer?"Angebot im Konfigurator öffnen":"Angebot")+'">'+
+     '<svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/><path d="M14 3v5h5"/></svg>'+bits.join(" · ")+(a.offer?' ↗':'')+'</a>';}
    return '<div class="tl-item '+cls+'">'+
      '<div class="tl-dot"><svg viewBox="0 0 24 24">'+icon+'</svg></div>'+
      '<div class="tl-top"><span class="tl-type">'+esc(actLabel(a.type))+'</span>'+
@@ -1154,6 +1154,7 @@ var USERS=%%USERS%%;
  function fmtEur(v){var n=parseFloat(String(v).replace(/[^0-9.,-]/g,"").replace(/\./g,"").replace(",","."));if(isNaN(n))return String(v);return n.toLocaleString("de-DE")+" €";}
  // Aktivität löschen
  document.getElementById("view-detail").addEventListener("click",function(e){
+   var lo=e.target.closest("[data-loadoffer]");if(lo){try{localStorage.setItem("amb_lepton_loadoffer",lo.getAttribute("data-loadoffer"));}catch(_){}return;} // Link navigiert selbst zum Konfigurator
    var d=e.target.closest(".tl-del");if(!d)return;var aid=d.getAttribute("data-act");var c=byId(curId);if(!c)return;
    c.activities=(c.activities||[]).filter(function(x){return x.id!==aid;});c.updated=Date.now();saveContact(c);openDetail(curId);
  });

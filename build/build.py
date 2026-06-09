@@ -664,6 +664,8 @@ var lang="de";
   applyLang();
   applyMode("angebot");
   refreshSaved();
+  // Aus dem CRM: ein bestimmtes gespeichertes Angebot direkt öffnen.
+  try{var lo=localStorage.getItem("amb_lepton_loadoffer");if(lo){localStorage.removeItem("amb_lepton_loadoffer");var all=loadAll();if(all[lo]){applyState(all[lo]);var slu=document.getElementById("savedList");if(slu)slu.value=lo;}}}catch(e){}
   // Vorausfüllung aus dem Vertriebs-CRM (gleicher Origin): Kundendaten übernehmen.
   try{var pf=localStorage.getItem("amb_lepton_prefill");if(pf){localStorage.removeItem("amb_lepton_prefill");var po=JSON.parse(pf);if(po&&po.fields){Object.keys(po.fields).forEach(function(k){var e=document.getElementById(k);if(e&&po.fields[k]!=null&&po.fields[k]!=="")e.value=po.fields[k];});}if(po&&po.mode)applyMode(po.mode);render();}}catch(e){}
   var _sb=document.getElementById("saveBtn");if(_sb)_sb.addEventListener("click",doSave);
