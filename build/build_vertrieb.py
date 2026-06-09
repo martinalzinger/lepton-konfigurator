@@ -57,20 +57,25 @@ input,select,textarea{font-family:var(--sans);font-size:15px}
 .topbar{position:sticky;top:0;z-index:80;background:var(--red);color:#fff}
 .topbar-in{max-width:1120px;margin:0 auto;padding:12px 16px calc(12px + env(safe-area-inset-top)) 16px;padding-top:max(12px,env(safe-area-inset-top))}
 .tb-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
-.tb-logo img{height:30px;display:block}
-.tb-title{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;opacity:.92}
-.conn{font-family:var(--mono);font-size:9.5px;letter-spacing:.02em;margin-top:2px;white-space:nowrap}
-.conn.on{color:#bbf7d0}.conn.off{color:rgba(255,255,255,.7)}
+.tb-brand{display:flex;flex-direction:column;align-items:flex-start;gap:3px;min-width:0}
+.tb-brand img{height:30px;display:block}
+.tb-sub{font-family:var(--mono);font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:#fff;opacity:.95;font-weight:600}
+.conn{font-family:var(--mono);font-size:9.5px;letter-spacing:.02em;white-space:nowrap}
+.conn.on{color:#bbf7d0}.conn.off{color:rgba(255,255,255,.72)}
 .tb-user{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600}
 .tb-user .av{width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.18);display:inline-flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:12px;font-weight:600}
 .tb-user button{background:none;border:0;color:rgba(255,255,255,.85);font-size:11px;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
 
-/* Tab-Navigation */
-.nav{position:sticky;top:0;z-index:70;background:#fff;border-bottom:1px solid var(--line);box-shadow:0 1px 0 rgba(0,0,0,.02)}
-.nav-in{max-width:1120px;margin:0 auto;display:flex;gap:2px;padding:0 8px;overflow-x:auto}
-.nav button{position:relative;background:none;border:0;padding:13px 14px;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent}
-.nav button.active{color:var(--red);border-bottom-color:var(--red)}
-.nav button .badge{position:absolute;top:7px;right:2px;min-width:16px;height:16px;padding:0 4px;border-radius:9px;background:var(--red);color:#fff;font-family:var(--mono);font-size:9px;font-weight:600;display:inline-flex;align-items:center;justify-content:center}
+/* Tab-Navigation – Pills mit Icon */
+.nav{position:sticky;top:0;z-index:70;background:var(--surface);border-bottom:1px solid var(--line)}
+.nav-in{max-width:1120px;margin:0 auto;display:flex;gap:8px;padding:11px 12px;overflow-x:auto;scrollbar-width:none}
+.nav-in::-webkit-scrollbar{display:none}
+.nav button{position:relative;display:inline-flex;align-items:center;gap:7px;background:var(--field);border:1px solid var(--line);border-radius:999px;padding:9px 15px;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;white-space:nowrap;transition:background .14s,color .14s,border-color .14s,box-shadow .14s}
+.nav button:hover{border-color:var(--line-strong);color:var(--ink)}
+.nav button svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.8}
+.nav button.active{background:var(--red);border-color:var(--red);color:#fff;box-shadow:0 5px 14px rgba(192,0,0,.26)}
+.nav button .badge{min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--red);color:#fff;font-family:var(--mono);font-size:9px;font-weight:700;display:inline-flex;align-items:center;justify-content:center}
+.nav button.active .badge{background:#fff;color:var(--red)}
 
 .wrap{max-width:1120px;margin:0 auto;padding:18px 16px 40px}
 .view{display:none}
@@ -234,12 +239,10 @@ textarea.field{min-height:74px;resize:vertical;line-height:1.5}
 <header class="topbar">
   <div class="topbar-in">
     <div class="tb-row">
-      <div style="display:flex;align-items:center;gap:12px;min-width:0">
-        <div class="tb-logo"><img src="%%LOGOL%%" alt="Alzinger"></div>
-        <div style="display:flex;flex-direction:column;min-width:0">
-          <div class="tb-title">Vertrieb&nbsp;·&nbsp;CRM</div>
-          <span id="connState" class="conn off" title="">● Lokal – dieses Gerät</span>
-        </div>
+      <div class="tb-brand">
+        <img src="%%LOGOL%%" alt="Alzinger">
+        <span class="tb-sub">CRM System</span>
+        <span id="connState" class="conn off" title="">● Lokal – dieses Gerät</span>
       </div>
       <div class="tb-user">
         <span class="av" id="uAv">–</span>
@@ -254,10 +257,10 @@ textarea.field{min-height:74px;resize:vertical;line-height:1.5}
 
 <nav class="nav">
   <div class="nav-in" id="nav">
-    <button data-view="dashboard" class="active">Übersicht<span class="badge hidden" id="navBadge"></span></button>
-    <button data-view="list">Kontakte</button>
-    <button data-view="leads">Leads</button>
-    <button data-view="data">Daten</button>
+    <button data-view="dashboard" class="active"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Übersicht<span class="badge hidden" id="navBadge"></span></button>
+    <button data-view="list"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 00-4-4H7a4 4 0 00-4 4v2"/><circle cx="9.5" cy="8" r="3.5"/><path d="M22 21v-2a4 4 0 00-3-3.87"/></svg>Kontakte</button>
+    <button data-view="leads"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2"/></svg>Leads</button>
+    <button data-view="data"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></svg>Daten</button>
   </div>
 </nav>
 
