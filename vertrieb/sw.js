@@ -1,6 +1,6 @@
 // Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v2";
+const CACHE="vertrieb-v3";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png"];
 
 self.addEventListener("install",e=>{
@@ -23,7 +23,8 @@ self.addEventListener("activate",e=>{
 self.addEventListener("fetch",e=>{
   const req=e.request;
   if(req.method!=="GET")return;
-  if(req.url.indexOf("api.php")>=0)return;   // dynamische API immer direkt ans Netz, nie cachen
+  if(req.url.indexOf("api.php")>=0)return;            // dynamische API immer direkt ans Netz, nie cachen
+  if(req.url.indexOf("nominatim")>=0||req.url.indexOf("overpass")>=0)return; // Karten-Lead-Suche: immer live
   const isHTML=req.mode==="navigate"||(req.headers.get("accept")||"").includes("text/html");
   if(isHTML){
     e.respondWith(

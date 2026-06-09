@@ -283,17 +283,23 @@ textarea.field{min-height:74px;resize:vertical;line-height:1.5}
   <!-- LEADS -->
   <section class="view" id="view-leads">
     <h2 class="vh">Leads</h2>
-    <div class="sub">Potenzielle Kunden in DE, CH, AT &amp; Co. erfassen und nachverfolgen.</div>
-    <div class="card" style="background:#fff7ed;border-color:#fed7aa">
-      <p style="font-size:13px;color:#7c4a02">
-        <b>Hinweis:</b> Automatische Internet-Suche nach Leads (Firmenregister, Branchen-Listen)
-        und automatisches Beantworten von E-Mails brauchen einen Server-Dienst und sind in dieser
-        Offline-App bewusst <b>nicht</b> enthalten. Hier verwaltest du Leads manuell oder per Import
-        (Reiter „Daten" → CSV). Leads mit Status <b>Lead</b>/<b>Interessent</b> erscheinen hier.
+    <div class="sub">Potenzielle Kunden in DE, CH, AT &amp; Co. finden, erfassen und nachverfolgen.</div>
+    <div class="card">
+      <h3><svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:var(--red);fill:none;stroke-width:1.8"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 010 18M12 3a15 15 0 000 18"/></svg> Neue Leads im Internet finden</h3>
+      <div style="display:flex;flex-wrap:wrap;gap:8px">
+        <input class="field" id="osmWas" placeholder="Was? z. B. Kompostierung, Recycling, Erdenwerk" style="flex:2;min-width:200px">
+        <input class="field" id="osmWo" placeholder="Wo? z. B. Bayern, München" style="flex:1;min-width:140px">
+        <button class="btn primary" id="osmSearch" type="button"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>Suchen</button>
+      </div>
+      <div id="osmStatus" style="font-size:13px;color:var(--muted);margin-top:10px"></div>
+      <div class="clist" id="osmResults" style="margin-top:10px"></div>
+      <p style="font-size:11px;color:var(--faint);margin-top:10px;line-height:1.6">
+        Quelle: © OpenStreetMap-Mitwirkende. Findet erfasste Betriebe – <b>keine amtliche Vollständigkeit</b>; Treffer kurz prüfen, dann als Lead übernehmen. Nur online. Tipp: bei zu vielen/zu wenigen Treffern Begriff oder Region anpassen (Stadt statt Bundesland).<br>
+        Vollständige Branchen-/Registerlisten und automatische E-Mail-Antworten brauchen einen Server-Dienst und sind hier (noch) nicht enthalten.
       </p>
     </div>
     <div class="toolbar">
-      <input class="search" id="qLead" placeholder="Leads durchsuchen…">
+      <input class="search" id="qLead" placeholder="Eigene Leads durchsuchen…">
       <select class="filter" id="fLeadLand"><option value="">Alle Länder</option></select>
     </div>
     <div class="clist" id="leadlist"></div>
@@ -624,9 +630,107 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
    var arr=DB.contacts.filter(function(c){return (c.status==="lead"||c.status==="interessent")&&matchQ(c,q)&&(!fl||c.land===fl);});
    arr.sort(function(a,b){return lastActivityTs(b)-lastActivityTs(a);});
    var el=document.getElementById("leadlist");
-   if(!arr.length){el.innerHTML=emptyState("Keine offenen Leads. Neue Leads als Kontakt mit Status „Lead“ anlegen oder per CSV importieren (Reiter „Daten“).");return;}
+   if(!arr.length){el.innerHTML=emptyState("Keine offenen Leads. Oben im Internet suchen, manuell anlegen oder per CSV importieren (Reiter „Daten“).");return;}
    el.innerHTML=arr.map(contactRow).join("");
  }
+
+ /* ---------- Online-Lead-Suche (OpenStreetMap – kostenlos, kein Server, nur online) ---------- */
+ var lastQuery="", searchLand="DE", osmEls=[], osmLast={};
+ function osmStatus(html){var e=document.getElementById("osmStatus");if(e)e.innerHTML=html;}
+ function osmGeocode(place){
+   var url="https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=1&accept-language=de&countrycodes=de,at,ch&q="+encodeURIComponent(place);
+   return fetch(url,{headers:{"Accept":"application/json"}}).then(function(r){if(!r.ok)throw new Error("geo");return r.json();}).then(function(a){if(!a||!a.length)throw new Error("noplace");return a[0];});
+ }
+ function osmAreaRef(g){
+   if(g.osm_type==="relation")return {area:3600000000+(+g.osm_id)};
+   if(g.osm_type==="way")return {area:2400000000+(+g.osm_id)};
+   return {around:[20000,g.lat,g.lon]};
+ }
+ function osmFilters(term){
+   var t=(term||"").toLowerCase(),f=[];
+   var word=(t.replace(/[^a-zäöüß ]/g," ").trim().split(/\s+/)[0]||"");
+   if(word.length>=3)f.push('nwr["name"~"'+word+'",i]');
+   if(/kompost/.test(t)){f.push('nwr["industrial"="composting"]');f.push('nwr["landuse"="industrial"]["name"~"kompost",i]');}
+   if(/recycl|entsorg|abfall|wertstoff|müll|mull/.test(t)){f.push('nwr["amenity"="recycling"]["recycling_type"="centre"]');f.push('nwr["industrial"="scrap_yard"]');}
+   if(/erden|substrat|humus|mutterboden/.test(t)){f.push('nwr["name"~"erden|substrat|humus",i]');}
+   if(/steinbruch|schotter|kies|sand|quarry|brech/.test(t)){f.push('nwr["landuse"="quarry"]');}
+   if(/biogas|gärrest|garrest/.test(t)){f.push('nwr["name"~"biogas",i]');}
+   if(/garten|landschaft|galabau/.test(t)){f.push('nwr["name"~"garten|landschaft",i]');f.push('nwr["shop"="garden_centre"]');}
+   if(/container/.test(t))f.push('nwr["name"~"container",i]');
+   if(!f.length)f.push('nwr["name"~"'+(word||"x")+'",i]');
+   return f;
+ }
+ function osmBuildQuery(ref,filters){
+   var lines=filters.map(function(fl){return ref.area?(fl+"(area.a);"):(fl+"(around:"+ref.around[0]+","+ref.around[1]+","+ref.around[2]+");");}).join("\n  ");
+   return "[out:json][timeout:30];\n"+(ref.area?("area("+ref.area+")->.a;\n"):"")+"(\n  "+lines+"\n);\nout center 120;";
+ }
+ function osmOverpass(q){
+   return fetch("https://overpass-api.de/api/interpreter",{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:"data="+encodeURIComponent(q)})
+     .then(function(r){if(!r.ok)throw new Error("overpass "+r.status);return r.json();}).then(function(j){return j.elements||[];});
+ }
+ function osmAddr(t){return {strasse:[t["addr:street"],t["addr:housenumber"]].filter(Boolean).join(" "),plz:t["addr:postcode"]||"",ort:t["addr:city"]||t["addr:town"]||t["addr:village"]||t["addr:municipality"]||""};}
+ function osmExisting(){var s={};DB.contacts.forEach(function(c){if(c._osm)s[c._osm]=1;if(c.firma)s[((c.firma||"")+"|"+(c.ort||"")).toLowerCase()]=1;});return s;}
+ function osmToContact(el){
+   var t=el.tags||{},a=osmAddr(t);var lat=el.lat||(el.center&&el.center.lat),lon=el.lon||(el.center&&el.center.lon);
+   return {id:uid(),created:Date.now(),updated:Date.now(),status:"lead",
+     firma:t.name||"",firma2:t.operator||"",anrede:"",vorname:"",nachname:"",
+     strasse:a.strasse,plz:a.plz,ort:a.ort,land:searchLand,
+     tel:t["contact:phone"]||t.phone||"",mobil:"",mail:t["contact:email"]||t.email||"",
+     web:t["contact:website"]||t.website||"",ustid:"",owner:(CUR&&CUR.n)||"",
+     quelle:"Karten-Suche: "+lastQuery,
+     notiz:(lat?("Auf Karte: https://www.openstreetmap.org/?mlat="+lat+"&mlon="+lon+"#map=18/"+lat+"/"+lon):""),
+     activities:[],_osm:(el.type+"/"+el.id)};
+ }
+ function osmMake(key){var el=osmLast[key];if(!el)return null;var c=osmToContact(el);DB.contacts.push(c);return c;}
+ function renderOsm(els){
+   osmEls=els;osmLast={};els.forEach(function(el){osmLast[el.type+"/"+el.id]=el;});
+   var box=document.getElementById("osmResults");
+   if(!els.length){osmStatus('Keine Treffer für „'+esc(lastQuery)+'“. Anderen Begriff (z. B. „Recycling“, „Erden“) oder andere Region versuchen.');box.innerHTML="";return;}
+   var ex=osmExisting(),anyNew=false;
+   osmStatus(els.length+' Treffer für „'+esc(lastQuery)+'“ – prüfen und übernehmen:');
+   box.innerHTML=els.map(function(el){
+     var t=el.tags||{},a=osmAddr(t),loc=[a.plz,a.ort].filter(Boolean).join(" ");
+     var key=el.type+"/"+el.id,have=ex[key]||ex[((t.name||"")+"|"+(a.ort||"")).toLowerCase()];if(!have)anyNew=true;
+     var web=t["contact:website"]||t.website;
+     return '<div class="crow" style="cursor:default">'+
+       '<div class="av" style="background:var(--gold)">'+esc(initials(t.name))+'</div>'+
+       '<div class="mid"><div class="nm">'+esc(t.name)+'</div>'+
+       '<div class="meta">'+(a.strasse?'<span>'+esc(a.strasse)+'</span>':'')+(loc?'<span>'+esc(loc)+'</span>':'')+
+         ((t["contact:phone"]||t.phone)?'<span>'+esc(t["contact:phone"]||t.phone)+'</span>':'')+
+         (web?'<span><a href="'+esc(/^https?:/.test(web)?web:"https://"+web)+'" target="_blank" rel="noopener" onclick="event.stopPropagation()">Web</a></span>':'')+
+       '</div></div>'+
+       '<div class="right">'+(have?'<span class="pill" style="background:#eef1f4;color:#6b7280">erfasst</span>':'<button class="btn sm primary" data-osm="'+key+'">+ Lead</button>')+'</div>'+
+     '</div>';
+   }).join("")+(anyNew?'<button class="btn block" id="osmAddAll" style="margin-top:8px">Alle neuen als Leads übernehmen</button>':'');
+ }
+ function osmRun(){
+   var was=(document.getElementById("osmWas").value||"").trim(),wo=(document.getElementById("osmWo").value||"").trim();
+   if(!was){osmStatus("Bitte eingeben, wonach gesucht werden soll (z. B. Kompostierung).");return;}
+   if(!wo){osmStatus("Bitte eine Region angeben (z. B. Bayern oder eine Stadt).");return;}
+   if(navigator.onLine===false){osmStatus("Keine Internetverbindung – die Lead-Suche funktioniert nur online.");return;}
+   lastQuery=was+" in "+wo;document.getElementById("osmResults").innerHTML="";
+   osmStatus('<span class="mono">… </span>Suche „'+esc(lastQuery)+'“ …');
+   osmGeocode(wo).then(function(g){
+     searchLand=({de:"DE",at:"AT",ch:"CH",it:"IT",fr:"FR",pl:"PL",nl:"NL",be:"BE",lu:"LU",cz:"CZ"})[(g.address&&g.address.country_code)||""]||"DE";
+     return osmOverpass(osmBuildQuery(osmAreaRef(g),osmFilters(was)));
+   }).then(function(els){
+     var seen={},out=[];els.forEach(function(el){var t=el.tags||{};if(!t.name)return;var k=el.type+"/"+el.id;if(seen[k])return;seen[k]=1;out.push(el);});
+     renderOsm(out);
+   }).catch(function(e){
+     var m=String((e&&e.message)||e);
+     if(/noplace/.test(m))osmStatus('Region „'+esc(wo)+'“ nicht gefunden. Anders schreiben (z. B. „Bayern“, „München“).');
+     else if(/overpass/.test(m))osmStatus("Suche fehlgeschlagen oder Region zu groß. Bitte enger eingrenzen (z. B. Stadt statt Bundesland) und erneut versuchen.");
+     else osmStatus("Suche gerade nicht möglich (offline oder Kartendienst nicht erreichbar). Später erneut versuchen.");
+   });
+ }
+ document.getElementById("osmSearch").onclick=osmRun;
+ document.getElementById("osmWas").addEventListener("keydown",function(e){if(e.key==="Enter")osmRun();});
+ document.getElementById("osmWo").addEventListener("keydown",function(e){if(e.key==="Enter")osmRun();});
+ document.getElementById("osmResults").addEventListener("click",function(e){
+   var b=e.target.closest("[data-osm]");
+   if(b){var c=osmMake(b.getAttribute("data-osm"));if(c)saveContact(c);b.outerHTML='<span class="pill" style="background:#e6f4ea;color:#15803d">✓ Lead</span>';renderLeads();return;}
+   if(e.target.id==="osmAddAll"){var ex=osmExisting(),added=[];Object.keys(osmLast).forEach(function(k){var el=osmLast[k],t=el.tags||{},a=osmAddr(t);if(ex[k]||ex[((t.name||"")+"|"+(a.ort||"")).toLowerCase()])return;var c=osmMake(k);if(c)added.push(c);});if(added.length)bulkSave(added,false);renderOsm(osmEls);renderLeads();osmStatus(added.length+" neue Leads übernommen – sie stehen unten in deiner Lead-Liste.");}
+ });
 
  /* ---------- Klick auf Kontaktzeile ---------- */
  document.body.addEventListener("click",function(e){
