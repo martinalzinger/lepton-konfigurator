@@ -128,7 +128,7 @@
           "model": "sd2-basis.glb",
           "img": "sd2_basis",
           "rot": [
-            -180,
+            0,
             0,
             0
           ],
@@ -164,12 +164,30 @@
           "model": "sd2-band-gerade-abs.glb",
           "img": "sd2_band_gerade",
           "rot": [
-            -180,
+            -90,
             0,
             0
           ],
           "name_pl": "Taśma prosta – z odsysaniem, bez separatora magnetycznego",
           "name_fr": "Bande droite – avec aspiration, sans séparateur magnétique"
+        },
+        {
+          "id": "SD2-BAND-GERADE-ABS-MAG",
+          "art": "—",
+          "name": "Band gerade – mit Absaugung, mit Magnetabscheider",
+          "name_en": "Belt straight – with suction, with magnetic separator",
+          "desc": "Komplette Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar",
+          "desc_en": "Complete assembly – pick and order all individual parts in 3D",
+          "price": 0,
+          "model": "sd2-band-gerade-abs-mag.glb",
+          "img": "sd2_band_gerade_mag",
+          "rot": [
+            -180,
+            0,
+            0
+          ],
+          "name_pl": "Taśma prosta – z odsysaniem, z separatorem magnetycznym",
+          "name_fr": "Bande droite – avec aspiration, avec séparateur magnétique"
         }
       ],
       "h_pl": "Pokład sitowy 2",
