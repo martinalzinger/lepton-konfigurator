@@ -859,7 +859,7 @@ var USERS=%%USERS%%;
  }
 
  /* ---------- Online-Lead-Suche (OpenStreetMap – kostenlos, kein Server, nur online) ---------- */
- var lastQuery="", searchLand="DE", osmEls=[], osmLast={}, _aiErr="", _searchSrc="", _lastWas="", _lastWo="";
+ var lastQuery="", searchLand="DE", osmEls=[], osmLast={}, _aiErr="", _searchSrc="", _lastWas="", _lastWo="", _autoMore=0;
  function osmStatus(html){var e=document.getElementById("osmStatus");if(e)e.innerHTML=html;}
  function osmLoading(msg){osmStatus('<span class="spin"></span>'+msg);var m=document.getElementById("osmMap");if(m)m.style.display="none";var b=document.getElementById("osmResults");if(b)b.innerHTML='<div class="skel"></div><div class="skel" style="opacity:.7"></div><div class="skel" style="opacity:.45"></div>';}
  function osmClearResults(){var b=document.getElementById("osmResults");if(b)b.innerHTML="";var m=document.getElementById("osmMap");if(m)m.style.display="none";}
@@ -948,17 +948,22 @@ var USERS=%%USERS%%;
  }
  // Weitersuchen: dieselbe KI-Suche erneut, aber die schon gefundenen Firmen ausschließen
  // und die neuen Treffer unten anhängen (max. 10 echte Firmen pro Suche).
- function aiMore(){
+ // Weitersuchen: dieselbe KI-Suche erneut, schon gefundene Firmen ausschließen und
+ // die neuen Treffer anhängen. auto=true -> läuft selbsttätig mehrere Runden (wie eine
+ // gründliche Recherche), bis _autoMore aufgebraucht ist oder nichts Neues mehr kommt.
+ function aiMore(auto){
    if(_searchSrc!=="KI"||!_lastWas)return;
-   var btn=document.getElementById("osmMore");if(btn){btn.disabled=true;btn.textContent="Sucht weitere Firmen … (~1–2 Min)";}
+   var btn=document.getElementById("osmMore");
+   if(btn){btn.disabled=true;btn.textContent=auto?("KI vertieft die Suche … ("+osmEls.length+" gefunden)"):"Sucht weitere Firmen … (~1–2 Min)";}
    var names=osmEls.map(function(el){return (el.tags&&el.tags.name)||"";}).filter(Boolean);
    var w2=_lastWas+" — WICHTIG: Finde NUR WEITERE, ANDERE echte Firmen. Bereits bekannt und NICHT erneut nennen: "+names.join("; ")+".";
    apiAi(w2,_lastWo).then(function(leads){
      var seen={};osmEls.forEach(function(el){seen[el.type+"/"+el.id]=1;seen["n:"+(((el.tags&&el.tags.name)||"").toLowerCase())]=1;});
      var add=[];leads.map(aiToEl).forEach(function(el){var k=el.type+"/"+el.id,nk="n:"+(((el.tags&&el.tags.name)||"").toLowerCase());if(seen[k]||seen[nk])return;seen[k]=1;seen[nk]=1;add.push(el);});
-     if(!add.length){if(btn){btn.disabled=false;btn.textContent="Keine weiteren gefunden – erneut versuchen";}return;}
+     if(!add.length){_autoMore=0;if(btn){btn.disabled=false;btn.textContent="Keine weiteren gefunden – erneut versuchen";}return;}
      renderOsm(osmEls.concat(add));
-   }).catch(function(e){if(btn){btn.disabled=false;btn.textContent="＋ Weitersuchen – weitere Firmen finden";}osmStatus('Weitersuche fehlgeschlagen: '+esc(String((e&&e.message)||e))+'. Bitte erneut versuchen.');});
+     if(auto&&_autoMore>0){_autoMore--;if(_autoMore>0)setTimeout(function(){aiMore(true);},400);}
+   }).catch(function(e){_autoMore=0;if(btn){btn.disabled=false;btn.textContent="＋ Weitersuchen – weitere Firmen finden";}if(!auto)osmStatus('Weitersuche fehlgeschlagen: '+esc(String((e&&e.message)||e))+'. Bitte erneut versuchen.');});
  }
  /* ---------- Karte (Leaflet, lokal mitgeliefert; Kacheln von OSM, nur online) ---------- */
  var _leafletP=null,_map=null,_markers=null;
@@ -1028,11 +1033,14 @@ var USERS=%%USERS%%;
    if(navigator.onLine===false){osmStatus("Keine Internetverbindung – die Lead-Suche funktioniert nur online.");return;}
    _aiErr="";
    if(!aiReady()){osmRun();return;}
-   lastQuery=was+" in "+wo;searchLand=guessLand(wo);_lastWas=was;_lastWo=wo;
-   osmLoading('KI durchsucht das Web nach „'+esc(lastQuery)+'“ … <b>gründliche Recherche – das dauert bis zu ~2 Minuten</b>, bitte warten.');
+   lastQuery=was+" in "+wo;searchLand=guessLand(wo);_lastWas=was;_lastWo=wo;_autoMore=0;
+   osmLoading('KI durchsucht das Web nach „'+esc(lastQuery)+'“ … <b>gründliche Recherche – das dauert bis zu ~2 Minuten</b>. Danach ergänzt die KI automatisch weitere Firmen.');
    apiAi(was,wo).then(function(leads){
      if(!leads.length){osmClearResults();osmStatus('Die KI hat für „'+esc(lastQuery)+'“ keine Firmen gefunden. Tipp: anderen Begriff (z. B. „Kompostierung", „Recycling", „Erdenwerk") oder ein größeres Gebiet (z. B. „Bayern" statt nur einer Stadt) versuchen.');return;}
      _searchSrc="KI";renderOsm(leads.map(aiToEl));
+     // Wie eine echte Recherche: automatisch noch bis zu 2 weitere Runden anhängen
+     // (nur wenn die erste Runde "voll" war, also vermutlich mehr existiert).
+     if(leads.length>=6){_autoMore=2;setTimeout(function(){aiMore(true);},500);}
    }).catch(function(e){osmClearResults();osmStatus('KI-Suche fehlgeschlagen: '+esc(String((e&&e.message)||e))+'. Bitte erneut versuchen.');});
  }
  document.getElementById("osmSearch").onclick=leadSearch;
@@ -1535,7 +1543,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v12";
+const CACHE="vertrieb-v13";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png",
   "./vendor/leaflet.js","./vendor/leaflet.css",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
