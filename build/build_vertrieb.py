@@ -1514,7 +1514,7 @@ out=out.replace("%%USERS%%",USERS_JS)
 
 for tok in ["%%RED%%","%%RED2%%","%%LOGOL%%","%%LOGOD%%","%%USERS%%"]:
     assert tok not in out, "Token übrig: "+tok
-for need in ['id="gateForm"','id="clist"','id="actModal"','renderDashboard','amb_lepton_crm','amb_lepton_configs','checkReminders','initBackend','api.php','id="connState"','id="osmSearch"','overpass-api.de','osmToContact','id="osmMap"','ensureLeaflet','tile.openstreetmap','id="sbUrl"','sbUpsert','supabase.co','id="cMap"','showContactsMap','id="actBetrag"','flagIcon','id="detMap"','contactLatLon','leadSearch','apiAi','id="aiSecret"','functions/v1/lead-ai']:
+for need in ['id="gateForm"','id="clist"','id="actModal"','renderDashboard','amb_lepton_crm','amb_lepton_configs','checkReminders','initBackend','api.php','id="connState"','id="osmSearch"','overpass-api.de','osmToContact','id="osmMap"','ensureLeaflet','tile.openstreetmap','id="sbUrl"','sbUpsert','supabase.co','id="cMap"','showContactsMap','id="actBetrag"','flagIcon','id="detMap"','contactLatLon','leadSearch','apiAi','aiPost','id="aiSecret"','/functions/v1/']:
     assert need in out, "Pflicht-Markierung fehlt: "+need
 # Leaflet (Karten-Bibliothek) muss lokal vorhanden sein (Laufzeit-Abhängigkeit der Standort-Karte)
 for vf in ["leaflet.js","leaflet.css","images/marker-icon.png","images/marker-shadow.png"]:
