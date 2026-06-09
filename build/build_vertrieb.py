@@ -1066,8 +1066,8 @@ var USERS=%%USERS%%;
    (c.news?'<div class="card" style="background:#eef4ff;border-color:#cfe0ff"><div style="font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#1d4ed8;margin-bottom:4px">News</div><div style="white-space:pre-wrap;font-size:14px">'+esc(c.news)+'</div></div>':'')+
    (notizClean?'<div class="card" style="background:var(--field)"><div style="white-space:pre-wrap;font-size:14px">'+esc(notizClean)+'</div></div>':'')+
    // Standort-Karte des Kontakts
-   (ll?('<div style="position:relative;margin:8px 0"><div id="detMap" style="height:200px;border-radius:12px;border:1px solid var(--line)"></div>'+
-        '<a class="btn sm" style="position:absolute;right:8px;top:8px;z-index:5" href="https://www.google.com/maps?q='+ll.lat+','+ll.lon+'" target="_blank" rel="noopener">In Google Maps</a></div>')
+   (ll?('<div style="margin:8px 0"><iframe id="detMap" title="Standort-Karte" src="https://maps.google.com/maps?q='+ll.lat+','+ll.lon+'&z=14&output=embed" style="width:100%;height:220px;border:0;border-radius:12px" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>'+
+        '<div style="margin-top:6px"><a class="btn sm" href="https://www.google.com/maps?q='+ll.lat+','+ll.lon+'" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.7"><path d="M12 21s-7-5.2-7-11a7 7 0 0114 0c0 5.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>In Google Maps öffnen</a></div></div>')
       :((addr)?'<div style="margin:8px 0"><button class="btn sm" id="geoBtn"><svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.7"><path d="M12 21s-7-5.2-7-11a7 7 0 0114 0c0 5.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>Auf Karte zeigen</button></div>':''))+
    // Wiedervorlage
    '<div class="fu-box'+(fu?' active-fu':'')+'" id="fuBox">'+
@@ -1094,7 +1094,6 @@ var USERS=%%USERS%%;
    document.getElementById("fuSet").onclick=function(){var d=document.getElementById("fuDate").value;if(!d){alert("Bitte ein Datum wählen.");return;}c.followup={due:new Date(d+"T09:00").getTime(),note:document.getElementById("fuNote").value.trim(),done:false};c.updated=Date.now();saveContact(c);openDetail(curId);};
    var fd=document.getElementById("fuDone");if(fd)fd.onclick=function(){if(c.followup)c.followup.done=true;c.updated=Date.now();saveContact(c);openDetail(curId);};
    document.getElementById("delBtn").onclick=function(){if(confirm("Diesen Kontakt mit gesamtem Verlauf endgültig löschen?")){removeContact(curId);renderList();show("list");}};
-   if(ll)renderDetMap(ll);
    var gb=document.getElementById("geoBtn");if(gb)gb.onclick=function(){var b=this;b.textContent="Suche Standort…";geocodeContact(c).then(function(p){c.lat=p.lat;c.lon=p.lon;c.updated=Date.now();saveContact(c);openDetail(curId);}).catch(function(){b.textContent="Standort nicht gefunden";});};
  }
  function contactLatLon(c){
