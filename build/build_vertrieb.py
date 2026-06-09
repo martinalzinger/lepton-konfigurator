@@ -909,7 +909,7 @@ var USERS=%%USERS%%;
      var t=el.tags||{},a=osmAddr(t),loc=[a.plz,a.ort].filter(Boolean).join(" ");
      var key=el.type+"/"+el.id,have=ex[key]||ex[((t.name||"")+"|"+(a.ort||"")).toLowerCase()];if(!have)anyNew=true;
      var web=t["contact:website"]||t.website;
-     return '<div class="crow" style="cursor:default">'+
+     return '<div class="crow" style="cursor:pointer" data-rowkey="'+esc(key)+'" data-rowhave="'+esc(have||"")+'">'+
        '<div class="av" style="background:var(--gold)">'+esc(initials(t.name))+'</div>'+
        '<div class="mid"><div class="nm">'+esc(t.name)+'</div>'+
        '<div class="meta">'+(a.strasse?'<span>'+esc(a.strasse)+'</span>':'')+(loc?'<span>'+esc(loc)+'</span>':'')+
@@ -1000,10 +1000,15 @@ var USERS=%%USERS%%;
  document.getElementById("osmWas").addEventListener("keydown",function(e){if(e.key==="Enter")leadSearch();});
  document.getElementById("osmWo").addEventListener("keydown",function(e){if(e.key==="Enter")leadSearch();});
  document.getElementById("osmResults").addEventListener("click",function(e){
+   if(e.target.closest("a"))return; // Web-Links normal lassen
+   if(e.target.id==="osmAddAll"){var ex=osmExisting(),added=[];Object.keys(osmLast).forEach(function(k){var el=osmLast[k],t=el.tags||{},a=osmAddr(t);if(ex[k]||ex[((t.name||"")+"|"+(a.ort||"")).toLowerCase()])return;var c=osmMake(k);if(c)added.push(c);});if(added.length)bulkSave(added,false);renderOsm(osmEls);renderLeads();osmStatus(added.length+" neue Leads übernommen – sie stehen unten in deiner Lead-Liste.");return;}
    var o=e.target.closest("[data-openid]");if(o){openDetail(o.getAttribute("data-openid"));return;}
+   // „+ Lead"-Button: schnell übernehmen (ohne Öffnen)
    var b=e.target.closest("[data-osm]");
    if(b){var c=osmMake(b.getAttribute("data-osm"));if(c)saveContact(c);b.outerHTML='<span class="pill" style="background:#e6f4ea;color:#15803d">✓ Lead</span>';renderLeads();return;}
-   if(e.target.id==="osmAddAll"){var ex=osmExisting(),added=[];Object.keys(osmLast).forEach(function(k){var el=osmLast[k],t=el.tags||{},a=osmAddr(t);if(ex[k]||ex[((t.name||"")+"|"+(a.ort||"")).toLowerCase()])return;var c=osmMake(k);if(c)added.push(c);});if(added.length)bulkSave(added,false);renderOsm(osmEls);renderLeads();osmStatus(added.length+" neue Leads übernommen – sie stehen unten in deiner Lead-Liste.");}
+   // Klick irgendwo auf die Zeile: erfasst -> öffnen; neu -> übernehmen und öffnen
+   var row=e.target.closest(".crow[data-rowkey]");
+   if(row){var have=row.getAttribute("data-rowhave");if(have){openDetail(have);return;}var c2=osmMake(row.getAttribute("data-rowkey"));if(c2){saveContact(c2);renderLeads();openDetail(c2.id);}}
  });
  // „+ Als Lead" aus einem Karten-Popup
  document.getElementById("osmMap").addEventListener("click",function(e){
