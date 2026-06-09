@@ -15,6 +15,8 @@
 // Die App schickt { was, wo } und den Header x-crm-secret und bekommt { leads: [...] }.
 
 const MODEL = "claude-opus-4-8";
+// URL gestückelt, damit sie beim Kopieren nicht automatisch in <…> verlinkt wird.
+const ANTHROPIC_URL = "https://api.anthropic" + ".com" + "/v1/messages";
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -51,8 +53,8 @@ Sternsiebanlage Lepton 5100 – ideale Kunden sind Betriebe in Kompostierung, Re
 Entsorgung, Erden-/Substratwerke, Steinbruch/Schotter, Garten-/Landschaftsbau, Biogas.
 
 Suche im Web nach REALEN Firmen, die zu "${was}" in der Region "${wo}" passen, und
-recherchiere pro Firma so viel wie möglich (Website/Impressum, Handelsregister,
-Branchenverzeichnisse, Presse/News).
+ermittle die wichtigsten Eckdaten pro Firma (Website/Impressum, ggf. Presse).
+Arbeite ZÜGIG – nutze nur wenige, gezielte Web-Suchen.
 Antworte AUSSCHLIESSLICH mit einem JSON-Array (kein Fließtext, kein Markdown, keine \`\`\`).
 Jedes Element exakt so:
 {"firma":"","strasse":"","plz":"","ort":"","land":"DE","web":"","tel":"","email":"","geschaeftsfuehrer":"","betriebsleiter":"","jahresmenge":"","siebtechnik":"","news":"","quelle":""}
@@ -65,19 +67,20 @@ Jedes Element exakt so:
 - news: ein relevanter aktueller Punkt mit Jahr (z.B. Erweiterung, Investition, neue Anlage), sonst "".
 - quelle: kurz, woher die Infos stammen (z.B. Website, Handelsregister, Presseartikel).
 - WICHTIG: Unbekannte Felder als leerer String "". Nichts erfinden – lieber leer lassen.
-- Höchstens 15 Firmen, dafür gründlich recherchiert. Nur echte, im Web auffindbare Betriebe.`;
+- Höchstens 10 Firmen. Nur echte, im Web auffindbare Betriebe.`;
 
     const base = {
       model: MODEL,
-      max_tokens: 16000,
-      tools: [{ type: "web_search_20260209", name: "web_search" }],
+      max_tokens: 12000,
+      // max_uses begrenzt die Anzahl der Web-Suchen -> deutlich schneller.
+      tools: [{ type: "web_search_20260209", name: "web_search", max_uses: 8 }],
     };
 
     // Web-Suche kann mehrere Runden brauchen -> pause_turn-Schleife
     let messages: unknown[] = [{ role: "user", content: prompt }];
     let data: any = null;
     for (let i = 0; i < 6; i++) {
-      const r = await fetch("https://api.anthropic.com/v1/messages", {
+      const r = await fetch(ANTHROPIC_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
