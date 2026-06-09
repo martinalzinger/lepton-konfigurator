@@ -128,6 +128,10 @@ select.filter{width:auto;min-width:120px;flex:0 0 auto}
 
 .empty{text-align:center;color:var(--faint);padding:42px 16px;font-size:14px}
 .empty svg{width:42px;height:42px;stroke:var(--line-strong);fill:none;stroke-width:1.4;margin-bottom:10px}
+.spin{display:inline-block;width:16px;height:16px;border:2px solid var(--line-strong);border-top-color:var(--red);border-radius:50%;animation:spin .7s linear infinite;vertical-align:-3px;margin-right:8px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.skel{height:62px;border-radius:12px;border:1px solid var(--line);margin-bottom:9px;background:linear-gradient(90deg,var(--field) 25%,#e9e7e1 37%,var(--field) 63%);background-size:400% 100%;animation:shimmer 1.4s ease infinite}
+@keyframes shimmer{0%{background-position:100% 0}100%{background-position:-100% 0}}
 
 /* Buttons */
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;border:1px solid var(--line-strong);background:#fff;color:var(--ink);border-radius:9px;padding:10px 14px;font-size:13px;font-weight:600;cursor:pointer;transition:.12s}
@@ -326,8 +330,7 @@ textarea.field{min-height:74px;resize:vertical;line-height:1.5}
       <div id="osmMap" style="height:340px;border:1px solid var(--line);border-radius:12px;margin-top:10px;display:none"></div>
       <div class="clist" id="osmResults" style="margin-top:10px"></div>
       <p style="font-size:11px;color:var(--faint);margin-top:10px;line-height:1.6">
-        Quelle: © OpenStreetMap-Mitwirkende. Findet erfasste Betriebe – <b>keine amtliche Vollständigkeit</b>; Treffer kurz prüfen, dann als Lead übernehmen. Nur online. Funktioniert <b>bundesland- und landesweit</b> (z. B. „Bayern" oder „Deutschland") – sehr große Gebiete können einige Sekunden dauern.<br>
-        Vollständige Branchen-/Registerlisten und automatische E-Mail-Antworten brauchen einen Server-Dienst und sind hier (noch) nicht enthalten.
+        Sucht <b>bundesland- und landesweit</b> (z. B. „Bayern" oder „Deutschland"). Ist die <b>KI-Suche</b> eingerichtet (Reiter „Daten"), durchsucht Claude das Web nach echten Firmen; sonst läuft automatisch die kostenlose Karten-Suche (© OpenStreetMap-Mitwirkende). <b>Keine amtliche Vollständigkeit</b> – Treffer kurz prüfen, dann als Lead übernehmen. Nur online.
       </p>
     </div>
     <div class="toolbar">
@@ -382,6 +385,16 @@ create policy "crm all" on contacts
         4. Auf jedem weiteren Gerät dieselbe URL + denselben Key eintragen → fertig, alle teilen sich die Daten.<br>
         <span style="color:var(--warn)">Hinweis Sicherheit: Mit diesem Schlüssel kann jeder, der ihn kennt, die Daten lesen/ändern – also nur im Team teilen. Stärkere Absicherung (Login) bauen wir bei Bedarf nach.</span>
       </div>
+    </div>
+    <div class="card">
+      <h3>KI-Lead-Suche (optional)</h3>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:10px">Lässt die Lead-Suche (Reiter „Leads") per <b>Claude + Web-Suche</b> echte Firmen finden. Voraussetzung: die Edge Function <span class="mono">lead-ai</span> ist in deinem Supabase-Projekt deployt (Anleitung weiter unten) und ein <span class="mono">CRM_SECRET</span> gesetzt. Hier denselben Wert eintragen.</p>
+      <div class="fg"><label>KI-Schlüssel (CRM_SECRET)</label><input class="field" id="aiSecret" placeholder="dasselbe wie in der Edge Function"></div>
+      <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;align-items:center">
+        <button class="btn primary" id="aiSave" type="button">Speichern</button>
+        <span id="aiState" style="font-size:12px;color:var(--muted)"></span>
+      </div>
+      <p style="font-size:11px;color:var(--faint);margin-top:10px;line-height:1.6">Kosten: pro Suche fallen bei Anthropic einige Cent an (KI + Web-Suche). KI-Treffer sind <b>Vorschläge zum Prüfen</b> – vor dem Kontaktieren verifizieren (DSGVO/UWG beachten). Ohne diesen Schlüssel nutzt die Suche automatisch die kostenlose Karten-Suche (OpenStreetMap).</p>
     </div>
     <div class="card">
       <h3>Sichern &amp; Übertragen</h3>
@@ -519,8 +532,10 @@ var USERS=%%USERS%%;
  var QKEY="amb_lepton_crm_queue";
  var TKEY="amb_crm_token";
  var SBKEY="amb_crm_sb";
+ var AIKEY="amb_crm_ai";
  var TOKEN=""; try{TOKEN=localStorage.getItem(TKEY)||"";}catch(e){}
  var SB=null; try{SB=JSON.parse(localStorage.getItem(SBKEY)||"null");}catch(e){}
+ var AISECRET=""; try{AISECRET=localStorage.getItem(AIKEY)||"";}catch(e){}
  function cacheRead(){try{var o=JSON.parse(localStorage.getItem(KEY)||"{}");if(!o.contacts)o.contacts=[];return o;}catch(e){return {contacts:[]};}}
  function cacheSave(){try{localStorage.setItem(KEY,JSON.stringify(DB));}catch(e){}}
  var DB=cacheRead();
@@ -539,6 +554,15 @@ var USERS=%%USERS%%;
  function sbUpsert(list){if(!list||!list.length)return Promise.resolve();var body=list.map(function(c){return {id:c.id,data:c};});return fetch(sbBase(),{method:"POST",headers:sbHeaders({"Prefer":"resolution=merge-duplicates,return=minimal"}),body:JSON.stringify(body)}).then(function(r){if(!r.ok)throw new Error("sb "+r.status);});}
  function sbDelete(id){return fetch(sbBase()+"?id=eq."+encodeURIComponent(id),{method:"DELETE",headers:sbHeaders({"Prefer":"return=minimal"})}).then(function(r){if(!r.ok)throw new Error("sb "+r.status);});}
  function sbDeleteAll(){return fetch(sbBase()+"?id=neq.__none__",{method:"DELETE",headers:sbHeaders({"Prefer":"return=minimal"})}).then(function(r){if(!r.ok)throw new Error("sb "+r.status);});}
+
+ /* --- KI-Lead-Suche über Supabase Edge Function "lead-ai" (Claude + Web-Suche) --- */
+ function aiReady(){return !!(SB&&SB.url&&SB.key&&AISECRET);}
+ function aiFnUrl(){return SB.url.replace(/\/+$/,"")+"/functions/v1/lead-ai";}
+ function apiAi(was,wo){
+   return fetch(aiFnUrl(),{method:"POST",headers:{"Authorization":"Bearer "+SB.key,"apikey":SB.key,"Content-Type":"application/json","x-crm-secret":AISECRET},body:JSON.stringify({was:was,wo:wo})})
+     .then(function(r){if(!r.ok)return r.json().catch(function(){return {};}).then(function(e){throw new Error("ai "+r.status+(e&&e.error?(": "+e.error):""));});return r.json();})
+     .then(function(d){return (d.leads||[]).filter(function(x){return x&&(x.firma||x.name);});});
+ }
 
  /* --- Op-Warteschlange (für Offline/Server) --- */
  function queueRead(){try{return JSON.parse(localStorage.getItem(QKEY)||"[]");}catch(e){return [];}}
@@ -793,6 +817,8 @@ var USERS=%%USERS%%;
  /* ---------- Online-Lead-Suche (OpenStreetMap – kostenlos, kein Server, nur online) ---------- */
  var lastQuery="", searchLand="DE", osmEls=[], osmLast={};
  function osmStatus(html){var e=document.getElementById("osmStatus");if(e)e.innerHTML=html;}
+ function osmLoading(msg){osmStatus('<span class="spin"></span>'+msg);var m=document.getElementById("osmMap");if(m)m.style.display="none";var b=document.getElementById("osmResults");if(b)b.innerHTML='<div class="skel"></div><div class="skel" style="opacity:.7"></div><div class="skel" style="opacity:.45"></div>';}
+ function osmClearResults(){var b=document.getElementById("osmResults");if(b)b.innerHTML="";var m=document.getElementById("osmMap");if(m)m.style.display="none";}
  function osmGeocode(place){
    var url="https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=1&accept-language=de&countrycodes=de,at,ch&q="+encodeURIComponent(place);
    return fetch(url,{headers:{"Accept":"application/json"}}).then(function(r){if(!r.ok)throw new Error("geo");return r.json();}).then(function(a){if(!a||!a.length)throw new Error("noplace");return a[0];});
@@ -839,13 +865,17 @@ var USERS=%%USERS%%;
    return {id:uid(),created:Date.now(),updated:Date.now(),status:"lead",
      firma:t.name||"",firma2:t.operator||"",anrede:"",vorname:"",nachname:"",
      lat:(lat!=null?+lat:null),lon:(lon!=null?+lon:null),
-     strasse:a.strasse,plz:a.plz,ort:a.ort,land:searchLand,
+     strasse:a.strasse,plz:a.plz,ort:a.ort,land:(t._land||searchLand),
      tel:t["contact:phone"]||t.phone||"",mobil:"",mail:t["contact:email"]||t.email||"",
      web:t["contact:website"]||t.website||"",ustid:"",owner:(CUR&&CUR.n)||"",
-     quelle:"Karten-Suche: "+lastQuery,
+     quelle:(el.type==="ai"?"KI-Suche: ":"Karten-Suche: ")+lastQuery+(t._quelle?(" – "+t._quelle):""),
      notiz:(t.operator?("Betreiber: "+t.operator):""),
      activities:[],_osm:(el.type+"/"+el.id)};
  }
+ // KI-Treffer in dieselbe Element-Form bringen wie OSM (damit Karten/Übernahme identisch funktionieren)
+ function aiToEl(o,i){return {type:"ai",id:i,lat:(o.lat!=null?+o.lat:null),lon:(o.lon!=null?+o.lon:null),
+   tags:{name:o.firma||o.name||"","addr:street":o.strasse||"","addr:postcode":o.plz||"","addr:city":o.ort||"","contact:phone":o.tel||"",website:o.web||"",_land:(o.land||searchLand||"DE"),_quelle:o.quelle||""}};}
+ function guessLand(wo){var t=(wo||"").toLowerCase();if(/schweiz|switzerland|\bch\b/.test(t))return "CH";if(/österreich|oesterreich|austria|\bat\b/.test(t))return "AT";if(/italien|italy|südtirol|suedtirol/.test(t))return "IT";if(/frankreich|france/.test(t))return "FR";if(/polen|poland/.test(t))return "PL";if(/niederlande|holland/.test(t))return "NL";return "DE";}
  function osmMake(key){var el=osmLast[key];if(!el)return null;var c=osmToContact(el);DB.contacts.push(c);return c;}
  function renderOsm(els){
    osmEls=els;osmLast={};els.forEach(function(el){osmLast[el.type+"/"+el.id]=el;});
@@ -912,8 +942,8 @@ var USERS=%%USERS%%;
    if(!was){osmStatus("Bitte eingeben, wonach gesucht werden soll (z. B. Kompostierung).");return;}
    if(!wo){osmStatus("Bitte eine Region angeben (z. B. Bayern oder eine Stadt).");return;}
    if(navigator.onLine===false){osmStatus("Keine Internetverbindung – die Lead-Suche funktioniert nur online.");return;}
-   lastQuery=was+" in "+wo;document.getElementById("osmResults").innerHTML="";
-   osmStatus('<span class="mono">… </span>Suche „'+esc(lastQuery)+'“ …');
+   lastQuery=was+" in "+wo;
+   osmLoading('Suche „'+esc(lastQuery)+'“ in der Karte …');
    osmGeocode(wo).then(function(g){
      searchLand=({de:"DE",at:"AT",ch:"CH",it:"IT",fr:"FR",pl:"PL",nl:"NL",be:"BE",lu:"LU",cz:"CZ"})[(g.address&&g.address.country_code)||""]||"DE";
      return osmOverpass(osmBuildQuery(osmAreaRef(g),osmFilters(was)));
@@ -921,15 +951,30 @@ var USERS=%%USERS%%;
      var seen={},out=[];els.forEach(function(el){var t=el.tags||{};if(!t.name)return;var k=el.type+"/"+el.id;if(seen[k])return;seen[k]=1;out.push(el);});
      renderOsm(out);
    }).catch(function(e){
+     osmClearResults();
      var m=String((e&&e.message)||e);
      if(/noplace/.test(m))osmStatus('Region „'+esc(wo)+'“ nicht gefunden. Anders schreiben (z. B. „Bayern“, „München“).');
      else if(/overpass/.test(m))osmStatus("Suche fehlgeschlagen oder Region zu groß. Bitte enger eingrenzen (z. B. Stadt statt Bundesland) und erneut versuchen.");
      else osmStatus("Suche gerade nicht möglich (offline oder Kartendienst nicht erreichbar). Später erneut versuchen.");
    });
  }
- document.getElementById("osmSearch").onclick=osmRun;
- document.getElementById("osmWas").addEventListener("keydown",function(e){if(e.key==="Enter")osmRun();});
- document.getElementById("osmWo").addEventListener("keydown",function(e){if(e.key==="Enter")osmRun();});
+ // Haupt-Einstieg der Lead-Suche: KI (falls eingerichtet) zuerst, sonst/als Fallback OSM-Karten-Suche.
+ function leadSearch(){
+   var was=(document.getElementById("osmWas").value||"").trim(),wo=(document.getElementById("osmWo").value||"").trim();
+   if(!was){osmStatus("Bitte eingeben, wonach gesucht werden soll (z. B. Kompostierung).");return;}
+   if(!wo){osmStatus("Bitte eine Region angeben (z. B. Bayern oder eine Stadt).");return;}
+   if(navigator.onLine===false){osmStatus("Keine Internetverbindung – die Lead-Suche funktioniert nur online.");return;}
+   if(!aiReady()){osmRun();return;}
+   lastQuery=was+" in "+wo;searchLand=guessLand(wo);
+   osmLoading('KI durchsucht das Web nach „'+esc(lastQuery)+'“ … (kann ein paar Sekunden dauern)');
+   apiAi(was,wo).then(function(leads){
+     if(!leads.length){osmStatus("KI fand nichts Passendes – ich versuche die Karten-Suche …");return osmRun();}
+     renderOsm(leads.map(aiToEl));
+   }).catch(function(e){osmStatus("KI-Suche nicht möglich ("+esc(String(e&&e.message||e))+") – ich versuche die Karten-Suche …");osmRun();});
+ }
+ document.getElementById("osmSearch").onclick=leadSearch;
+ document.getElementById("osmWas").addEventListener("keydown",function(e){if(e.key==="Enter")leadSearch();});
+ document.getElementById("osmWo").addEventListener("keydown",function(e){if(e.key==="Enter")leadSearch();});
  document.getElementById("osmResults").addEventListener("click",function(e){
    var b=e.target.closest("[data-osm]");
    if(b){var c=osmMake(b.getAttribute("data-osm"));if(c)saveContact(c);b.outerHTML='<span class="pill" style="background:#e6f4ea;color:#15803d">✓ Lead</span>';renderLeads();return;}
@@ -1230,6 +1275,9 @@ var USERS=%%USERS%%;
    var su=document.getElementById("sbUrl"),sk=document.getElementById("sbKey");
    if(su&&document.activeElement!==su)su.value=(SB&&SB.url)||"";
    if(sk&&document.activeElement!==sk)sk.value=(SB&&SB.key)||"";
+   var ai=document.getElementById("aiSecret");if(ai&&document.activeElement!==ai)ai.value=AISECRET||"";
+   var aiSt=document.getElementById("aiState");
+   if(aiSt){aiSt.textContent=aiReady()?"✓ KI-Suche aktiv":(SB&&SB.url&&SB.key?"Schlüssel fehlt – KI-Suche aus":"erst Cloud-Datenbank verbinden");aiSt.style.color=aiReady()?"var(--pos)":"var(--muted)";}
  }
  document.getElementById("reconnBtn").onclick=function(){var b=this;b.textContent="Prüfe…";initBackend();setTimeout(function(){b.textContent="Verbindung prüfen";renderDataConn();},900);};
  document.getElementById("tokenSave").onclick=function(){TOKEN=document.getElementById("tokenInp").value.trim();try{localStorage.setItem(TKEY,TOKEN);}catch(e){}initBackend();setTimeout(renderDataConn,700);};
@@ -1243,6 +1291,7 @@ var USERS=%%USERS%%;
  };
  document.getElementById("sbDisconnect").onclick=function(){SB=null;try{localStorage.removeItem(SBKEY);}catch(e){}MODE="local";setConn(false);renderDataConn();};
  document.getElementById("sbHelp").onclick=function(e){e.preventDefault();document.getElementById("sbHelpBox").classList.toggle("hidden");};
+ document.getElementById("aiSave").onclick=function(){AISECRET=document.getElementById("aiSecret").value.trim();try{localStorage.setItem(AIKEY,AISECRET);}catch(e){}renderDataConn();};
 
  /* ---------- Erinnerungen (Browser-Benachrichtigungen) ---------- */
  var NKEY="amb_crm_notified";
@@ -1462,7 +1511,7 @@ out=out.replace("%%USERS%%",USERS_JS)
 
 for tok in ["%%RED%%","%%RED2%%","%%LOGOL%%","%%LOGOD%%","%%USERS%%"]:
     assert tok not in out, "Token übrig: "+tok
-for need in ['id="gateForm"','id="clist"','id="actModal"','renderDashboard','amb_lepton_crm','amb_lepton_configs','checkReminders','initBackend','api.php','id="connState"','id="osmSearch"','overpass-api.de','osmToContact','id="osmMap"','ensureLeaflet','tile.openstreetmap','id="sbUrl"','sbUpsert','supabase.co','id="cMap"','showContactsMap','id="actBetrag"','flagIcon','id="detMap"','contactLatLon']:
+for need in ['id="gateForm"','id="clist"','id="actModal"','renderDashboard','amb_lepton_crm','amb_lepton_configs','checkReminders','initBackend','api.php','id="connState"','id="osmSearch"','overpass-api.de','osmToContact','id="osmMap"','ensureLeaflet','tile.openstreetmap','id="sbUrl"','sbUpsert','supabase.co','id="cMap"','showContactsMap','id="actBetrag"','flagIcon','id="detMap"','contactLatLon','leadSearch','apiAi','id="aiSecret"','functions/v1/lead-ai']:
     assert need in out, "Pflicht-Markierung fehlt: "+need
 # Leaflet (Karten-Bibliothek) muss lokal vorhanden sein (Laufzeit-Abhängigkeit der Standort-Karte)
 for vf in ["leaflet.js","leaflet.css","images/marker-icon.png","images/marker-shadow.png"]:
