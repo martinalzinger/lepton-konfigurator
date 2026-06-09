@@ -305,7 +305,9 @@ textarea.field{min-height:74px;resize:vertical;line-height:1.5}
       <select class="filter" id="fLand"><option value="">Alle Länder</option></select>
       <select class="filter" id="fOwner"><option value="">Alle Vertriebler</option></select>
       <select class="filter" id="fSort"><option value="updated">Zuletzt aktiv</option><option value="name">Name A–Z</option><option value="created">Neueste</option><option value="due">Wiedervorlage</option></select>
+      <button class="btn sm" id="mapToggle" type="button"><svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.7"><path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"/><path d="M9 4v14M15 6v14"/></svg>Karte</button>
     </div>
+    <div id="cMap" style="height:360px;border:1px solid var(--line);border-radius:12px;margin-bottom:12px;display:none"></div>
     <div class="clist" id="clist"></div>
   </section>
 
@@ -355,6 +357,33 @@ textarea.field{min-height:74px;resize:vertical;line-height:1.5}
       </div>
     </div>
     <div class="card">
+      <h3>Cloud-Datenbank (online &amp; geteilt – empfohlen)</h3>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:12px">Kostenlos über <b>Supabase</b>. Trage die Zugangsdaten aus deinem Projekt ein (Supabase → Project Settings → API). Sie bleiben <b>nur auf diesem Gerät</b>. Danach sehen alle Vertriebler denselben Stand – ohne eigenen Server.</p>
+      <div class="fg"><label>Project-URL</label><input class="field" id="sbUrl" placeholder="https://xxxxxxxx.supabase.co"></div>
+      <div class="fg" style="margin-top:8px"><label>anon public Key</label><input class="field" id="sbKey" placeholder="eyJhbGciOi…"></div>
+      <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+        <button class="btn primary" id="sbConnect" type="button">Verbinden</button>
+        <button class="btn" id="sbDisconnect" type="button">Trennen</button>
+        <a class="btn ghost sm" href="#" id="sbHelp">Anleitung (1× einrichten)</a>
+      </div>
+      <div id="sbHelpBox" class="hidden" style="margin-top:12px;font-size:12px;color:var(--muted);line-height:1.7;border-top:1px solid var(--line);padding-top:10px">
+        <b>So richtest du es einmalig ein (ca. 5 Min):</b><br>
+        1. Auf <span class="mono">supabase.com</span> kostenlos registrieren → <b>New Project</b> (Region <b>Frankfurt/EU</b> wählen – Datenschutz).<br>
+        2. Im Projekt links <b>SQL Editor</b> öffnen, folgendes einfügen und ausführen:
+        <pre style="white-space:pre-wrap;background:var(--field);border:1px solid var(--line);border-radius:8px;padding:8px;margin:6px 0;font-family:var(--mono);font-size:11px">create table if not exists contacts (
+  id text primary key,
+  data jsonb,
+  updated_at timestamptz default now()
+);
+alter table contacts enable row level security;
+create policy "crm all" on contacts
+  for all using (true) with check (true);</pre>
+        3. Links <b>Project Settings → API</b>: <b>Project URL</b> und den <b>anon public</b> Key kopieren und oben eintragen → <b>Verbinden</b>.<br>
+        4. Auf jedem weiteren Gerät dieselbe URL + denselben Key eintragen → fertig, alle teilen sich die Daten.<br>
+        <span style="color:var(--warn)">Hinweis Sicherheit: Mit diesem Schlüssel kann jeder, der ihn kennt, die Daten lesen/ändern – also nur im Team teilen. Stärkere Absicherung (Login) bauen wir bei Bedarf nach.</span>
+      </div>
+    </div>
+    <div class="card">
       <h3>Sichern &amp; Übertragen</h3>
       <p style="font-size:13px;color:var(--muted);margin-bottom:12px">Exportiere alle Kontakte &amp; Aktivitäten als Datei – zur Sicherung oder um sie auf ein anderes Gerät / zu Kollegen zu übertragen.</p>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
@@ -394,7 +423,7 @@ textarea.field{min-height:74px;resize:vertical;line-height:1.5}
   <section class="view" id="view-form"></section>
 
   <div class="foot">
-    Alzinger Maschinenbau · Vertrieb / CRM — Offline-PWA, Daten nur auf diesem Gerät.<br>
+    Alzinger Maschinenbau · Vertrieb / CRM — PWA, online wie offline.<br>
     <a href="../index.html">Konfigurator</a> · <a href="../ersatzteile/">Ersatzteile</a>
   </div>
 </div>
@@ -419,9 +448,15 @@ textarea.field{min-height:74px;resize:vertical;line-height:1.5}
       <label>Datum &amp; Uhrzeit</label>
       <input class="field" type="datetime-local" id="actDate">
     </div>
-    <div class="fg" id="actOfferWrap" style="margin-bottom:10px">
-      <label>Verknüpftes Angebot aus dem Konfigurator</label>
-      <select class="field" id="actOffer"><option value="">— keines —</option></select>
+    <div id="actOfferWrap" style="margin-bottom:10px">
+      <div class="fg" style="margin-bottom:10px">
+        <label>Angebot aus dem Konfigurator verknüpfen</label>
+        <select class="field" id="actOffer"><option value="">— keines —</option></select>
+      </div>
+      <div style="display:flex;gap:10px">
+        <div class="fg" style="flex:1"><label>Angebot-Nr.</label><input class="field" id="actOfferNr" placeholder="z. B. 2026-118"></div>
+        <div class="fg" style="flex:1"><label>Betrag (€)</label><input class="field" id="actBetrag" inputmode="decimal" placeholder="z. B. 340300"></div>
+      </div>
     </div>
     <div class="fg" style="margin-bottom:6px">
       <label>Notiz</label>
@@ -479,47 +514,87 @@ var USERS=%%USERS%%;
        localStorage dient als Offline-Spiegel; offline gemachte Änderungen werden
        bei nächster Verbindung nachgereicht.
      - MODE="local": kein Server -> nur localStorage (pro Gerät), wie bisher. */
- var MODE="local";
+ var MODE="local";                 // "local" | "server" (PHP) | "cloud" (Supabase)
  var API="api.php";
  var QKEY="amb_lepton_crm_queue";
  var TKEY="amb_crm_token";
+ var SBKEY="amb_crm_sb";
  var TOKEN=""; try{TOKEN=localStorage.getItem(TKEY)||"";}catch(e){}
+ var SB=null; try{SB=JSON.parse(localStorage.getItem(SBKEY)||"null");}catch(e){}
  function cacheRead(){try{var o=JSON.parse(localStorage.getItem(KEY)||"{}");if(!o.contacts)o.contacts=[];return o;}catch(e){return {contacts:[]};}}
  function cacheSave(){try{localStorage.setItem(KEY,JSON.stringify(DB));}catch(e){}}
  var DB=cacheRead();
  function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
  function byId(id){for(var i=0;i<DB.contacts.length;i++)if(DB.contacts[i].id===id)return DB.contacts[i];return null;}
 
- /* --- API --- */
+ /* --- PHP-API (eigener Server) --- */
  function apiGet(){return fetch(API+"?action=all",{cache:"no-store",headers:TOKEN?{"X-CRM-Token":TOKEN}:{}}).then(function(r){if(!r.ok)throw new Error("http "+r.status);return r.json();});}
  function apiPost(action,body){var h={"Content-Type":"application/json"};if(TOKEN)h["X-CRM-Token"]=TOKEN;return fetch(API+"?action="+action,{method:"POST",headers:h,body:JSON.stringify(body)}).then(function(r){if(!r.ok)throw new Error("http "+r.status);return r.json();});}
+
+ /* --- Supabase (kostenlose Cloud-DB) REST: Tabelle "contacts" (id text, data jsonb) --- */
+ function sbReady(){return !!(SB&&SB.url&&SB.key);}
+ function sbBase(){return SB.url.replace(/\/+$/,"")+"/rest/v1/contacts";}
+ function sbHeaders(extra){var h={"apikey":SB.key,"Authorization":"Bearer "+SB.key,"Content-Type":"application/json"};if(extra)for(var k in extra)h[k]=extra[k];return h;}
+ function sbGet(){return fetch(sbBase()+"?select=data",{cache:"no-store",headers:sbHeaders()}).then(function(r){if(!r.ok)throw new Error("sb "+r.status);return r.json();}).then(function(rows){return rows.map(function(x){return x.data;}).filter(Boolean);});}
+ function sbUpsert(list){if(!list||!list.length)return Promise.resolve();var body=list.map(function(c){return {id:c.id,data:c};});return fetch(sbBase(),{method:"POST",headers:sbHeaders({"Prefer":"resolution=merge-duplicates,return=minimal"}),body:JSON.stringify(body)}).then(function(r){if(!r.ok)throw new Error("sb "+r.status);});}
+ function sbDelete(id){return fetch(sbBase()+"?id=eq."+encodeURIComponent(id),{method:"DELETE",headers:sbHeaders({"Prefer":"return=minimal"})}).then(function(r){if(!r.ok)throw new Error("sb "+r.status);});}
+ function sbDeleteAll(){return fetch(sbBase()+"?id=neq.__none__",{method:"DELETE",headers:sbHeaders({"Prefer":"return=minimal"})}).then(function(r){if(!r.ok)throw new Error("sb "+r.status);});}
 
  /* --- Op-Warteschlange (für Offline/Server) --- */
  function queueRead(){try{return JSON.parse(localStorage.getItem(QKEY)||"[]");}catch(e){return [];}}
  function queueWrite(q){try{localStorage.setItem(QKEY,JSON.stringify(q));}catch(e){}}
  function enqueue(op){var q=queueRead();q.push(op);queueWrite(q);}
- function flush(){if(MODE!=="server")return Promise.resolve();var q=queueRead();if(!q.length)return Promise.resolve();
-   return apiPost("batch",{ops:q}).then(function(res){queueWrite([]);if(res&&res.rev!=null)DB.rev=res.rev;}).catch(function(){/* Server offline: behalten, später erneut versuchen */});}
+ function flush(){
+   if(MODE==="local")return Promise.resolve();
+   var q=queueRead();if(!q.length)return Promise.resolve();
+   if(MODE==="server")return apiPost("batch",{ops:q}).then(function(res){queueWrite([]);if(res&&res.rev!=null)DB.rev=res.rev;}).catch(function(){/* offline: behalten */});
+   // cloud: Ops sequenziell an Supabase; bei Fehler Rest behalten und später erneut
+   var i=0;
+   function step(){
+     if(i>=q.length){queueWrite([]);return Promise.resolve();}
+     var op=q[i],pr;
+     if(op.op==="upsert")pr=sbUpsert([op.contact]);
+     else if(op.op==="delete")pr=sbDelete(op.id);
+     else if(op.op==="bulk")pr=op.replace?sbDeleteAll().then(function(){return sbUpsert(op.contacts||[]);}):sbUpsert(op.contacts||[]);
+     else pr=Promise.resolve();
+     return pr.then(function(){i++;return step();});
+   }
+   return step().catch(function(){if(i>0)queueWrite(q.slice(i));});
+ }
 
- /* --- Mutationen: lokal optimistisch + (im Server-Modus) an den Server --- */
+ /* --- Mutationen: lokal optimistisch + (online) in die geteilte Quelle --- */
  function persist(){cacheSave();} /* nur lokaler Spiegel */
- function saveContact(c){cacheSave();if(MODE==="server"){enqueue({op:"upsert",contact:c});flush();}}
- function removeContact(id){DB.contacts=DB.contacts.filter(function(x){return x.id!==id;});cacheSave();if(MODE==="server"){enqueue({op:"delete",id:id});flush();}}
- function bulkSave(list,replace){cacheSave();if(MODE==="server"){enqueue({op:"bulk",contacts:list,replace:!!replace});flush();}}
+ function saveContact(c){cacheSave();if(MODE!=="local"){enqueue({op:"upsert",contact:c});flush();}}
+ function removeContact(id){DB.contacts=DB.contacts.filter(function(x){return x.id!==id;});cacheSave();if(MODE!=="local"){enqueue({op:"delete",id:id});flush();}}
+ function bulkSave(list,replace){cacheSave();if(MODE!=="local"){enqueue({op:"bulk",contacts:list,replace:!!replace});flush();}}
 
- /* --- Server-Sync --- */
- function pull(){return apiGet().then(function(d){DB.contacts=d.contacts||[];DB.rev=d.rev||0;cacheSave();rerenderCurrent();});}
- function syncFromServer(){if(MODE!=="server")return;flush().then(pull).catch(function(){});}
- function initServer(){
+ /* --- Online-Sync --- */
+ function pull(){
+   if(MODE==="cloud")return sbGet().then(function(list){DB.contacts=list||[];cacheSave();rerenderCurrent();});
+   return apiGet().then(function(d){DB.contacts=d.contacts||[];DB.rev=d.rev||0;cacheSave();rerenderCurrent();});
+ }
+ function syncFromServer(){if(MODE==="local")return;flush().then(pull).catch(function(){});}
+ // Backend erkennen: zuerst Cloud (Supabase), dann eigener PHP-Server, sonst lokal.
+ function initBackend(){
+   if(sbReady()){
+     sbGet().then(function(list){
+       MODE="cloud";setConn(true);
+       if(!(list&&list.length)&&DB.contacts&&DB.contacts.length){enqueue({op:"bulk",contacts:DB.contacts,replace:false});}
+       flush().then(sbGet).then(function(l){DB.contacts=l||[];cacheSave();rerenderCurrent();}).catch(function(){});
+     }).catch(function(){initPhp();});
+   } else initPhp();
+ }
+ function initPhp(){
    apiGet().then(function(data){
      MODE="server";setConn(true);DB.rev=data.rev||0;
-     var serverEmpty=!(data.contacts&&data.contacts.length);
-     if(serverEmpty&&DB.contacts&&DB.contacts.length){enqueue({op:"bulk",contacts:DB.contacts,replace:false});}
+     if(!(data.contacts&&data.contacts.length)&&DB.contacts&&DB.contacts.length){enqueue({op:"bulk",contacts:DB.contacts,replace:false});}
      flush().then(function(){return apiGet();}).then(function(d){DB.contacts=d.contacts||[];DB.rev=d.rev||0;cacheSave();rerenderCurrent();}).catch(function(){});
    }).catch(function(){MODE="local";setConn(false);});
  }
  function setConn(ok){
-   var el=document.getElementById("connState");if(el){el.className="conn "+(ok?"on":"off");el.textContent=ok?"● Server – geteilt":"● Lokal – dieses Gerät";el.title=ok?"Mit dem Firmenserver verbunden. Daten werden für alle geteilt.":"Kein Server gefunden. Daten nur auf diesem Gerät (Austausch per Export/Import).";}
+   var el=document.getElementById("connState");
+   var lab=MODE==="cloud"?"● Cloud – geteilt":(MODE==="server"?"● Server – geteilt":"● Lokal – dieses Gerät");
+   if(el){el.className="conn "+(ok?"on":"off");el.textContent=lab;el.title=ok?"Online verbunden – Daten werden für alle geteilt.":"Kein Online-Speicher verbunden. Daten nur auf diesem Gerät (Reiter „Daten“).";}
    var d=document.getElementById("connData");if(d)renderDataConn();
  }
  function rerenderCurrent(){
@@ -648,11 +723,58 @@ var USERS=%%USERS%%;
      return lastActivityTs(b)-lastActivityTs(a);
    });
    document.getElementById("listSub").textContent=arr.length+" von "+DB.contacts.length+" Kontakten";
+   lastListArr=arr;
    var el=document.getElementById("clist");
-   if(!arr.length){el.innerHTML=emptyState(DB.contacts.length?"Keine Treffer für diese Filter.":"Noch keine Kontakte. Lege den ersten an (+ unten rechts).");return;}
-   el.innerHTML=arr.map(contactRow).join("");
+   if(!arr.length){el.innerHTML=emptyState(DB.contacts.length?"Keine Treffer für diese Filter.":"Noch keine Kontakte. Lege den ersten an (+ unten rechts).");}
+   else el.innerHTML=arr.map(contactRow).join("");
+   if(cMapOpen)showContactsMap();
  }
  function emptyState(msg){return '<div class="empty"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 00-4-4H7a4 4 0 00-4 4v2"/><circle cx="9.5" cy="8" r="3.5"/><path d="M19 8v6M22 11h-6"/></svg><div>'+esc(msg)+'</div></div>';}
+
+ /* ---------- Kontakte-Karte (Standorte mit Fahnen-Markern) ---------- */
+ var lastListArr=[],cMapOpen=false,_cmap=null,_cmarkers=null,_geoBusy=false;
+ function flagIcon(L){return L.divIcon({className:"flag-mark",html:'<div style="font-size:22px;line-height:1;filter:drop-shadow(0 1px 1px rgba(0,0,0,.45))">🚩</div>',iconSize:[24,24],iconAnchor:[3,22],popupAnchor:[8,-20]});}
+ function addContactMarker(L,c){
+   if(!_cmarkers||c.lat==null||c.lon==null)return;
+   var loc=[c.plz,c.ort].filter(Boolean).join(" ");
+   var pop='<b>'+esc(displayName(c))+'</b>'+(loc?'<br>'+esc(loc):'')+(c.land?' ('+esc(c.land)+')':'')+
+     '<br><button data-cid="'+c.id+'" style="margin-top:6px;border:0;background:#c00000;color:#fff;border-radius:6px;padding:5px 9px;font:600 12px sans-serif;cursor:pointer">Öffnen</button>';
+   L.marker([c.lat,c.lon],{icon:flagIcon(L)}).addTo(_cmarkers).bindPopup(pop);
+ }
+ function geocodeContact(c){
+   var parts=[c.strasse,[c.plz,c.ort].filter(Boolean).join(" "),landLabel(c.land)].filter(Boolean);
+   if(!parts.length)return Promise.reject();
+   return fetch("https://nominatim.openstreetmap.org/search?format=json&limit=1&accept-language=de&q="+encodeURIComponent(parts.join(", ")))
+     .then(function(r){if(!r.ok)throw 0;return r.json();}).then(function(a){if(!a||!a.length)throw 0;return {lat:parseFloat(a[0].lat),lon:parseFloat(a[0].lon)};});
+ }
+ function geocodePending(L,list,i){
+   if(i>=list.length||!cMapOpen){_geoBusy=false;return;}
+   var c=list[i];
+   geocodeContact(c).then(function(p){c.lat=p.lat;c.lon=p.lon;saveContact(c);if(cMapOpen)addContactMarker(L,c);}).catch(function(){}).then(function(){setTimeout(function(){geocodePending(L,list,i+1);},600);});
+ }
+ function showContactsMap(){
+   var div=document.getElementById("cMap");
+   ensureLeaflet().then(function(L){
+     if(!_cmap){_cmap=L.map(div).setView([47.5,9],5);L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"© OpenStreetMap-Mitwirkende"}).addTo(_cmap);}
+     if(_cmarkers)_cmarkers.remove();
+     _cmarkers=L.layerGroup().addTo(_cmap);
+     var bounds=[],pending=[];
+     lastListArr.forEach(function(c){
+       if(c.lat!=null&&c.lon!=null){addContactMarker(L,c);bounds.push([c.lat,c.lon]);}
+       else if(c.ort||c.strasse||c.plz){pending.push(c);}
+     });
+     if(bounds.length)_cmap.fitBounds(bounds,{padding:[28,28],maxZoom:12});
+     setTimeout(function(){try{_cmap.invalidateSize();}catch(e){}},130);
+     if(pending.length&&!_geoBusy){_geoBusy=true;geocodePending(L,pending,0);}
+   }).catch(function(){div.style.display="none";});
+ }
+ document.getElementById("mapToggle").onclick=function(){
+   cMapOpen=!cMapOpen;
+   document.getElementById("cMap").style.display=cMapOpen?"block":"none";
+   this.classList.toggle("primary",cMapOpen);
+   if(cMapOpen)showContactsMap();
+ };
+ document.getElementById("cMap").addEventListener("click",function(e){var b=e.target.closest("[data-cid]");if(b)openDetail(b.getAttribute("data-cid"));});
 
  /* ---------- Leads ---------- */
  function renderLeads(){
@@ -712,6 +834,7 @@ var USERS=%%USERS%%;
    var t=el.tags||{},a=osmAddr(t);var lat=el.lat||(el.center&&el.center.lat),lon=el.lon||(el.center&&el.center.lon);
    return {id:uid(),created:Date.now(),updated:Date.now(),status:"lead",
      firma:t.name||"",firma2:t.operator||"",anrede:"",vorname:"",nachname:"",
+     lat:(lat!=null?+lat:null),lon:(lon!=null?+lon:null),
      strasse:a.strasse,plz:a.plz,ort:a.ort,land:searchLand,
      tel:t["contact:phone"]||t.phone||"",mobil:"",mail:t["contact:email"]||t.email||"",
      web:t["contact:website"]||t.website||"",ustid:"",owner:(CUR&&CUR.n)||"",
@@ -875,13 +998,14 @@ var USERS=%%USERS%%;
      '</div>'+
    '</div>'+
    // Aktivitäten
-   '<h3 style="font-family:var(--mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:18px 0 10px">Verlauf ('+acts.length+')</h3>'+
-   (acts.length?'<div class="tl">'+acts.map(actItem).join("")+'</div>':'<div style="font-size:13px;color:var(--faint);padding:4px 0 14px">Noch nichts erfasst. Erfasse den ersten Anruf, eine Mail oder ein Angebot.</div>')+
+   '<h3 style="font-family:var(--mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:18px 0 10px">Verlauf / Lebenslauf ('+acts.length+')</h3>'+
+   (acts.length?'<div class="tl">'+acts.map(actItem).join("")+'</div>':'<div style="font-size:13px;color:var(--muted);background:var(--field);border:1px dashed var(--line-strong);border-radius:12px;padding:14px;text-align:center">Hier entsteht der komplette Verlauf: <b>wann</b> war Kontakt, <b>wer</b>, Anrufe, E-Mails, <b>Angebote</b> (mit Nr./Betrag) und Notizen.<br><button class="btn sm primary" id="emptyAddAct" style="margin-top:10px">+ Erste Aktivität erfassen</button></div>')+
    '<div style="margin:22px 0 8px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn danger sm" id="delBtn">Kontakt löschen</button></div>';
    var v=document.getElementById("view-detail");v.innerHTML=html;show("detail");
    document.getElementById("backBtn").onclick=function(){renderList();show("list");};
    document.getElementById("editBtn").onclick=function(){openForm(curId);};
    document.getElementById("addActBtn").onclick=function(){openActModal(curId);};
+   var eab=document.getElementById("emptyAddAct");if(eab)eab.onclick=function(){openActModal(curId);};
    document.getElementById("dStatus").onchange=function(){c.status=this.value;c.updated=Date.now();saveContact(c);openDetail(curId);};
    document.getElementById("fuSet").onclick=function(){var d=document.getElementById("fuDate").value;if(!d){alert("Bitte ein Datum wählen.");return;}c.followup={due:new Date(d+"T09:00").getTime(),note:document.getElementById("fuNote").value.trim(),done:false};c.updated=Date.now();saveContact(c);openDetail(curId);};
    var fd=document.getElementById("fuDone");if(fd)fd.onclick=function(){if(c.followup)c.followup.done=true;c.updated=Date.now();saveContact(c);openDetail(curId);};
@@ -894,7 +1018,12 @@ var USERS=%%USERS%%;
      mailout:'<path d="M3 7l9 6 9-6"/>',mailin:'<path d="M3 7l9 6 9-6"/>',
      besuch:'<path d="M12 21s-7-5.2-7-11a7 7 0 0114 0c0 5.8-7 11-7 11z"/>',notiz:'<path d="M5 7h14M5 12h14M5 17h9"/>'}[a.type]||'<circle cx="12" cy="12" r="6"/>';
    var offer="";
-   if(a.offer){offer='<a class="tl-offer" href="../index.html" title="Im Konfigurator gespeichertes Angebot"><svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/><path d="M14 3v5h5"/></svg>'+esc(a.offer)+'</a>';}
+   var bits=[];
+   if(a.offerNr)bits.push("Nr "+esc(a.offerNr));
+   if(a.betrag)bits.push(esc(fmtEur(a.betrag)));
+   if(a.offer)bits.push("Konfig: "+esc(a.offer));
+   if(bits.length){offer='<a class="tl-offer" href="../index.html" title="Angebot">'+
+     '<svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/><path d="M14 3v5h5"/></svg>'+bits.join(" · ")+'</a>';}
    return '<div class="tl-item '+cls+'">'+
      '<div class="tl-dot"><svg viewBox="0 0 24 24">'+icon+'</svg></div>'+
      '<div class="tl-top"><span class="tl-type">'+esc(actLabel(a.type))+'</span>'+
@@ -903,6 +1032,7 @@ var USERS=%%USERS%%;
      (a.note?'<div class="tl-note">'+esc(a.note)+'</div>':'')+offer+
    '</div>';
  }
+ function fmtEur(v){var n=parseFloat(String(v).replace(/[^0-9.,-]/g,"").replace(/\./g,"").replace(",","."));if(isNaN(n))return String(v);return n.toLocaleString("de-DE")+" €";}
  // Aktivität löschen
  document.getElementById("view-detail").addEventListener("click",function(e){
    var d=e.target.closest(".tl-del");if(!d)return;var aid=d.getAttribute("data-act");var c=byId(curId);if(!c)return;
@@ -919,6 +1049,7 @@ var USERS=%%USERS%%;
    var bs=document.querySelectorAll("#actSeg button");for(var i=0;i<bs.length;i++)bs[i].classList.toggle("on",bs[i].getAttribute("data-t")==="anruf");
    document.getElementById("actDate").value=nowLocalInput();
    document.getElementById("actNote").value="";
+   document.getElementById("actOfferNr").value="";document.getElementById("actBetrag").value="";
    document.getElementById("actFu").checked=true;document.getElementById("actFuDays").value=7;
    // Angebote aus Konfigurator füllen
    var offers=loadOffers();var sel=document.getElementById("actOffer");
@@ -936,7 +1067,9 @@ var USERS=%%USERS%%;
    var c=byId(actForId);if(!c)return;
    var dv=document.getElementById("actDate").value;var ts=dv?new Date(dv).getTime():Date.now();
    var a={id:uid(),type:actType,date:ts,note:document.getElementById("actNote").value.trim(),by:(CUR&&CUR.n)||""};
-   if(actType==="angebot"){var off=document.getElementById("actOffer").value;if(off)a.offer=off;}
+   if(actType==="angebot"){var off=document.getElementById("actOffer").value;if(off)a.offer=off;var onr=document.getElementById("actOfferNr").value.trim();if(onr)a.offerNr=onr;var ab=document.getElementById("actBetrag").value.trim();if(ab)a.betrag=ab;
+     // Wenn ein Konfigurator-Angebot gewählt wurde, Nr automatisch übernehmen
+     if(off&&!a.offerNr){var offs=loadOffers();var o=offs[off];if(o&&o.fields&&o.fields.m_nr)a.offerNr=o.fields.m_nr;}}
    c.activities=c.activities||[];c.activities.push(a);
    // Status automatisch hochstufen
    if(actType==="angebot"&&(c.status==="lead"||c.status==="interessent"))c.status="angebot";
@@ -1050,21 +1183,37 @@ var USERS=%%USERS%%;
    document.getElementById("csvTpl").href="data:text/csv;charset=utf-8,"+encodeURIComponent(tpl);})();
  document.getElementById("wipeBtn").onclick=function(){if(confirm("Wirklich ALLE CRM-Daten auf diesem Gerät löschen? Das kann nicht rückgängig gemacht werden.")){if(confirm("Sicher? Letzte Warnung.")){DB={contacts:[]};bulkSave([],true);renderDashboard();renderList();show("dashboard");}}};
 
- /* ---------- Daten-Reiter: Server-Status ---------- */
+ /* ---------- Daten-Reiter: Verbindungsstatus + Cloud-Konfiguration ---------- */
  function renderDataConn(){
    var body=document.getElementById("connDataBody");if(!body)return;
    var q=queueRead().length;
-   if(MODE==="server"){
+   if(MODE==="cloud"){
+     body.innerHTML='<div style="font-size:14px;color:var(--pos);font-weight:700">✓ Mit der Cloud-Datenbank verbunden – Daten online &amp; für alle geteilt.</div>'+
+       '<div style="font-size:12px;color:var(--muted);margin-top:4px">'+DB.contacts.length+' Kontakte'+(q?(' · '+q+' Änderung(en) werden übertragen'):' · alles synchron')+'</div>';
+   } else if(MODE==="server"){
      body.innerHTML='<div style="font-size:14px;color:var(--pos);font-weight:700">✓ Mit dem Server verbunden – Daten werden für alle geteilt.</div>'+
        '<div style="font-size:12px;color:var(--muted);margin-top:4px">'+DB.contacts.length+' Kontakte · Stand '+(DB.rev||0)+(q?(' · '+q+' Änderung(en) warten auf Übertragung'):' · alles synchron')+'</div>';
    } else {
      body.innerHTML='<div style="font-size:14px;font-weight:700">Lokaler Modus – Daten nur auf diesem Gerät.</div>'+
-       '<div style="font-size:12px;color:var(--muted);margin-top:4px">Kein Server gefunden. Für <b>geteilte Daten</b> den Ordner <span class="mono">vertrieb/</span> samt <span class="mono">api.php</span> auf einen Server mit PHP legen und dort aufrufen. Sonst Austausch per Export/Import.'+(q?(' ('+q+' lokale Änderung(en) bereit zur Übertragung, sobald ein Server da ist.)'):'')+'</div>';
+       '<div style="font-size:12px;color:var(--muted);margin-top:4px">Für <b>online &amp; geteilt</b> unten eine kostenlose Cloud-Datenbank verbinden – oder einen eigenen PHP-Server nutzen. Sonst Austausch per Export/Import.'+(q?(' ('+q+' lokale Änderung(en) bereit zur Übertragung.)'):'')+'</div>';
    }
    var ti=document.getElementById("tokenInp");if(ti&&document.activeElement!==ti)ti.value=TOKEN;
+   var su=document.getElementById("sbUrl"),sk=document.getElementById("sbKey");
+   if(su&&document.activeElement!==su)su.value=(SB&&SB.url)||"";
+   if(sk&&document.activeElement!==sk)sk.value=(SB&&SB.key)||"";
  }
- document.getElementById("reconnBtn").onclick=function(){var b=this;b.textContent="Prüfe…";initServer();setTimeout(function(){b.textContent="Verbindung prüfen";renderDataConn();},900);};
- document.getElementById("tokenSave").onclick=function(){TOKEN=document.getElementById("tokenInp").value.trim();try{localStorage.setItem(TKEY,TOKEN);}catch(e){}initServer();setTimeout(renderDataConn,700);};
+ document.getElementById("reconnBtn").onclick=function(){var b=this;b.textContent="Prüfe…";initBackend();setTimeout(function(){b.textContent="Verbindung prüfen";renderDataConn();},900);};
+ document.getElementById("tokenSave").onclick=function(){TOKEN=document.getElementById("tokenInp").value.trim();try{localStorage.setItem(TKEY,TOKEN);}catch(e){}initBackend();setTimeout(renderDataConn,700);};
+ document.getElementById("sbConnect").onclick=function(){
+   var url=document.getElementById("sbUrl").value.trim(),key=document.getElementById("sbKey").value.trim();
+   if(!/^https?:\/\//.test(url)||!key){alert("Bitte Project-URL (https://…supabase.co) und den anon-Key eingeben.");return;}
+   SB={url:url,key:key};try{localStorage.setItem(SBKEY,JSON.stringify(SB));}catch(e){}
+   var b=this;b.textContent="Verbinde…";
+   sbGet().then(function(){initBackend();setTimeout(function(){b.textContent="Verbinden";renderDataConn();},600);})
+     .catch(function(){b.textContent="Verbinden";alert("Verbindung fehlgeschlagen. Bitte URL/Key prüfen und sicherstellen, dass die Tabelle contacts samt Zugriffsregel angelegt ist (siehe Anleitung).");renderDataConn();});
+ };
+ document.getElementById("sbDisconnect").onclick=function(){SB=null;try{localStorage.removeItem(SBKEY);}catch(e){}MODE="local";setConn(false);renderDataConn();};
+ document.getElementById("sbHelp").onclick=function(e){e.preventDefault();document.getElementById("sbHelpBox").classList.toggle("hidden");};
 
  /* ---------- Erinnerungen (Browser-Benachrichtigungen) ---------- */
  var NKEY="amb_crm_notified";
@@ -1094,11 +1243,11 @@ var USERS=%%USERS%%;
    if(booted)return;booted=true;
    initFilters();renderDashboard();renderList();show("dashboard");
    refreshNotifBtn();renderDataConn();
-   initServer();                 // Server erkennen + geteilte Daten laden (sonst lokal)
+   initBackend();                // Cloud/Server erkennen + geteilte Daten laden (sonst lokal)
    checkReminders();
    setInterval(function(){syncFromServer();checkReminders();if(curView==="dashboard")updateBadge();},30*1000);
    document.addEventListener("visibilitychange",function(){if(!document.hidden){syncFromServer();checkReminders();}});
-   window.addEventListener("online",function(){if(MODE==="local")initServer();else syncFromServer();});
+   window.addEventListener("online",function(){if(MODE==="local")initBackend();else syncFromServer();});
  }
 
  if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){});});}
@@ -1131,7 +1280,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v5";
+const CACHE="vertrieb-v6";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png",
   "./vendor/leaflet.js","./vendor/leaflet.css",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
@@ -1159,6 +1308,7 @@ self.addEventListener("fetch",e=>{
   if(req.url.indexOf("api.php")>=0)return;            // dynamische API immer direkt ans Netz, nie cachen
   if(req.url.indexOf("nominatim")>=0||req.url.indexOf("overpass")>=0)return; // Karten-Lead-Suche: immer live
   if(req.url.indexOf("tile.openstreetmap")>=0)return;  // Karten-Kacheln nicht cachen (Browser-Cache reicht)
+  if(req.url.indexOf("supabase.co")>=0)return;          // Cloud-DB immer live, nie cachen
   const isHTML=req.mode==="navigate"||(req.headers.get("accept")||"").includes("text/html");
   if(isHTML){
     e.respondWith(
@@ -1283,7 +1433,7 @@ out=out.replace("%%USERS%%",USERS_JS)
 
 for tok in ["%%RED%%","%%RED2%%","%%LOGOL%%","%%LOGOD%%","%%USERS%%"]:
     assert tok not in out, "Token übrig: "+tok
-for need in ['id="gateForm"','id="clist"','id="actModal"','renderDashboard','amb_lepton_crm','amb_lepton_configs','checkReminders','initServer','api.php','id="connState"','id="osmSearch"','overpass-api.de','osmToContact','id="osmMap"','ensureLeaflet','tile.openstreetmap']:
+for need in ['id="gateForm"','id="clist"','id="actModal"','renderDashboard','amb_lepton_crm','amb_lepton_configs','checkReminders','initBackend','api.php','id="connState"','id="osmSearch"','overpass-api.de','osmToContact','id="osmMap"','ensureLeaflet','tile.openstreetmap','id="sbUrl"','sbUpsert','supabase.co','id="cMap"','showContactsMap','id="actBetrag"','flagIcon']:
     assert need in out, "Pflicht-Markierung fehlt: "+need
 # Leaflet (Karten-Bibliothek) muss lokal vorhanden sein (Laufzeit-Abhängigkeit der Standort-Karte)
 for vf in ["leaflet.js","leaflet.css","images/marker-icon.png","images/marker-shadow.png"]:
