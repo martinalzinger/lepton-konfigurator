@@ -182,7 +182,7 @@
           "model": "sd2-band-gerade-abs-mag.glb",
           "img": "sd2_band_gerade_mag",
           "rot": [
-            -180,
+            90,
             0,
             0
           ],
