@@ -174,10 +174,10 @@
     "fr": "Vider"
   },
   "viewer_hint": {
-    "de": "Ziehen = drehen · Rechtsklick/2 Finger = verschieben · Scrollen = Zoom · Klick = Teil wählen",
-    "en": "Drag = rotate · right-drag/2 fingers = pan · scroll = zoom · click = select part",
-    "pl": "Przeciągnij = obrót · prawy/2 palce = przesuń · przewiń = zoom · klik = wybór",
-    "fr": "Glisser = tourner · clic droit/2 doigts = déplacer · molette = zoom · clic = pièce"
+    "de": "1 Finger = drehen · 2 Finger = Zoom & verschieben · Tippen = Teil wählen",
+    "en": "1 finger = rotate · 2 fingers = zoom & pan · tap = select part",
+    "pl": "1 palec = obrót · 2 palce = zoom i przesuwanie · dotknij = wybór części",
+    "fr": "1 doigt = tourner · 2 doigts = zoom & déplacer · toucher = sélectionner"
   },
   "parts_title": {
     "de": "Einzelteile",
@@ -376,5 +376,23 @@
     "en": "Customs code",
     "pl": "Kod celny",
     "fr": "Code douanier"
+  },
+  "lbl_liefer": {
+    "de": "Lieferart",
+    "en": "Delivery",
+    "pl": "Sposób dostawy",
+    "fr": "Livraison"
+  },
+  "liefer_standard": {
+    "de": "Normaler Versand",
+    "en": "Standard shipping",
+    "pl": "Wysyłka standardowa",
+    "fr": "Envoi standard"
+  },
+  "liefer_express": {
+    "de": "Nachtexpress",
+    "en": "Overnight express",
+    "pl": "Ekspres nocny",
+    "fr": "Express de nuit"
   }
 }

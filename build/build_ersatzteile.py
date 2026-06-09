@@ -159,7 +159,7 @@ for cat in SP_RAW["kategorien"]:
             "name":p["name"], "name_en":p.get("name_en"),
             "desc":p.get("desc",""), "desc_en":p.get("desc_en"),
             "price":p.get("price",0),
-            "model": mk, "modelKind": kind, "img": p.get("img")
+            "model": mk, "modelKind": kind, "img": p.get("img"), "rot": p.get("rot")
         })
     CAT.append({"h":cat["h"], "h_en":cat.get("h_en"), "items":items})
 
@@ -283,7 +283,7 @@ body{font-family:var(--sans);background:var(--paper);color:var(--ink);line-heigh
 .dhead button{background:none;border:0;color:#fff;font-size:26px;line-height:1;cursor:pointer;opacity:.8}.dhead button:hover{opacity:1}
 .dbody{flex:1;overflow:auto;padding:14px 18px}
 .citem{display:flex;gap:11px;padding:11px 0;border-bottom:1px solid var(--line);align-items:center}
-.citem .ci-th{width:52px;height:44px;border-radius:6px;background:#fff;border:1px solid var(--line);flex-shrink:0;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.citem .ci-th{width:66px;height:56px;border-radius:6px;background:#fff;border:1px solid var(--line);flex-shrink:0;display:flex;align-items:center;justify-content:center;overflow:hidden}
 .citem .ci-th img{max-width:100%;max-height:100%;object-fit:contain}
 .citem .ci-th svg{width:30px;height:30px;stroke:#b7b3a8;fill:none;stroke-width:1.4}
 .citem .ci-n{flex:1;min-width:0}
@@ -305,6 +305,10 @@ body{font-family:var(--sans);background:var(--paper);color:var(--ink);line-heigh
 .fld label{font-size:12px;color:var(--muted);font-weight:600}
 .fld input,.fld textarea{font-family:var(--sans);font-size:13.5px;border:1px solid var(--line-strong);background:#fff;border-radius:8px;padding:9px 11px;outline:none}
 .fld input:focus,.fld textarea:focus{border-color:var(--red);box-shadow:0 0 0 3px var(--red-soft)}
+.segchoice{display:flex;gap:6px}
+.segchoice button{flex:1;font-family:var(--sans);font-size:13px;font-weight:600;border:1px solid var(--line-strong);background:#fff;color:var(--muted);border-radius:8px;padding:9px 8px;cursor:pointer;transition:.12s}
+.segchoice button:hover{border-color:var(--ink)}
+.segchoice button.active{background:var(--red);border-color:var(--red);color:#fff}
 .fld textarea{min-height:60px;resize:vertical}
 .frow{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .dfoot{padding:14px 18px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:8px}
@@ -348,9 +352,9 @@ body{font-family:var(--sans);background:var(--paper);color:var(--ink);line-heigh
 .prow .eye svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.7}
 .prow.hidden .eye{color:var(--faint)}
 .prow .pmid{flex:1;min-width:0}
-.prow .pthumbS{width:42px;height:42px;flex-shrink:0;background:#fff;border:1px solid var(--line);border-radius:6px;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.prow .pthumbS{width:60px;height:60px;flex-shrink:0;background:#fff;border:1px solid var(--line);border-radius:7px;display:flex;align-items:center;justify-content:center;overflow:hidden}
 .prow .pthumbS img{width:100%;height:100%;object-fit:contain}
-.dtbl .pdfimg{height:26px;width:26px;object-fit:contain;vertical-align:middle;margin-right:7px;border:1px solid #e4e2db;border-radius:3px;background:#fff}
+.dtbl .pdfimg{height:36px;width:36px;object-fit:contain;vertical-align:middle;margin-right:8px;border:1px solid #e4e2db;border-radius:3px;background:#fff}
 .prow .pml{font-size:12.5px;font-weight:600;line-height:1.25;word-break:break-word}
 .prow .pma{font-family:var(--mono);font-size:10px;color:var(--faint)}
 .prow .qbadge{font-family:var(--mono);font-size:10px;color:var(--slate);background:var(--field);border:1px solid var(--line);border-radius:5px;padding:1px 5px;flex-shrink:0}
@@ -482,6 +486,13 @@ body{font-family:var(--sans);background:var(--paper);color:var(--ink);line-heigh
         </div>
         <div class="fld"><label data-i18n="lbl_mail">E-Mail</label><input id="c_mail" type="email"></div>
         <div class="fld"><label data-i18n="lbl_masch">Maschinen-Nr. / Baujahr</label><input id="c_masch" data-i18n-ph="ph_optional"></div>
+        <div class="fld"><label data-i18n="lbl_liefer">Lieferart</label>
+          <div class="segchoice" id="lieferSeg">
+            <button type="button" data-liefer="standard" class="active" data-i18n="liefer_standard">Normaler Versand</button>
+            <button type="button" data-liefer="express" data-i18n="liefer_express">Nachtexpress</button>
+          </div>
+          <input type="hidden" id="c_liefer" value="standard">
+        </div>
         <div class="fld"><label data-i18n="lbl_msg">Nachricht</label><textarea id="c_msg" data-i18n-ph="ph_optional"></textarea></div>
       </div>
     </div>
@@ -635,7 +646,7 @@ const ICONS={
  function closeCart(){document.getElementById("drawer").classList.remove("open");document.getElementById("backdrop").classList.remove("open");}
  // ===== 3D-Explorer (three.js wird BEI BEDARF dynamisch geladen) =====
  var THREE,GLTFLoader,OrbitControls,RoomEnvironment,loader,hlMat;
- var renderer,scene,camera,controls,raycaster,curRoot=null,pivot=null,autoSpin=true,groups=[],activeG=null,fitR=1,vinit=false,viewerActive=false,threeReady=false;
+ var renderer,scene,camera,controls,raycaster,curRoot=null,pivot=null,autoSpin=true,baseQuat=null,camDist=1,curModelRot=null,groups=[],activeG=null,fitR=1,vinit=false,viewerActive=false,threeReady=false;
  function ensureThree(){
   if(threeReady)return Promise.resolve(true);
   return Promise.all([import("./vendor/three.module.min.js"),import("./vendor/GLTFLoader.js"),import("./vendor/OrbitControls.js"),import("./vendor/RoomEnvironment.js")]).then(function(m){
@@ -662,9 +673,9 @@ const ICONS={
   controls.enableRotate=false;     // Kamera-Rotation aus -> freie Modell-Rotation (Pointer-Handler unten)
   controls.rotateSpeed=0.75;          // ruhigeres Drehen
   controls.zoomSpeed=0.9;             // feinerer Zoom
-  controls.panSpeed=1.2;              // leichtgängigeres Verschieben
-  controls.zoomToCursor=true;         // zum Mauszeiger zoomen (statt zur Mitte)
-  controls.screenSpacePanning=true;   // intuitives Verschieben in der Bildebene
+  controls.panSpeed=1.0;
+  controls.screenSpacePanning=true;   // 2-Finger-Verschieben in der Bildebene
+  controls.zoomToCursor=false;        // mittig zoomen (kein Wegspringen beim Zoom)
   // Rundum-Beleuchtung: gleichmäßig hell von allen Seiten (keine dunkle Seite mehr)
   scene.add(new THREE.HemisphereLight(0xffffff,0x9a9aa0,1.6));
   scene.add(new THREE.AmbientLight(0xffffff,0.45));
@@ -715,14 +726,34 @@ const ICONS={
   order.sort(function(a,b){return b.count-a.count||a.label.localeCompare(b.label);});
   groups=order;
  }
+ // Ausricht-Quaternion: bringt Modell-Achse a0 -> Welt-X (waagrecht), a1 -> Welt-Y (oben)
+ function axisPermQuat(a0,a1){
+  var ax={x:new THREE.Vector3(1,0,0),y:new THREE.Vector3(0,1,0),z:new THREE.Vector3(0,0,1)};
+  var u=ax[a0].clone(),w=ax[a1].clone(),tt=new THREE.Vector3().crossVectors(u,w);
+  var m=new THREE.Matrix4();m.set(u.x,u.y,u.z,0, w.x,w.y,w.z,0, tt.x,tt.y,tt.z,0, 0,0,0,1);
+  return new THREE.Quaternion().setFromRotationMatrix(m);
+ }
+ function eulerQuat(d){if(!d)return new THREE.Quaternion();return new THREE.Quaternion().setFromEuler(new THREE.Euler(d[0]*Math.PI/180,d[1]*Math.PI/180,d[2]*Math.PI/180,"XYZ"));}
+ function framePos(d){return new THREE.Vector3(0.62,0.5,0.85).normalize().multiplyScalar(d);}
  function frameModel(){
   if(!pivot){pivot=new THREE.Group();scene.add(pivot);}
   if(curRoot.parent!==pivot){if(curRoot.parent)curRoot.parent.remove(curRoot);pivot.add(curRoot);}
   pivot.quaternion.identity();curRoot.position.set(0,0,0);pivot.updateMatrixWorld(true);
-  var box=new THREE.Box3().setFromObject(curRoot);var c=box.getCenter(new THREE.Vector3()),size=box.getSize(new THREE.Vector3());var r=Math.max(size.x,size.y,size.z)||1;fitR=r;
-  curRoot.position.copy(c).multiplyScalar(-1);          // Modell-Mittelpunkt = Pivot-Ursprung
-  controls.target.set(0,0,0);var d=r*1.9;camera.position.set(d*0.7,d*0.55,d*0.9);camera.near=r/200;camera.far=r*200;camera.updateProjectionMatrix();controls.minDistance=r*0.05;controls.maxDistance=r*12;controls.update();autoSpin=true;}
- function resetView(){if(!curRoot)return;if(pivot)pivot.quaternion.identity();controls.target.set(0,0,0);var d=fitR*1.9;camera.position.set(d*0.7,d*0.55,d*0.9);autoSpin=true;controls.update();}
+  var box=new THREE.Box3().setFromObject(curRoot);var c=box.getCenter(new THREE.Vector3()),size=box.getSize(new THREE.Vector3());
+  curRoot.position.copy(c).multiplyScalar(-1);                       // Mittelpunkt -> Pivot-Ursprung
+  var dims=[["x",size.x],["y",size.y],["z",size.z]].sort(function(a,b){return b[1]-a[1];});
+  baseQuat=axisPermQuat(dims[0][0],dims[1][0]);                      // konsistente Ausrichtung
+  if(curModelRot){baseQuat=eulerQuat(curModelRot).multiply(baseQuat);}  // optionale Zusatz-Drehung pro Modell
+  pivot.quaternion.copy(baseQuat);
+  var sx=dims[0][1],sy=dims[1][1],sz=dims[2][1];fitR=Math.max(sx,sy,sz)||1;
+  var R=0.5*Math.sqrt(sx*sx+sy*sy+sz*sz)||1;                          // Bounding-Kugel
+  var fov=camera.fov*Math.PI/180,asp=camera.aspect||1.4;
+  camDist=Math.max(R/Math.sin(fov/2), R/Math.sin(Math.atan(Math.tan(fov/2)*asp)))*1.05;
+  controls.target.set(0,0,0);camera.position.copy(framePos(camDist));
+  camera.near=Math.max(R*0.0015,1e-4);camera.far=R*60;camera.updateProjectionMatrix();
+  controls.minDistance=R*0.004;controls.maxDistance=R*16;controls.update();autoSpin=true;
+ }
+ function resetView(){if(!curRoot)return;if(pivot&&baseQuat)pivot.quaternion.copy(baseQuat);controls.target.set(0,0,0);camera.position.copy(framePos(camDist||fitR*1.6));autoSpin=true;controls.update();}
  function setHighlight(g,on){g.meshes.forEach(function(m){if(on){if(m.userData._om===undefined)m.userData._om=m.material;m.material=hlMat;}else if(m.userData._om!==undefined){m.material=m.userData._om;m.userData._om=undefined;}});}
  function selectGroup(g,scroll){if(activeG===g)return;if(activeG)setHighlight(activeG,false);activeG=g;if(g)setHighlight(g,true);autoSpin=false;document.querySelectorAll(".prow").forEach(function(r){r.classList.toggle("active",r.__g===g);});if(scroll&&g){var rows=[].slice.call(document.querySelectorAll(".prow"));for(var i=0;i<rows.length;i++){if(rows[i].__g===g){rows[i].scrollIntoView({block:"nearest"});break;}}}}
  function toggleGroup(g){g.visible=!g.visible;g.meshes.forEach(function(m){m.visible=g.visible;});document.querySelectorAll(".prow").forEach(function(r){if(r.__g===g)r.classList.toggle("hidden",!g.visible);});}
@@ -752,6 +783,7 @@ const ICONS={
  function showNo(msg){document.getElementById("mvLoad").style.display="none";var no=document.getElementById("mvNo");no.style.display="flex";no.textContent=msg||t("no_3d");}
  function open3D(id){
   var p=byId[id];document.getElementById("mvName").textContent=pName(p);document.getElementById("mvArt").textContent=t("art_prefix")+p.art;
+  curModelRot=p.rot||null;
   document.getElementById("mvModal").classList.add("open");viewerActive=true;
   document.getElementById("mvNo").style.display="none";
   document.getElementById("partList").innerHTML="";document.getElementById("partCount").textContent="0";
@@ -774,7 +806,8 @@ const ICONS={
  // ---- toast ----
  var toTimer;function toast(m){var el=document.getElementById("toast");el.textContent=m;el.classList.add("show");clearTimeout(toTimer);toTimer=setTimeout(function(){el.classList.remove("show");},1600);}
  // ---- fields persist ----
- var FLDS=["c_firma","c_name","c_tel","c_mail","c_masch","c_msg"];
+ var FLDS=["c_firma","c_name","c_tel","c_mail","c_masch","c_liefer","c_msg"];
+ function syncLiefer(){var v=fv("c_liefer")||"standard";document.querySelectorAll("#lieferSeg button").forEach(function(b){b.classList.toggle("active",b.getAttribute("data-liefer")===v);});}
  function loadFields(){try{var o=JSON.parse(localStorage.getItem(FKEY)||"{}");FLDS.forEach(function(id){if(o[id]!=null){var e=document.getElementById(id);if(e)e.value=o[id];}});}catch(e){}}
  function saveFields(){try{var o={};FLDS.forEach(function(id){var e=document.getElementById(id);if(e)o[id]=e.value;});localStorage.setItem(FKEY,JSON.stringify(o));}catch(e){}}
  function fv(id){var e=document.getElementById(id);return e?(e.value||"").trim():"";}
@@ -788,7 +821,8 @@ const ICONS={
   L.forEach(function(l){body+="  "+l.q+"× "+l.p.art+"  "+pName(l.p)+(l.p.zoll?"   "+t("col_zoll")+" "+l.p.zoll:"")+(l.p.weight>0?"   "+fmtKg(l.p.weight*l.q):"")+(l.p.price>0?"   "+money(l.p.price*l.q):"")+"\n";});
   var tw=totalWeight();if(tw>0)body+="\n"+t("weight_total")+": "+fmtKg(tw)+"\n";
   var sub=subtotal();if(sub>0)body+=t("cart_subtotal")+": "+money(sub)+"\n";
-  if(fv("c_masch"))body+="\n"+t("lbl_masch")+": "+fv("c_masch")+"\n";
+  body+="\n"+t("lbl_liefer")+": "+t("liefer_"+(fv("c_liefer")||"standard"))+"\n";
+  if(fv("c_masch"))body+=t("lbl_masch")+": "+fv("c_masch")+"\n";
   if(fv("c_msg"))body+="\n"+fv("c_msg")+"\n";
   body+="\n"+t("mail_regards")+"\n"+[fv("c_name"),fv("c_firma")].filter(Boolean).join("\n");
   var contact=[fv("c_mail"),fv("c_tel")].filter(Boolean).join(" · ");if(contact)body+="\n"+contact;
@@ -807,7 +841,7 @@ const ICONS={
   var from=[fv("c_firma"),fv("c_name"),fv("c_mail"),fv("c_tel")].filter(Boolean).map(esc).join("<br>")||'<span style="color:#9a9aa0">—</span>';
   var doc=stripe+'<div class="dpad">'
    +'<div class="dhd"><div class="dfirm"><img class="dlogo" src="'+LOGO_D+'"><div class="fnm" style="margin-top:3px">Maschinenbau GmbH</div>Am Gewerbering 14 · D-84069 Schierling<br>www.alzinger-recyclingtechnik.com<br>'+MAIL+'</div>'
-   +'<div class="dmeta">'+t("doc_date")+' <b>'+esc(date)+'</b></div></div>'
+   +'<div class="dmeta">'+t("doc_date")+' <b>'+esc(date)+'</b><br>'+t("lbl_liefer")+': <b>'+esc(t("liefer_"+(fv("c_liefer")||"standard")))+'</b></div></div>'
    +'<div class="dtitle">'+esc(t("doc_title"))+'</div>'
    +'<div class="dparties"><div><span class="s">'+t("doc_from")+'</span>'+from+(fv("c_masch")?'<br><span style="color:#9a9aa0;font-size:11px">'+t("doc_machine")+': '+esc(fv("c_masch"))+'</span>':'')+'</div>'
    +'<div><span class="s">'+t("doc_to")+'</span><b>Alzinger Maschinenbau GmbH</b><br>Am Gewerbering 14<br>D-84069 Schierling</div></div>'
@@ -839,7 +873,7 @@ const ICONS={
  function setLang(l){if(!I18N[l])return;lang=l;try{localStorage.setItem(LKEY,l);}catch(e){}applyLang();buildChips();renderCatalog();renderCart();}
  function init(){
   document.getElementById("tbLogo").src=LOGO_L;
-  applyLang();buildChips();renderCatalog();updateBadge();renderCart();loadFields();
+  applyLang();buildChips();renderCatalog();updateBadge();renderCart();loadFields();syncLiefer();
   document.getElementById("search").addEventListener("input",function(e){query=e.target.value;renderCatalog();});
   document.querySelectorAll("#langsel button").forEach(function(b){b.addEventListener("click",function(){setLang(b.getAttribute("data-lang"));});});
   document.getElementById("cartBtn").addEventListener("click",openCart);
@@ -854,6 +888,7 @@ const ICONS={
   document.getElementById("printReq").addEventListener("click",printReq);
   document.getElementById("clearCart").addEventListener("click",function(){cart={};saveCart();updateBadge();renderCatalog();renderCart();});
   FLDS.forEach(function(id){var e=document.getElementById(id);if(e)e.addEventListener("input",saveFields);});
+  document.querySelectorAll("#lieferSeg button").forEach(function(b){b.addEventListener("click",function(){document.getElementById("c_liefer").value=b.getAttribute("data-liefer");syncLiefer();saveFields();});});
   document.addEventListener("keydown",function(e){if(e.key==="Escape"){close3D();closeCart();}});
  }
  init();
