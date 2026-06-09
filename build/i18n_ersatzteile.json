@@ -138,10 +138,10 @@
   "fr": "Téléphone"
  },
  "lbl_masch": {
-  "de": "Maschinen-Nr. / Baujahr",
-  "en": "Machine no. / year",
-  "pl": "Nr maszyny / rok",
-  "fr": "N° machine / année"
+  "de": "Maschinen-Nr.",
+  "en": "Machine no.",
+  "pl": "Nr maszyny",
+  "fr": "N° de machine"
  },
  "lbl_msg": {
   "de": "Nachricht",
@@ -400,5 +400,23 @@
   "en": "contains the searched part",
   "pl": "zawiera szukaną część",
   "fr": "contient la pièce recherchée"
+ },
+ "lbl_baujahr": {
+  "de": "Baujahr",
+  "en": "Year of manufacture",
+  "pl": "Rok produkcji",
+  "fr": "Année de construction"
+ },
+ "btn_excel": {
+  "de": "Als Excel exportieren",
+  "en": "Export as Excel",
+  "pl": "Eksportuj do Excela",
+  "fr": "Exporter en Excel"
+ },
+ "fill_required": {
+  "de": "Bitte alle Pflichtfelder ausfüllen",
+  "en": "Please fill in all required fields",
+  "pl": "Proszę wypełnić wszystkie wymagane pola",
+  "fr": "Veuillez remplir tous les champs obligatoires"
  }
 }
