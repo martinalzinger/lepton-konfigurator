@@ -2,67 +2,365 @@
   "_hinweis": "Ersatzteil-Katalog. Jede Kategorie = eine Baugruppe der Maschine; 'teile' = deren Unter-Baugruppen (Kacheln). 'model' = GLB-Dateiname in ersatzteile/models/ (aus STEP konvertiert). Leere Kategorie (teile:[]) zeigt den Hinweis 'sub_soon'. 'art' = Artikelnummer (— = folgt aus STEP/PDM).",
   "kategorien": [
     {
-      "h": "Fahrgestell", "h_en": "Chassis",
+      "h": "Fahrgestell",
+      "h_en": "Chassis",
       "teile": [
-        { "id": "FG-BASIS", "art": "—", "name": "Basis", "name_en": "Base frame", "desc": "Unter-Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar", "desc_en": "Sub-assembly – pick and order all individual parts in 3D", "price": 0, "model": "fahrgestell-basis.glb", "img": "fahrgestell" }
-      ]
+        {
+          "id": "FG-BASIS",
+          "art": "—",
+          "name": "Basis",
+          "name_en": "Base frame",
+          "desc": "Unter-Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar",
+          "desc_en": "Sub-assembly – pick and order all individual parts in 3D",
+          "price": 0,
+          "model": "fahrgestell-basis.glb",
+          "img": "fahrgestell",
+          "name_pl": "Podstawa",
+          "name_fr": "Base"
+        }
+      ],
+      "h_pl": "Podwozie",
+      "h_fr": "Châssis"
     },
     {
-      "h": "Bunker", "h_en": "Hopper",
+      "h": "Bunker",
+      "h_en": "Hopper",
       "teile": [
-        { "id": "BUNKER-MAIN", "art": "—", "name": "Bunker", "name_en": "Hopper", "desc": "Komplette Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar", "desc_en": "Complete assembly – pick and order all individual parts in 3D", "price": 0, "model": "bunker.glb", "img": "bunker", "rot": [-90, 0, 0] },
-        { "id": "BUNKER-DOSIERWALZE", "art": "—", "name": "Dosierwalzenmantel 125 mm", "name_en": "Metering roller jacket 125 mm", "desc": "Unter-Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar", "desc_en": "Sub-assembly – pick and order all individual parts in 3D", "price": 0, "model": "dosierwalzenmantel.glb", "img": "dosierwalzenmantel" },
-        { "id": "BUNKER-DOSIERWALZE-QP", "art": "—", "name": "Dosierwalzenmantel mit Querplatten", "name_en": "Metering roller jacket with cross plates", "desc": "Unter-Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar", "desc_en": "Sub-assembly – pick and order all individual parts in 3D", "price": 0, "model": "dosierwalzenmantel-querplatten.glb", "img": "dosierwalzenmantel_qp" }
-      ]
+        {
+          "id": "BUNKER-MAIN",
+          "art": "—",
+          "name": "Bunker",
+          "name_en": "Hopper",
+          "desc": "Komplette Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar",
+          "desc_en": "Complete assembly – pick and order all individual parts in 3D",
+          "price": 0,
+          "model": "bunker.glb",
+          "img": "bunker",
+          "rot": [
+            -90,
+            0,
+            0
+          ],
+          "name_pl": "Zasobnik",
+          "name_fr": "Trémie"
+        },
+        {
+          "id": "BUNKER-DOSIERWALZE",
+          "art": "—",
+          "name": "Dosierwalzenmantel 125 mm",
+          "name_en": "Metering roller jacket 125 mm",
+          "desc": "Unter-Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar",
+          "desc_en": "Sub-assembly – pick and order all individual parts in 3D",
+          "price": 0,
+          "model": "dosierwalzenmantel.glb",
+          "img": "dosierwalzenmantel",
+          "name_pl": "Płaszcz walca dozującego 125 mm",
+          "name_fr": "Enveloppe du rouleau doseur 125 mm"
+        },
+        {
+          "id": "BUNKER-DOSIERWALZE-QP",
+          "art": "—",
+          "name": "Dosierwalzenmantel mit Querplatten",
+          "name_en": "Metering roller jacket with cross plates",
+          "desc": "Unter-Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar",
+          "desc_en": "Sub-assembly – pick and order all individual parts in 3D",
+          "price": 0,
+          "model": "dosierwalzenmantel-querplatten.glb",
+          "img": "dosierwalzenmantel_qp",
+          "name_pl": "Płaszcz walca dozującego z płytami poprzecznymi",
+          "name_fr": "Enveloppe du rouleau doseur avec plaques transversales"
+        }
+      ],
+      "h_pl": "Zasobnik",
+      "h_fr": "Trémie"
     },
     {
-      "h": "Siebdeck 1", "h_en": "Screen deck 1",
+      "h": "Siebdeck 1",
+      "h_en": "Screen deck 1",
       "teile": [
-        { "id": "SD1-BASIS", "art": "—", "name": "Basis", "name_en": "Base frame", "desc": "Grundrahmen Siebdeck 1 – im 3D alle Einzelteile auswählbar und bestellbar", "desc_en": "Screen deck 1 base frame – pick and order all individual parts in 3D", "price": 0, "model": "sd1-basis.glb", "img": "sd1_basis", "rot": [-90, 0, 0] },
-        { "id": "SD1-BAND-QUER", "art": "—", "name": "Band quer horizontal", "name_en": "Transverse belt horizontal", "desc": "Unter-Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar", "desc_en": "Sub-assembly – pick and order all individual parts in 3D", "price": 0, "model": "sd1-band-quer.glb", "img": "sd1_band_quer" }
-      ]
+        {
+          "id": "SD1-BASIS",
+          "art": "—",
+          "name": "Basis",
+          "name_en": "Base frame",
+          "desc": "Grundrahmen Siebdeck 1 – im 3D alle Einzelteile auswählbar und bestellbar",
+          "desc_en": "Screen deck 1 base frame – pick and order all individual parts in 3D",
+          "price": 0,
+          "model": "sd1-basis.glb",
+          "img": "sd1_basis",
+          "rot": [
+            -90,
+            0,
+            0
+          ],
+          "name_pl": "Podstawa",
+          "name_fr": "Base"
+        },
+        {
+          "id": "SD1-BAND-QUER",
+          "art": "—",
+          "name": "Band quer horizontal",
+          "name_en": "Transverse belt horizontal",
+          "desc": "Unter-Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar",
+          "desc_en": "Sub-assembly – pick and order all individual parts in 3D",
+          "price": 0,
+          "model": "sd1-band-quer.glb",
+          "img": "sd1_band_quer",
+          "name_pl": "Taśma poprzeczna pozioma",
+          "name_fr": "Bande transversale horizontale"
+        }
+      ],
+      "h_pl": "Pokład sitowy 1",
+      "h_fr": "Pont de criblage 1"
     },
     {
-      "h": "Siebdeck 2", "h_en": "Screen deck 2",
+      "h": "Siebdeck 2",
+      "h_en": "Screen deck 2",
       "teile": [
-        { "id": "SD2-ABSAUGUNG", "art": "—", "name": "Absaugung Siebdeck 2", "name_en": "Suction screen deck 2", "desc": "Unter-Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar", "desc_en": "Sub-assembly – pick and order all individual parts in 3D", "price": 0, "model": "absaugung-sd2.glb", "img": "absaugung_sd2", "rot": [-90, 0, 0] }
-      ]
+        {
+          "id": "SD2-ABSAUGUNG",
+          "art": "—",
+          "name": "Absaugung Siebdeck 2",
+          "name_en": "Suction screen deck 2",
+          "desc": "Unter-Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar",
+          "desc_en": "Sub-assembly – pick and order all individual parts in 3D",
+          "price": 0,
+          "model": "absaugung-sd2.glb",
+          "img": "absaugung_sd2",
+          "rot": [
+            -90,
+            0,
+            0
+          ],
+          "name_pl": "Odsysanie pokładu sitowego 2",
+          "name_fr": "Aspiration pont de criblage 2"
+        }
+      ],
+      "h_pl": "Pokład sitowy 2",
+      "h_fr": "Pont de criblage 2"
     },
     {
-      "h": "Grobkornband", "h_en": "Coarse-grain conveyor",
+      "h": "Grobkornband",
+      "h_en": "Coarse-grain conveyor",
       "teile": [
-        { "id": "GKB-GESAMT", "art": "—", "name": "Grobkornband 1 und 2", "name_en": "Coarse-grain conveyor 1 and 2", "desc": "Komplette Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar", "desc_en": "Complete assembly – pick and order all individual parts in 3D", "price": 0, "model": "grobkornband.glb", "img": "grobkornband" },
-        { "id": "GKB-1-OHNE-2", "art": "—", "name": "Grobkornband 1 ohne Grobkornband 2", "name_en": "Coarse-grain conveyor 1 without coarse-grain conveyor 2", "desc": "Komplette Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar", "desc_en": "Complete assembly – pick and order all individual parts in 3D", "price": 0, "model": "grobkornband-1-ohne-2.glb", "img": "grobkornband_1_ohne_2" },
-        { "id": "GKB-1-LANG", "art": "—", "name": "Grobkornband 1 lang", "name_en": "Coarse-grain conveyor 1 long", "desc": "Komplette Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar", "desc_en": "Complete assembly – pick and order all individual parts in 3D", "price": 0, "model": "grobkornband-1-lang.glb", "img": "grobkornband_1_lang" }
-      ]
+        {
+          "id": "GKB-GESAMT",
+          "art": "—",
+          "name": "Grobkornband 1 und 2",
+          "name_en": "Coarse-grain conveyor 1 and 2",
+          "desc": "Komplette Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar",
+          "desc_en": "Complete assembly – pick and order all individual parts in 3D",
+          "price": 0,
+          "model": "grobkornband.glb",
+          "img": "grobkornband",
+          "name_pl": "Taśma frakcji grubej 1 i 2",
+          "name_fr": "Bande gros grains 1 et 2"
+        },
+        {
+          "id": "GKB-1-OHNE-2",
+          "art": "—",
+          "name": "Grobkornband 1 ohne Grobkornband 2",
+          "name_en": "Coarse-grain conveyor 1 without coarse-grain conveyor 2",
+          "desc": "Komplette Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar",
+          "desc_en": "Complete assembly – pick and order all individual parts in 3D",
+          "price": 0,
+          "model": "grobkornband-1-ohne-2.glb",
+          "img": "grobkornband_1_ohne_2",
+          "name_pl": "Taśma frakcji grubej 1 bez taśmy 2",
+          "name_fr": "Bande gros grains 1 sans bande 2"
+        },
+        {
+          "id": "GKB-1-LANG",
+          "art": "—",
+          "name": "Grobkornband 1 lang",
+          "name_en": "Coarse-grain conveyor 1 long",
+          "desc": "Komplette Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar",
+          "desc_en": "Complete assembly – pick and order all individual parts in 3D",
+          "price": 0,
+          "model": "grobkornband-1-lang.glb",
+          "img": "grobkornband_1_lang",
+          "name_pl": "Taśma frakcji grubej 1 długa",
+          "name_fr": "Bande gros grains 1 longue"
+        }
+      ],
+      "h_pl": "Taśma frakcji grubej",
+      "h_fr": "Bande gros grains"
     },
     {
-      "h": "Feinkornband 1", "h_en": "Fine-grain conveyor 1",
+      "h": "Feinkornband 1",
+      "h_en": "Fine-grain conveyor 1",
       "teile": [
-        { "id": "FKB1-MAIN", "art": "—", "name": "Feinkornband 1 kurz – für Siebdeck 2", "name_en": "Fine-grain conveyor 1 short – for screen deck 2", "desc": "Komplette Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar", "desc_en": "Complete assembly – pick and order all individual parts in 3D", "price": 0, "model": "feinkornband-1.glb", "img": "feinkornband_1", "rot": [-90, 0, 0] },
-        { "id": "FKB1-LANG", "art": "—", "name": "Feinkornband 1 lang – für Siebdeck 2", "name_en": "Fine-grain conveyor 1 long – for screen deck 2", "desc": "Komplette Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar", "desc_en": "Complete assembly – pick and order all individual parts in 3D", "price": 0, "model": "feinkornband-1-lang.glb", "img": "feinkornband_1_lang", "rot": [-90, 0, 0] },
-        { "id": "FKB1-OHNE-SD2", "art": "—", "name": "Feinkornband 1 kurz – ohne Siebdeck 2", "name_en": "Fine-grain conveyor 1 short – without screen deck 2", "desc": "Komplette Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar", "desc_en": "Complete assembly – pick and order all individual parts in 3D", "price": 0, "model": "feinkornband-1-ohne-sd2.glb", "img": "feinkornband_1_ohne_sd2", "rot": [-90, 0, 0] },
-        { "id": "FKB1-LANG-OHNE-SD2", "art": "—", "name": "Feinkornband 1 lang – ohne Siebdeck 2", "name_en": "Fine-grain conveyor 1 long – without screen deck 2", "desc": "Komplette Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar", "desc_en": "Complete assembly – pick and order all individual parts in 3D", "price": 0, "model": "feinkornband-1-lang-ohne-sd2.glb", "img": "feinkornband_1_lang_ohne_sd2", "rot": [-90, 0, 0] }
-      ]
+        {
+          "id": "FKB1-MAIN",
+          "art": "—",
+          "name": "Feinkornband 1 kurz – für Siebdeck 2",
+          "name_en": "Fine-grain conveyor 1 short – for screen deck 2",
+          "desc": "Komplette Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar",
+          "desc_en": "Complete assembly – pick and order all individual parts in 3D",
+          "price": 0,
+          "model": "feinkornband-1.glb",
+          "img": "feinkornband_1",
+          "rot": [
+            -90,
+            0,
+            0
+          ],
+          "name_pl": "Taśma frakcji drobnej 1 krótka – dla pokładu sitowego 2",
+          "name_fr": "Bande fines 1 courte – pour pont de criblage 2"
+        },
+        {
+          "id": "FKB1-LANG",
+          "art": "—",
+          "name": "Feinkornband 1 lang – für Siebdeck 2",
+          "name_en": "Fine-grain conveyor 1 long – for screen deck 2",
+          "desc": "Komplette Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar",
+          "desc_en": "Complete assembly – pick and order all individual parts in 3D",
+          "price": 0,
+          "model": "feinkornband-1-lang.glb",
+          "img": "feinkornband_1_lang",
+          "rot": [
+            -90,
+            0,
+            0
+          ],
+          "name_pl": "Taśma frakcji drobnej 1 długa – dla pokładu sitowego 2",
+          "name_fr": "Bande fines 1 longue – pour pont de criblage 2"
+        },
+        {
+          "id": "FKB1-OHNE-SD2",
+          "art": "—",
+          "name": "Feinkornband 1 kurz – ohne Siebdeck 2",
+          "name_en": "Fine-grain conveyor 1 short – without screen deck 2",
+          "desc": "Komplette Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar",
+          "desc_en": "Complete assembly – pick and order all individual parts in 3D",
+          "price": 0,
+          "model": "feinkornband-1-ohne-sd2.glb",
+          "img": "feinkornband_1_ohne_sd2",
+          "rot": [
+            -90,
+            0,
+            0
+          ],
+          "name_pl": "Taśma frakcji drobnej 1 krótka – bez pokładu sitowego 2",
+          "name_fr": "Bande fines 1 courte – sans pont de criblage 2"
+        },
+        {
+          "id": "FKB1-LANG-OHNE-SD2",
+          "art": "—",
+          "name": "Feinkornband 1 lang – ohne Siebdeck 2",
+          "name_en": "Fine-grain conveyor 1 long – without screen deck 2",
+          "desc": "Komplette Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar",
+          "desc_en": "Complete assembly – pick and order all individual parts in 3D",
+          "price": 0,
+          "model": "feinkornband-1-lang-ohne-sd2.glb",
+          "img": "feinkornband_1_lang_ohne_sd2",
+          "rot": [
+            -90,
+            0,
+            0
+          ],
+          "name_pl": "Taśma frakcji drobnej 1 długa – bez pokładu sitowego 2",
+          "name_fr": "Bande fines 1 longue – sans pont de criblage 2"
+        }
+      ],
+      "h_pl": "Taśma frakcji drobnej 1",
+      "h_fr": "Bande fines 1"
     },
     {
-      "h": "Feinkornband 2", "h_en": "Fine-grain conveyor 2",
+      "h": "Feinkornband 2",
+      "h_en": "Fine-grain conveyor 2",
       "teile": [
-        { "id": "FKB2-MAIN", "art": "—", "name": "Feinkornband 2", "name_en": "Fine-grain conveyor 2", "desc": "Komplette Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar", "desc_en": "Complete assembly – pick and order all individual parts in 3D", "price": 0, "model": "feinkornband-2.glb", "img": "feinkornband_2", "rot": [90, 0, 0] }
-      ]
+        {
+          "id": "FKB2-MAIN",
+          "art": "—",
+          "name": "Feinkornband 2",
+          "name_en": "Fine-grain conveyor 2",
+          "desc": "Komplette Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar",
+          "desc_en": "Complete assembly – pick and order all individual parts in 3D",
+          "price": 0,
+          "model": "feinkornband-2.glb",
+          "img": "feinkornband_2",
+          "rot": [
+            90,
+            0,
+            0
+          ],
+          "name_pl": "Taśma frakcji drobnej 2",
+          "name_fr": "Bande fines 2"
+        }
+      ],
+      "h_pl": "Taśma frakcji drobnej 2",
+      "h_fr": "Bande fines 2"
     },
     {
-      "h": "Feinkornband 3", "h_en": "Fine-grain conveyor 3",
+      "h": "Feinkornband 3",
+      "h_en": "Fine-grain conveyor 3",
       "teile": [
-        { "id": "FKB3-MAIN", "art": "—", "name": "Feinkornband 3 mit Magnetabscheider", "name_en": "Fine-grain conveyor 3 with magnetic separator", "desc": "Komplette Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar", "desc_en": "Complete assembly – pick and order all individual parts in 3D", "price": 0, "model": "feinkornband-3.glb", "img": "feinkornband_3", "rot": [90, 0, 0] },
-        { "id": "FKB3-OHNE-MAGNET", "art": "—", "name": "Feinkornband 3 ohne Magnetabscheider", "name_en": "Fine-grain conveyor 3 without magnetic separator", "desc": "Komplette Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar", "desc_en": "Complete assembly – pick and order all individual parts in 3D", "price": 0, "model": "feinkornband-3-ohne-magnet.glb", "img": "feinkornband_3_ohne_magnet", "rot": [90, 0, 0] }
-      ]
+        {
+          "id": "FKB3-MAIN",
+          "art": "—",
+          "name": "Feinkornband 3 mit Magnetabscheider",
+          "name_en": "Fine-grain conveyor 3 with magnetic separator",
+          "desc": "Komplette Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar",
+          "desc_en": "Complete assembly – pick and order all individual parts in 3D",
+          "price": 0,
+          "model": "feinkornband-3.glb",
+          "img": "feinkornband_3",
+          "rot": [
+            90,
+            0,
+            0
+          ],
+          "name_pl": "Taśma frakcji drobnej 3 z separatorem magnetycznym",
+          "name_fr": "Bande fines 3 avec séparateur magnétique"
+        },
+        {
+          "id": "FKB3-OHNE-MAGNET",
+          "art": "—",
+          "name": "Feinkornband 3 ohne Magnetabscheider",
+          "name_en": "Fine-grain conveyor 3 without magnetic separator",
+          "desc": "Komplette Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar",
+          "desc_en": "Complete assembly – pick and order all individual parts in 3D",
+          "price": 0,
+          "model": "feinkornband-3-ohne-magnet.glb",
+          "img": "feinkornband_3_ohne_magnet",
+          "rot": [
+            90,
+            0,
+            0
+          ],
+          "name_pl": "Taśma frakcji drobnej 3 bez separatora magnetycznego",
+          "name_fr": "Bande fines 3 sans séparateur magnétique"
+        }
+      ],
+      "h_pl": "Taśma frakcji drobnej 3",
+      "h_fr": "Bande fines 3"
     },
     {
-      "h": "Schaltschrank", "h_en": "Control cabinet",
+      "h": "Schaltschrank",
+      "h_en": "Control cabinet",
       "teile": [
-        { "id": "ESK-ELEKTROSCHRANK", "art": "004566", "name": "Elektroschrank", "name_en": "Electrical cabinet", "desc": "Komplette Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar", "desc_en": "Complete assembly – pick and order all individual parts in 3D", "price": 0, "model": "elektroschrank.glb", "img": "elektroschrank", "rot": [90, 0, 0] }
-      ]
+        {
+          "id": "ESK-ELEKTROSCHRANK",
+          "art": "004566",
+          "name": "Elektroschrank",
+          "name_en": "Electrical cabinet",
+          "desc": "Komplette Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar",
+          "desc_en": "Complete assembly – pick and order all individual parts in 3D",
+          "price": 0,
+          "model": "elektroschrank.glb",
+          "img": "elektroschrank",
+          "rot": [
+            90,
+            0,
+            0
+          ],
+          "name_pl": "Szafa elektryczna",
+          "name_fr": "Armoire électrique"
+        }
+      ],
+      "h_pl": "Szafa sterownicza",
+      "h_fr": "Armoire électrique"
     }
   ]
 }
