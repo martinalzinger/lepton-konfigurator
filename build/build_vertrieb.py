@@ -661,6 +661,29 @@ var USERS=%%USERS%%;
  function initials(n){n=(n||"").trim();if(!n)return "?";var p=n.split(/\s+/);return ((p[0][0]||"")+(p.length>1?p[p.length-1][0]:"")).toUpperCase();}
  function fullName(c){var n=[c.vorname,c.nachname].filter(Boolean).join(" ").trim();return n;}
  function displayName(c){return c.firma||fullName(c)||"(ohne Namen)";}
+ // ---- Outlook/E-Mail (mailto) + Kalender (.ics) ----
+ function mailGreeting(c){var nn=c.nachname||"",a=c.anrede||"";
+   if(nn){if(/frau/i.test(a))return "Sehr geehrte Frau "+nn+",";if(/herr/i.test(a))return "Sehr geehrter Herr "+nn+",";return "Guten Tag "+nn+",";}
+   return "Sehr geehrte Damen und Herren,";}
+ function buildMailto(c){
+   var who=(CUR&&CUR.n)?CUR.n:"";
+   var sig="\n\nMit freundlichen Grüßen\n"+(who?who+"\n":"")+"Alzinger Maschinenbau";
+   var body=mailGreeting(c)+"\n\n"+sig;
+   return "mailto:"+encodeURIComponent(c.mail||"")+"?subject="+encodeURIComponent("Alzinger Maschinenbau – Sternsiebanlage Lepton 5100")+"&body="+encodeURIComponent(body);
+ }
+ function icsEsc(s){return String(s||"").replace(/\\/g,"\\\\").replace(/;/g,"\\;").replace(/,/g,"\\,").replace(/\r?\n/g,"\\n");}
+ function icsDownload(c,fu){
+   if(!fu||!fu.due)return;
+   function z(n){return n<10?"0"+n:""+n;}
+   function fmt(d){return d.getUTCFullYear()+z(d.getUTCMonth()+1)+z(d.getUTCDate())+"T"+z(d.getUTCHours())+z(d.getUTCMinutes())+z(d.getUTCSeconds())+"Z";}
+   var dt=new Date(fu.due),who=displayName(c);
+   var summ="Lepton: "+(fu.note||"Wiedervorlage")+" – "+who;
+   var desc=["Kontakt: "+who,c.tel?("Tel: "+c.tel):"",c.mobil?("Mobil: "+c.mobil):"",c.mail?("E-Mail: "+c.mail):"",fu.note?("Notiz: "+fu.note):""].filter(Boolean).join("\n");
+   var ics=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Alzinger Maschinenbau//CRM//DE","CALSCALE:GREGORIAN","METHOD:PUBLISH","BEGIN:VEVENT","UID:amb-"+c.id+"-"+dt.getTime()+"@alzinger-maschinenbau.de","DTSTAMP:"+fmt(new Date()),"DTSTART:"+fmt(dt),"DTEND:"+fmt(new Date(dt.getTime()+1800000)),"SUMMARY:"+icsEsc(summ),"DESCRIPTION:"+icsEsc(desc),"BEGIN:VALARM","ACTION:DISPLAY","DESCRIPTION:"+icsEsc(summ),"TRIGGER:-PT30M","END:VALARM","END:VEVENT","END:VCALENDAR"].join("\r\n");
+   var blob=new Blob([ics],{type:"text/calendar;charset=utf-8"}),url=URL.createObjectURL(blob);
+   var a=document.createElement("a");a.href=url;a.download=(who.replace(/[^0-9A-Za-zÄÖÜäöüß]+/g,"_")||"Termin")+".ics";document.body.appendChild(a);a.click();a.remove();
+   setTimeout(function(){URL.revokeObjectURL(url);},15000);
+ }
  function pad(n){return n<10?"0"+n:""+n;}
  function todayStr(){var d=new Date();return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());}
  function nowLocalInput(){var d=new Date();return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())+"T"+pad(d.getHours())+":"+pad(d.getMinutes());}
@@ -1071,7 +1094,7 @@ var USERS=%%USERS%%;
    '<div class="quick">'+
      (c.tel?'<a class="btn sm primary" href="tel:'+esc(c.tel)+'"><svg viewBox="0 0 24 24"><path d="M5 4h4l2 5-3 2a13 13 0 006 6l2-3 5 2v4a2 2 0 01-2 2A17 17 0 013 6a2 2 0 012-2"/></svg>Anrufen</a>':'')+
      (c.mobil?'<a class="btn sm" href="tel:'+esc(c.mobil)+'">Mobil</a>':'')+
-     (c.mail?'<a class="btn sm" href="mailto:'+esc(c.mail)+'"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>E-Mail</a>':'')+
+     (c.mail?'<a class="btn sm" id="mailBtn" href="mailto:'+esc(c.mail)+'" title="E-Mail in Outlook (vorausgefüllt)"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>E-Mail</a>':'')+
      '<button class="btn sm primary" id="offerBtn"><svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/><path d="M14 3v5h5"/></svg>Angebot erstellen</button>'+
      '<button class="btn sm" id="addActBtn"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Aktivität</button>'+
      '<button class="btn sm" id="editBtn">Bearbeiten</button>'+
@@ -1110,6 +1133,7 @@ var USERS=%%USERS%%;
        '<input class="field" type="date" id="fuDate" value="'+(fu?new Date(fu.due).toISOString().slice(0,10):"")+'" style="width:auto">'+
        '<input class="field" id="fuNote" placeholder="Notiz (optional)" value="'+(fu?esc(fu.note||""):"")+'" style="flex:1;min-width:140px">'+
        '<button class="btn sm" id="fuSet">Setzen</button>'+
+       (fu?'<button class="btn sm" id="icsBtn" title="Termin in Outlook/Kalender übernehmen (.ics)"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/></svg>In Kalender</button>':'')+
        (fu?'<button class="btn sm danger" id="fuDone">Erledigt</button>':'')+
      '</div>'+
    '</div>'+
@@ -1128,6 +1152,8 @@ var USERS=%%USERS%%;
    document.getElementById("dStatus").onchange=function(){c.status=this.value;c.updated=Date.now();saveContact(c);openDetail(curId);};
    document.getElementById("fuSet").onclick=function(){var d=document.getElementById("fuDate").value;if(!d){alert("Bitte ein Datum wählen.");return;}c.followup={due:new Date(d+"T09:00").getTime(),note:document.getElementById("fuNote").value.trim(),done:false};c.updated=Date.now();saveContact(c);openDetail(curId);};
    var fd=document.getElementById("fuDone");if(fd)fd.onclick=function(){if(c.followup)c.followup.done=true;c.updated=Date.now();saveContact(c);openDetail(curId);};
+   var mb2=document.getElementById("mailBtn");if(mb2)mb2.href=buildMailto(c); // Outlook vorausgefüllt (Anrede + Signatur)
+   var ib=document.getElementById("icsBtn");if(ib)ib.onclick=function(){icsDownload(c,c.followup);};
    document.getElementById("delBtn").onclick=function(){if(confirm("Diesen Kontakt mit gesamtem Verlauf endgültig löschen?")){removeContact(curId);renderList();show("list");}};
    var gb=document.getElementById("geoBtn");if(gb)gb.onclick=function(){var b=this;b.textContent="Suche Standort…";geocodeContact(c).then(function(p){c.lat=p.lat;c.lon=p.lon;c.updated=Date.now();saveContact(c);openDetail(curId);}).catch(function(){b.textContent="Standort nicht gefunden";});};
  }
@@ -1509,7 +1535,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v11";
+const CACHE="vertrieb-v12";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png",
   "./vendor/leaflet.js","./vendor/leaflet.css",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
