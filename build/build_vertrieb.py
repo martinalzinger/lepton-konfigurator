@@ -1047,6 +1047,7 @@ var USERS=%%USERS%%;
      (c.tel?'<a class="btn sm primary" href="tel:'+esc(c.tel)+'"><svg viewBox="0 0 24 24"><path d="M5 4h4l2 5-3 2a13 13 0 006 6l2-3 5 2v4a2 2 0 01-2 2A17 17 0 013 6a2 2 0 012-2"/></svg>Anrufen</a>':'')+
      (c.mobil?'<a class="btn sm" href="tel:'+esc(c.mobil)+'">Mobil</a>':'')+
      (c.mail?'<a class="btn sm" href="mailto:'+esc(c.mail)+'"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>E-Mail</a>':'')+
+     '<button class="btn sm primary" id="offerBtn"><svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/><path d="M14 3v5h5"/></svg>Angebot erstellen</button>'+
      '<button class="btn sm" id="addActBtn"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Aktivität</button>'+
      '<button class="btn sm" id="editBtn">Bearbeiten</button>'+
    '</div>'+
@@ -1095,6 +1096,11 @@ var USERS=%%USERS%%;
    document.getElementById("backBtn").onclick=function(){renderList();show("list");};
    document.getElementById("editBtn").onclick=function(){openForm(curId);};
    document.getElementById("addActBtn").onclick=function(){openActModal(curId);};
+   document.getElementById("offerBtn").onclick=function(){
+     var pre={k_firma:c.firma||"",k_firma2:c.firma2||"",k_anrede:c.anrede||"",k_vor:c.vorname||"",k_nach:c.nachname||"",k_str:c.strasse||"",k_plz:c.plz||"",k_ort:c.ort||"",k_land:landLabel(c.land)||"",k_tel:c.tel||"",k_mail:c.mail||"",k_ustid:c.ustid||""};
+     try{localStorage.setItem("amb_lepton_prefill",JSON.stringify({mode:"angebot",fields:pre,from:c.id,ts:Date.now()}));}catch(e){}
+     location.href="../index.html";
+   };
    var eab=document.getElementById("emptyAddAct");if(eab)eab.onclick=function(){openActModal(curId);};
    document.getElementById("dStatus").onchange=function(){c.status=this.value;c.updated=Date.now();saveContact(c);openDetail(curId);};
    document.getElementById("fuSet").onclick=function(){var d=document.getElementById("fuDate").value;if(!d){alert("Bitte ein Datum wählen.");return;}c.followup={due:new Date(d+"T09:00").getTime(),note:document.getElementById("fuNote").value.trim(),done:false};c.updated=Date.now();saveContact(c);openDetail(curId);};
