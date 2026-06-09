@@ -37,8 +37,9 @@
     {
       "h": "Feinkornband 1", "h_en": "Fine-grain conveyor 1",
       "teile": [
-        { "id": "FKB1-MAIN", "art": "—", "name": "Feinkornband 1 – für Siebdeck 2", "name_en": "Fine-grain conveyor 1 – for screen deck 2", "desc": "Komplette Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar", "desc_en": "Complete assembly – pick and order all individual parts in 3D", "price": 0, "model": "feinkornband-1.glb", "img": "feinkornband_1", "rot": [-90, 0, 0] },
-        { "id": "FKB1-OHNE-SD2", "art": "—", "name": "Feinkornband 1 – ohne Siebdeck 2", "name_en": "Fine-grain conveyor 1 – without screen deck 2", "desc": "Komplette Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar", "desc_en": "Complete assembly – pick and order all individual parts in 3D", "price": 0, "model": "feinkornband-1-ohne-sd2.glb", "img": "feinkornband_1_ohne_sd2", "rot": [-90, 0, 0] }
+        { "id": "FKB1-MAIN", "art": "—", "name": "Feinkornband 1 kurz – für Siebdeck 2", "name_en": "Fine-grain conveyor 1 short – for screen deck 2", "desc": "Komplette Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar", "desc_en": "Complete assembly – pick and order all individual parts in 3D", "price": 0, "model": "feinkornband-1.glb", "img": "feinkornband_1", "rot": [-90, 0, 0] },
+        { "id": "FKB1-LANG", "art": "—", "name": "Feinkornband 1 lang – für Siebdeck 2", "name_en": "Fine-grain conveyor 1 long – for screen deck 2", "desc": "Komplette Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar", "desc_en": "Complete assembly – pick and order all individual parts in 3D", "price": 0, "model": "feinkornband-1-lang.glb", "img": "feinkornband_1_lang", "rot": [-90, 0, 0] },
+        { "id": "FKB1-OHNE-SD2", "art": "—", "name": "Feinkornband 1 kurz – ohne Siebdeck 2", "name_en": "Fine-grain conveyor 1 short – without screen deck 2", "desc": "Komplette Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar", "desc_en": "Complete assembly – pick and order all individual parts in 3D", "price": 0, "model": "feinkornband-1-ohne-sd2.glb", "img": "feinkornband_1_ohne_sd2", "rot": [-90, 0, 0] }
       ]
     },
     {
