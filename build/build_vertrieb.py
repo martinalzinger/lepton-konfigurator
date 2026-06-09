@@ -560,8 +560,12 @@ var USERS=%%USERS%%;
  /* --- KI-Lead-Suche über Supabase Edge Function "lead-ai" (Claude + Web-Suche) --- */
  function aiReady(){return !!(SB&&SB.url&&SB.key&&AISECRET);}
  function aiPost(name,was,wo){
-   return fetch(SB.url.replace(/\/+$/,"")+"/functions/v1/"+name,{method:"POST",headers:{"Authorization":"Bearer "+SB.key,"apikey":SB.key,"Content-Type":"application/json","x-crm-secret":AISECRET},body:JSON.stringify({was:was,wo:wo})})
-     .then(function(r){if(!r.ok)return r.json().catch(function(){return {};}).then(function(e){var err=new Error("ai "+r.status+(e&&e.error?(": "+e.error):""));err.status=r.status;throw err;});return r.json();});
+   var ctl=("AbortController" in window)?new AbortController():null;
+   var to=ctl?setTimeout(function(){try{ctl.abort();}catch(_){}},75000):0;
+   var done=function(){if(to)clearTimeout(to);};
+   return fetch(SB.url.replace(/\/+$/,"")+"/functions/v1/"+name,{method:"POST",headers:{"Authorization":"Bearer "+SB.key,"apikey":SB.key,"Content-Type":"application/json","x-crm-secret":AISECRET},body:JSON.stringify({was:was,wo:wo}),signal:ctl?ctl.signal:undefined})
+     .then(function(r){if(!r.ok)return r.json().catch(function(){return {};}).then(function(e){var err=new Error("ai "+r.status+(e&&e.error?(": "+e.error):""));err.status=r.status;throw err;});return r.json();})
+     .then(function(d){done();return d;},function(e){done();if(e&&(e.name==="AbortError"||/abort/i.test(String(e&&e.message)))){var er=new Error("Zeitüberschreitung – die KI-Suche hat zu lange gebraucht. Bitte Region enger fassen und erneut versuchen.");er.status=0;throw er;}throw e;});
  }
  function apiAi(was,wo){
    // Edge-Function-Name kann „lead-ai" oder „lead-ai-" sein -> bei 404 die zweite Variante versuchen.
@@ -825,7 +829,7 @@ var USERS=%%USERS%%;
  function osmLoading(msg){osmStatus('<span class="spin"></span>'+msg);var m=document.getElementById("osmMap");if(m)m.style.display="none";var b=document.getElementById("osmResults");if(b)b.innerHTML='<div class="skel"></div><div class="skel" style="opacity:.7"></div><div class="skel" style="opacity:.45"></div>';}
  function osmClearResults(){var b=document.getElementById("osmResults");if(b)b.innerHTML="";var m=document.getElementById("osmMap");if(m)m.style.display="none";}
  function osmGeocode(place){
-   var url="https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=1&accept-language=de&countrycodes=de,at,ch&q="+encodeURIComponent(place);
+   var url="https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=1&accept-language=de&q="+encodeURIComponent(place);
    return fetch(url,{headers:{"Accept":"application/json"}}).then(function(r){if(!r.ok)throw new Error("geo");return r.json();}).then(function(a){if(!a||!a.length)throw new Error("noplace");return a[0];});
  }
  function osmAreaRef(g){
@@ -950,7 +954,7 @@ var USERS=%%USERS%%;
    lastQuery=was+" in "+wo;
    osmLoading('Suche „'+esc(lastQuery)+'“ in der Karte …');
    osmGeocode(wo).then(function(g){
-     searchLand=({de:"DE",at:"AT",ch:"CH",it:"IT",fr:"FR",pl:"PL",nl:"NL",be:"BE",lu:"LU",cz:"CZ"})[(g.address&&g.address.country_code)||""]||"DE";
+     var cc=(g.address&&g.address.country_code)||"";searchLand=cc?cc.toUpperCase():"DE";
      return osmOverpass(osmBuildQuery(osmAreaRef(g),osmFilters(was)));
    }).then(function(els){
      var seen={},out=[];els.forEach(function(el){var t=el.tags||{};if(!t.name)return;var k=el.type+"/"+el.id;if(seen[k])return;seen[k]=1;out.push(el);});
@@ -1365,7 +1369,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v6";
+const CACHE="vertrieb-v7";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png",
   "./vendor/leaflet.js","./vendor/leaflet.css",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
