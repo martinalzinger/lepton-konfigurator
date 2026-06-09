@@ -751,7 +751,6 @@ const ICONS={
  }
  function exportXlsx(){
   var L=lines();if(!L.length){toast(t("alert_empty"));return;}
-  if(!validateRequired())return;
   var date=new Date().toLocaleDateString(LOCALE[lang]||"de-DE",{day:"2-digit",month:"2-digit",year:"numeric"});
   var aoa=[[t("doc_title")],[t("doc_date"),date],[t("lbl_firma"),fv("c_firma")],[t("lbl_name"),fv("c_name")],[t("lbl_mail"),fv("c_mail")]];
   if(fv("c_tel"))aoa.push([t("lbl_tel"),fv("c_tel")]);
