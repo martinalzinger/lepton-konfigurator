@@ -69,7 +69,7 @@ Jedes Element exakt so:
 
     const base = {
       model: MODEL,
-      max_tokens: 12000,
+      max_tokens: 16000,
       tools: [{ type: "web_search_20260209", name: "web_search" }],
     };
 
@@ -98,19 +98,45 @@ Jedes Element exakt so:
       break;
     }
 
-    const text = (data?.content || [])
+    let text = (data?.content || [])
       .filter((b: any) => b.type === "text")
       .map((b: any) => b.text)
       .join("\n")
       .trim();
+    // Code-Fences entfernen (```json ... ```)
+    text = text.replace(/```json/gi, "").replace(/```/g, "");
 
-    let leads: unknown[] = [];
-    try {
-      const m = text.match(/\[[\s\S]*\]/);
-      const parsed = JSON.parse(m ? m[0] : text);
-      if (Array.isArray(parsed)) leads = parsed;
-    } catch (_) {
-      leads = [];
+    // Robustes Herausziehen des JSON-Arrays von Objekten (ignoriert Quellen-Fußnoten wie [1]).
+    function extractLeads(t: string): any[] | null {
+      // 1) Array, das mit [ { beginnt
+      const m = t.match(/\[\s*\{[\s\S]*\}\s*\]/);
+      if (m) { try { const a = JSON.parse(m[0]); if (Array.isArray(a)) return a; } catch (_) { /* weiter */ } }
+      // 2) gesamter Text
+      try { const a = JSON.parse(t.trim()); if (Array.isArray(a)) return a; } catch (_) { /* weiter */ }
+      // 3) abgeschnittenes Array retten: bis zum letzten vollständigen } abschneiden und schließen
+      const start = t.indexOf("[");
+      if (start >= 0) {
+        const lastObj = t.lastIndexOf("}");
+        if (lastObj > start) {
+          const repaired = t.slice(start, lastObj + 1) + "]";
+          try { const a = JSON.parse(repaired); if (Array.isArray(a)) return a; } catch (_) { /* weiter */ }
+        }
+      }
+      return null;
+    }
+
+    const leads = extractLeads(text);
+    if (leads === null) {
+      // Diagnose mitsenden, damit man im App-/Test-Ergebnis sieht, was los war.
+      return json({
+        leads: [],
+        debug: {
+          stop_reason: data?.stop_reason || null,
+          text_len: text.length,
+          truncated: data?.stop_reason === "max_tokens",
+          sample: text.slice(0, 500),
+        },
+      });
     }
     return json({ leads });
   } catch (e) {
