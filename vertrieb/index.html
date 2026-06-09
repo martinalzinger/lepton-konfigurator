@@ -165,7 +165,9 @@ textarea.field{min-height:74px;resize:vertical;line-height:1.5}
 .fu-box.active-fu{background:#fff7ed;border-color:#fed7aa}
 
 /* Modal */
-.modal-bg{position:fixed;inset:0;background:rgba(16,17,19,.45);z-index:100;display:none;align-items:flex-end;justify-content:center}
+.modal-bg{position:fixed;inset:0;background:rgba(16,17,19,.45);z-index:1500;display:none;align-items:flex-end;justify-content:center}
+/* Karten in einen eigenen Stapelkontext sperren, damit Leaflet-Ebenen nicht über Topbar/Modal liegen */
+#detMap,#osmMap,#cMap{position:relative;z-index:0}
 .modal-bg.open{display:flex}
 .modal{background:#fff;width:100%;max-width:520px;border-radius:16px 16px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom));max-height:90vh;overflow:auto}
 .modal h3{font-size:17px;font-weight:800;margin-bottom:14px}
@@ -1015,7 +1017,7 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
    (notizClean?'<div class="card" style="background:var(--field)"><div style="white-space:pre-wrap;font-size:14px">'+esc(notizClean)+'</div></div>':'')+
    // Standort-Karte des Kontakts
    (ll?('<div style="position:relative;margin:8px 0"><div id="detMap" style="height:200px;border-radius:12px;border:1px solid var(--line)"></div>'+
-        '<a class="btn sm" style="position:absolute;right:8px;top:8px;z-index:500" href="https://www.google.com/maps?q='+ll.lat+','+ll.lon+'" target="_blank" rel="noopener">In Google Maps</a></div>')
+        '<a class="btn sm" style="position:absolute;right:8px;top:8px;z-index:5" href="https://www.google.com/maps?q='+ll.lat+','+ll.lon+'" target="_blank" rel="noopener">In Google Maps</a></div>')
       :((addr)?'<div style="margin:8px 0"><button class="btn sm" id="geoBtn"><svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.7"><path d="M12 21s-7-5.2-7-11a7 7 0 0114 0c0 5.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>Auf Karte zeigen</button></div>':''))+
    // Wiedervorlage
    '<div class="fu-box'+(fu?' active-fu':'')+'" id="fuBox">'+
