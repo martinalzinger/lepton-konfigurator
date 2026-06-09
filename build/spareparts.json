@@ -128,7 +128,7 @@
           "model": "sd2-basis.glb",
           "img": "sd2_basis",
           "rot": [
-            -180,
+            0,
             0,
             0
           ],
@@ -164,7 +164,7 @@
           "model": "sd2-band-gerade-abs.glb",
           "img": "sd2_band_gerade",
           "rot": [
-            -180,
+            -90,
             0,
             0
           ],
