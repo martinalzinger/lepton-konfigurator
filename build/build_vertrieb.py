@@ -464,8 +464,9 @@ create policy "crm all" on contacts
       <input class="field" type="datetime-local" id="actDate">
     </div>
     <div id="actOfferWrap" style="margin-bottom:10px">
+      <button class="btn primary block" id="actCreateOffer" type="button" style="margin-bottom:10px"><svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.7"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/><path d="M14 3v5h5"/></svg>Im Konfigurator erstellen →</button>
       <div class="fg" style="margin-bottom:10px">
-        <label>Angebot aus dem Konfigurator verknüpfen</label>
+        <label>…oder vorhandenes Angebot verknüpfen</label>
         <select class="field" id="actOffer"><option value="">— keines —</option></select>
       </div>
       <div style="display:flex;gap:10px">
@@ -1025,6 +1026,14 @@ var USERS=%%USERS%%;
  /* ---------- Detail ---------- */
  var curId=null;
  function offerLink(name){return "../index.html"; }
+ // Kundendaten für den Konfigurator vorbereiten und dorthin springen.
+ function offerPrefillFields(c){return {k_firma:c.firma||"",k_firma2:c.firma2||"",k_anrede:c.anrede||"",k_vor:c.vorname||"",k_nach:c.nachname||"",k_str:c.strasse||"",k_plz:c.plz||"",k_ort:c.ort||"",k_land:landLabel(c.land)||"",k_tel:c.tel||"",k_mail:c.mail||"",k_ustid:c.ustid||""};}
+ function gotoConfigurator(c,withReturn){
+   try{localStorage.setItem("amb_lepton_prefill",JSON.stringify({mode:"angebot",fields:offerPrefillFields(c),from:c.id,ts:Date.now()}));
+     if(withReturn)localStorage.setItem("amb_lepton_offer_return",JSON.stringify({contactId:c.id,ts:Date.now()}));
+     else try{localStorage.removeItem("amb_lepton_offer_return");}catch(_){}}catch(e){}
+   location.href="../index.html";
+ }
  function openDetail(id){
    var c=byId(id);if(!c)return;curId=id;
    var loc=[c.str,[c.plz,c.ort].filter(Boolean).join(" ")].filter(Boolean);
@@ -1096,11 +1105,7 @@ var USERS=%%USERS%%;
    document.getElementById("backBtn").onclick=function(){renderList();show("list");};
    document.getElementById("editBtn").onclick=function(){openForm(curId);};
    document.getElementById("addActBtn").onclick=function(){openActModal(curId);};
-   document.getElementById("offerBtn").onclick=function(){
-     var pre={k_firma:c.firma||"",k_firma2:c.firma2||"",k_anrede:c.anrede||"",k_vor:c.vorname||"",k_nach:c.nachname||"",k_str:c.strasse||"",k_plz:c.plz||"",k_ort:c.ort||"",k_land:landLabel(c.land)||"",k_tel:c.tel||"",k_mail:c.mail||"",k_ustid:c.ustid||""};
-     try{localStorage.setItem("amb_lepton_prefill",JSON.stringify({mode:"angebot",fields:pre,from:c.id,ts:Date.now()}));}catch(e){}
-     location.href="../index.html";
-   };
+   document.getElementById("offerBtn").onclick=function(){gotoConfigurator(c,false);};
    var eab=document.getElementById("emptyAddAct");if(eab)eab.onclick=function(){openActModal(curId);};
    document.getElementById("dStatus").onchange=function(){c.status=this.value;c.updated=Date.now();saveContact(c);openDetail(curId);};
    document.getElementById("fuSet").onclick=function(){var d=document.getElementById("fuDate").value;if(!d){alert("Bitte ein Datum wählen.");return;}c.followup={due:new Date(d+"T09:00").getTime(),note:document.getElementById("fuNote").value.trim(),done:false};c.updated=Date.now();saveContact(c);openDetail(curId);};
@@ -1176,7 +1181,21 @@ var USERS=%%USERS%%;
    modal.classList.add("open");
  }
  document.getElementById("actCancel").onclick=function(){modal.classList.remove("open");};
+ document.getElementById("actCreateOffer").onclick=function(){var c=byId(actForId);if(c){modal.classList.remove("open");gotoConfigurator(c,true);}};
  modal.addEventListener("click",function(e){if(e.target===modal)modal.classList.remove("open");});
+ // Rücksprung aus dem Konfigurator: Angebot wurde gespeichert -> Aktivität „Angebot gesendet" vorbereiten.
+ function checkOfferReturn(){
+   try{var d=localStorage.getItem("amb_lepton_offer_done");if(!d)return;localStorage.removeItem("amb_lepton_offer_done");
+     var o=JSON.parse(d);if(!o||!o.contactId)return;var c=byId(o.contactId);if(!c)return;
+     openDetail(o.contactId);openActModal(o.contactId);
+     actType="angebot";var bs=document.querySelectorAll("#actSeg button");for(var i=0;i<bs.length;i++)bs[i].classList.toggle("on",bs[i].getAttribute("data-t")==="angebot");
+     toggleOfferField();
+     var sel=document.getElementById("actOffer");if(sel){var has=false;for(var j=0;j<sel.options.length;j++)if(sel.options[j].value===o.name)has=true;if(!has){var op=document.createElement("option");op.value=o.name;op.textContent=o.name;sel.appendChild(op);}sel.value=o.name;}
+     document.getElementById("actOfferNr").value=o.nr||"";
+     document.getElementById("actBetrag").value=o.betrag?String(Math.round(o.betrag)):"";
+     var nt=document.getElementById("actNote");if(nt&&!nt.value)nt.value="Angebot im Konfigurator erstellt: "+(o.name||"");
+   }catch(e){}
+ }
  document.getElementById("actSave").onclick=function(){
    var c=byId(actForId);if(!c)return;
    var dv=document.getElementById("actDate").value;var ts=dv?new Date(dv).getTime():Date.now();
@@ -1368,6 +1387,7 @@ var USERS=%%USERS%%;
    initFilters();renderDashboard();renderList();show("dashboard");
    refreshNotifBtn();renderDataConn();
    initBackend();                // Cloud/Server erkennen + geteilte Daten laden (sonst lokal)
+   checkOfferReturn();           // aus dem Konfigurator zurückgekommen? Angebot-Aktivität vorbereiten.
    checkReminders();
    setInterval(function(){syncFromServer();checkReminders();if(curView==="dashboard")updateBadge();},30*1000);
    document.addEventListener("visibilitychange",function(){if(!document.hidden){syncFromServer();checkReminders();}});
