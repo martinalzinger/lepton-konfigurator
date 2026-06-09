@@ -133,7 +133,63 @@ Im `spareparts.json` per `"model":"<safe>.glb"` referenzieren (Dateiname in
 
 `spareparts.json` ändern → **immer** `python3 build/build_ersatzteile.py` neu bauen.
 
+## Vertriebs-CRM (eigenständiger Ordner `vertrieb/`)
+**Vollständig getrennt** vom Konfigurator und vom Ersatzteilkatalog: eigener
+Ordner/URL (`…/vertrieb/`), **eigener Service-Worker** (`vertrieb/sw.js`, Scope
+`/vertrieb/`, Cache-Namespace `vertrieb-`), **eigenes Manifest/Icons**. Funktioniert
+**online wie offline** (PWA, installierbar) – dasselbe Modell wie der Konfigurator.
+
+Zweck: Vertrieb verwaltet **Adressen/Kontakte & Leads** (DE/CH/AT/…), erfasst pro
+Kontakt einen **Verlauf** (Anruf, E-Mail raus/rein, Angebot gesendet, Besuch, Notiz –
+jeweils mit **wer/wann**) und setzt **Wiedervorlagen/Rückruf-Erinnerungen**. Fällige
+Rückrufe erscheinen im Dashboard und als **Browser-Benachrichtigung** (Notifications API).
+
+**Zwei Betriebsarten – automatisch erkannt:**
+- **Lokal** (Standard, z. B. GitHub Pages): Daten pro Gerät im `localStorage`
+  (`amb_lepton_crm`). Übertragung per **Export/Import (JSON)**, Leads per **CSV-Import**.
+- **Server / geteilt**: Liegt der Ordner auf einem Server **mit PHP**, nutzt die App
+  automatisch das mitgelieferte Backend `vertrieb/api.php` → **eine zentrale,
+  geteilte Datendatei** `vertrieb/data/crm.json` für das ganze Team. Die App pingt
+  beim Start `api.php`; ist es da → Server-Modus (Anzeige „● Server – geteilt"),
+  sonst lokal. Status/Umschaltung im Reiter **Daten**.
+
+`api.php` ist ein **einzelnes, dateibasiertes** Backend (keine DB): `GET ?action=all`
+liefert `{rev,contacts}`, `POST ?action=batch` wendet **Ops** (`upsert`/`delete`/`bulk`)
+unter `flock`-Sperre an. Schreibvorgänge laufen **pro Kontakt** (nicht ganze DB) →
+gleichzeitiges Arbeiten ist sicher. Offline gemachte Änderungen landen in einer
+**Warteschlange** (`amb_lepton_crm_queue`) und werden bei nächster Verbindung
+nachgereicht → funktioniert **online wie offline**. Optionaler Zugriffsschutz per
+`$TOKEN` in `api.php` (gleicher Wert in der App unter Daten → Zugriffsschutz).
+Die Datendatei `vertrieb/data/crm.json` ist **nicht eingecheckt** (`.gitignore`);
+`vertrieb/data/.htaccess` sperrt den direkten Web-Zugriff (Apache).
+
+(Automatische Internet-Lead-Suche und automatisches E-Mail-Beantworten brauchen
+zusätzliche Server-Dienste und sind bewusst **nicht** enthalten.)
+
+**Verknüpfung zum Konfigurator** (gleicher Origin → gemeinsamer `localStorage`):
+- Anmeldung wird geteilt (`amb_lepton_auth`/`amb_lepton_user`, gleiche `USERS`-Liste
+  wie in `build.py`) → das CRM kennt den eingeloggten Vertriebler („wer hat Kontakt").
+- Beim Erfassen einer **„Angebot gesendet"**-Aktivität kann ein im Konfigurator
+  gespeichertes Angebot (`amb_lepton_configs`) verknüpft werden (read-only).
+
+Quelle/Build:
+- `build/build_vertrieb.py` – komplettes Template (`TPL`) + Manifest + SW + PHP-API.
+  Schreibt `vertrieb/index.html`, `vertrieb/manifest.webmanifest`, `vertrieb/sw.js`,
+  `vertrieb/api.php`, `vertrieb/data/.htaccess` und kopiert die Icons.
+  Aufruf: `python3 build/build_vertrieb.py`. Keine externen Pakete.
+  Der SW cacht `api.php` **nie** (dynamisch, immer ans Netz).
+- Marke/Optik wie der Rest (Rot `#c00000`, Manrope + IBM Plex Mono); nutzt `LOGO_*`,
+  `RED*` aus `build/assets.b64.json`.
+- UI ist **deutsch** (interne App; keine i18n-Datei).
+
 ## Deploy
 GitHub Pages aus dem Branch `main` (Ordner `/root`). Konfigurator = `index.html`
 im Wurzelverzeichnis; Ersatzteilkatalog = Ordner `ersatzteile/` (eigene URL
-`…/ersatzteile/`). Kein Build-Schritt auf dem Server nötig.
+`…/ersatzteile/`); Vertriebs-CRM = Ordner `vertrieb/` (eigene URL `…/vertrieb/`).
+Kein Build-Schritt auf dem Server nötig.
+
+**Geteiltes CRM auf eigenem Server:** Den Ordner `vertrieb/` auf einen Webserver
+**mit PHP** legen (IIS+PHP, Apache, nginx+php-fpm, NAS) und `…/vertrieb/` aufrufen;
+`vertrieb/data/` muss für den Webserver beschreibbar sein. Dann teilen sich alle
+Vertriebler automatisch denselben Datenstand. Auf GitHub Pages (kein PHP) läuft die
+App weiter im lokalen Modus.

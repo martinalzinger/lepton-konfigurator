@@ -7,3 +7,8 @@ __pycache__/
 build/models_cad/*
 !build/models_cad/README.md
 *.out.glb
+
+# CRM: zentrale Datendatei am Server (nicht einchecken – sind echte Vertriebsdaten)
+vertrieb/data/crm.json
+vertrieb/data/crm.json.*
+vertrieb/data/*.lock
