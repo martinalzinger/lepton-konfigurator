@@ -370,8 +370,10 @@ body{font-family:var(--sans);background:var(--paper);color:var(--ink);line-heigh
 .custform .ct{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);font-weight:600;margin-bottom:10px}
 .fld{display:flex;flex-direction:column;gap:5px;margin-bottom:10px}
 .fld label{font-size:12px;color:var(--muted);font-weight:600}
+.fld label.req::after{content:" *";color:var(--red);font-weight:700}
 .fld input,.fld textarea{font-family:var(--sans);font-size:13.5px;border:1px solid var(--line-strong);background:#fff;border-radius:8px;padding:9px 11px;outline:none}
 .fld input:focus,.fld textarea:focus{border-color:var(--red);box-shadow:0 0 0 3px var(--red-soft)}
+.fld input.invalid,.fld textarea.invalid{border-color:var(--red);background:var(--red-soft)}
 .segchoice{display:flex;gap:6px}
 .segchoice button{flex:1;font-family:var(--sans);font-size:13px;font-weight:600;border:1px solid var(--line-strong);background:#fff;color:var(--muted);border-radius:8px;padding:9px 8px;cursor:pointer;transition:.12s}
 .segchoice button:hover{border-color:var(--ink)}
@@ -546,13 +548,16 @@ body{font-family:var(--sans);background:var(--paper);color:var(--ink);line-heigh
       <div class="cnote" data-i18n="cart_note"></div>
       <div class="custform">
         <div class="ct" data-i18n="cust_title">Ihre Kontaktdaten</div>
-        <div class="fld"><label data-i18n="lbl_firma">Firma</label><input id="c_firma"></div>
+        <div class="fld"><label class="req" data-i18n="lbl_firma">Firma</label><input id="c_firma"></div>
         <div class="frow">
-          <div class="fld"><label data-i18n="lbl_name">Ansprechpartner</label><input id="c_name"></div>
+          <div class="fld"><label class="req" data-i18n="lbl_name">Ansprechpartner</label><input id="c_name"></div>
           <div class="fld"><label data-i18n="lbl_tel">Telefon</label><input id="c_tel" data-i18n-ph="ph_optional"></div>
         </div>
-        <div class="fld"><label data-i18n="lbl_mail">E-Mail</label><input id="c_mail" type="email"></div>
-        <div class="fld"><label data-i18n="lbl_masch">Maschinen-Nr. / Baujahr</label><input id="c_masch" data-i18n-ph="ph_optional"></div>
+        <div class="fld"><label class="req" data-i18n="lbl_mail">E-Mail</label><input id="c_mail" type="email"></div>
+        <div class="frow">
+          <div class="fld"><label class="req" data-i18n="lbl_masch">Maschinen-Nr.</label><input id="c_masch"></div>
+          <div class="fld"><label class="req" data-i18n="lbl_baujahr">Baujahr</label><input id="c_baujahr"></div>
+        </div>
         <div class="fld"><label data-i18n="lbl_liefer">Lieferart</label>
           <div class="segchoice" id="lieferSeg">
             <button type="button" data-liefer="standard" class="active" data-i18n="liefer_standard">Normaler Versand</button>
@@ -567,6 +572,7 @@ body{font-family:var(--sans);background:var(--paper);color:var(--ink);line-heigh
   <div class="dfoot">
     <button class="btn p" id="sendMail" data-i18n="btn_send_mail">Per E-Mail senden</button>
     <button class="btn s" id="printReq" data-i18n="btn_save_pdf">Als PDF speichern</button>
+    <button class="btn s" id="exportXlsx" data-i18n="btn_excel">Als Excel exportieren</button>
     <button class="btn t" id="clearCart" data-i18n="btn_clear">Leeren</button>
   </div>
 </aside>
@@ -696,9 +702,9 @@ const ICONS={
  function renderCart(){
   var ids=Object.keys(cart).filter(function(id){return item(id);});
   var empty=document.getElementById("cartEmpty"),tail=document.getElementById("cartTail"),wrap=document.getElementById("cartItems");
-  if(!ids.length){empty.style.display="block";tail.style.display="none";wrap.innerHTML="";document.getElementById("sendMail").disabled=true;document.getElementById("printReq").disabled=true;return;}
+  if(!ids.length){empty.style.display="block";tail.style.display="none";wrap.innerHTML="";document.getElementById("sendMail").disabled=true;document.getElementById("printReq").disabled=true;document.getElementById("exportXlsx").disabled=true;return;}
   empty.style.display="none";tail.style.display="block";
-  document.getElementById("sendMail").disabled=false;document.getElementById("printReq").disabled=false;
+  document.getElementById("sendMail").disabled=false;document.getElementById("printReq").disabled=false;document.getElementById("exportXlsx").disabled=false;
   var h="",sub=0,anyPrice=false;
   ids.forEach(function(id){var p=item(id),q=cart[id];if(p.price>0){sub+=p.price*q;anyPrice=true;}
    h+='<div class="citem"><div class="ci-th">'+thumbHTML(p)+'</div><div class="ci-n"><div class="ci-name">'+esc(pName(p))+'</div><div class="ci-art">'+t("art_prefix")+esc(p.art)+(p.weight>0?'  ·  '+esc(fmtKg(p.weight)):'')+(p.zoll?'  ·  '+t("col_zoll")+' '+esc(p.zoll):'')+'</div><div class="ci-price">'+priceHTML(p)+'</div>'
@@ -885,7 +891,18 @@ const ICONS={
  // ---- toast ----
  var toTimer;function toast(m){var el=document.getElementById("toast");el.textContent=m;el.classList.add("show");clearTimeout(toTimer);toTimer=setTimeout(function(){el.classList.remove("show");},1600);}
  // ---- fields persist ----
- var FLDS=["c_firma","c_name","c_tel","c_mail","c_masch","c_liefer","c_msg"];
+ var FLDS=["c_firma","c_name","c_tel","c_mail","c_masch","c_baujahr","c_liefer","c_msg"];
+ var REQFLDS=["c_firma","c_name","c_mail","c_masch","c_baujahr"];
+ function clearInvalid(){REQFLDS.forEach(function(id){var e=document.getElementById(id);if(e)e.classList.remove("invalid");});}
+ function validateRequired(){
+  var ok=true,first=null;
+  REQFLDS.forEach(function(id){var e=document.getElementById(id);if(!e)return;var v=(e.value||"").trim();
+   if(!v){e.classList.add("invalid");if(!first)first=e;ok=false;}else e.classList.remove("invalid");});
+  var em=document.getElementById("c_mail");
+  if(em&&(em.value||"").trim()&&!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em.value.trim())){em.classList.add("invalid");if(!first)first=em;ok=false;}
+  if(!ok){toast(t("fill_required"));if(first)first.focus();}
+  return ok;
+ }
  function syncLiefer(){var v=fv("c_liefer")||"standard";document.querySelectorAll("#lieferSeg button").forEach(function(b){b.classList.toggle("active",b.getAttribute("data-liefer")===v);});}
  function loadFields(){try{var o=JSON.parse(localStorage.getItem(FKEY)||"{}");FLDS.forEach(function(id){if(o[id]!=null){var e=document.getElementById(id);if(e)e.value=o[id];}});}catch(e){}}
  function saveFields(){try{var o={};FLDS.forEach(function(id){var e=document.getElementById(id);if(e)o[id]=e.value;});localStorage.setItem(FKEY,JSON.stringify(o));}catch(e){}}
@@ -896,12 +913,14 @@ const ICONS={
  // ---- send mail ----
  function sendMail(){
   var L=lines();if(!L.length){toast(t("alert_empty"));return;}
+  if(!validateRequired())return;
   var body=t("mail_intro")+"\n\n";
   L.forEach(function(l){body+="  "+l.q+"× "+l.p.art+"  "+pName(l.p)+(l.p.zoll?"   "+t("col_zoll")+" "+l.p.zoll:"")+(l.p.weight>0?"   "+fmtKg(l.p.weight*l.q):"")+(l.p.price>0?"   "+money(l.p.price*l.q):"")+"\n";});
   var tw=totalWeight();if(tw>0)body+="\n"+t("weight_total")+": "+fmtKg(tw)+"\n";
   var sub=subtotal();if(sub>0)body+=t("cart_subtotal")+": "+money(sub)+"\n";
   body+="\n"+t("lbl_liefer")+": "+t("liefer_"+(fv("c_liefer")||"standard"))+"\n";
   if(fv("c_masch"))body+=t("lbl_masch")+": "+fv("c_masch")+"\n";
+  if(fv("c_baujahr"))body+=t("lbl_baujahr")+": "+fv("c_baujahr")+"\n";
   if(fv("c_msg"))body+="\n"+fv("c_msg")+"\n";
   body+="\n"+t("mail_regards")+"\n"+[fv("c_name"),fv("c_firma")].filter(Boolean).join("\n");
   var contact=[fv("c_mail"),fv("c_tel")].filter(Boolean).join(" · ");if(contact)body+="\n"+contact;
@@ -922,7 +941,7 @@ const ICONS={
    +'<div class="dhd"><div class="dfirm"><img class="dlogo" src="'+LOGO_D+'"><div class="fnm" style="margin-top:3px">Maschinenbau GmbH</div>Am Gewerbering 14 · D-84069 Schierling<br>www.alzinger-recyclingtechnik.com<br>'+MAIL+'</div>'
    +'<div class="dmeta">'+t("doc_date")+' <b>'+esc(date)+'</b><br>'+t("lbl_liefer")+': <b>'+esc(t("liefer_"+(fv("c_liefer")||"standard")))+'</b></div></div>'
    +'<div class="dtitle">'+esc(t("doc_title"))+'</div>'
-   +'<div class="dparties"><div><span class="s">'+t("doc_from")+'</span>'+from+(fv("c_masch")?'<br><span style="color:#9a9aa0;font-size:11px">'+t("doc_machine")+': '+esc(fv("c_masch"))+'</span>':'')+'</div>'
+   +'<div class="dparties"><div><span class="s">'+t("doc_from")+'</span>'+from+((fv("c_masch")||fv("c_baujahr"))?'<br><span style="color:#9a9aa0;font-size:11px">'+(fv("c_masch")?t("lbl_masch")+': '+esc(fv("c_masch")):"")+(fv("c_masch")&&fv("c_baujahr")?' · ':"")+(fv("c_baujahr")?t("lbl_baujahr")+': '+esc(fv("c_baujahr")):"")+'</span>':'')+'</div>'
    +'<div><span class="s">'+t("doc_to")+'</span><b>Alzinger Maschinenbau GmbH</b><br>Am Gewerbering 14<br>D-84069 Schierling</div></div>'
    +'<table class="dtbl"><thead><tr><th>'+t("col_pos")+'</th><th>'+t("col_art")+'</th><th>'+t("col_name")+'</th><th>'+t("col_zoll")+'</th><th class="r">'+t("col_qty")+'</th><th class="r">'+t("col_weight")+'</th><th class="r">'+t("col_price")+'</th><th class="r">'+t("col_sum")+'</th></tr></thead><tbody>'+rows+'</tbody></table>'
    +(tw>0?'<div class="dtot" style="font-weight:600;color:var(--ink)">'+t("weight_total")+': '+fmtKg(tw)+'</div>':'')
@@ -931,7 +950,7 @@ const ICONS={
    +'<div class="dfo">'+t("doc_foot")+'</div></div>';
   document.getElementById("doc").innerHTML=doc;
  }
- function printReq(){if(!lines().length){toast(t("alert_empty"));return;}buildDoc();
+ function printReq(){if(!lines().length){toast(t("alert_empty"));return;}if(!validateRequired())return;buildDoc();
   var prev=document.title;
   var firm=((fv("c_firma")||"").trim()||"Alzinger").replace(/[^A-Za-z0-9\-_]+/g,"_").replace(/^_+|_+$/g,"")||"Alzinger";
   document.title="Ersatzteilanfrage_"+firm+"_"+new Date().toISOString().slice(0,10);  // sinnvoller PDF-Dateiname
@@ -940,6 +959,67 @@ const ICONS={
   function go(){if(fired)return;fired=true;window.print();setTimeout(function(){document.title=prev;},1200);}
   imgs.forEach(function(im){if(!im.complete){pend++;var d=function(){if(--pend<=0)go();};im.addEventListener("load",d);im.addEventListener("error",d);}});
   if(pend===0)go(); else setTimeout(go,3000);
+ }
+ // ---- Excel-Export (offline, minimales XLSX ohne Fremdpakete) ----
+ function _xx(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
+ function colRef(n){var s="";n++;while(n>0){var m=(n-1)%26;s=String.fromCharCode(65+m)+s;n=(n-m-1)/26|0;}return s;}
+ function sheetXml(aoa){
+  var rows="";
+  aoa.forEach(function(row,r){var cells="";
+   (row||[]).forEach(function(v,c){var ref=colRef(c)+(r+1);
+    if(typeof v==="number"&&isFinite(v)){cells+='<c r="'+ref+'"><v>'+v+'</v></c>';}
+    else{var s=(v==null?"":String(v));if(s==="")return;cells+='<c r="'+ref+'" t="inlineStr"><is><t xml:space="preserve">'+_xx(s)+'</t></is></c>';}});
+   rows+='<row r="'+(r+1)+'">'+cells+'</row>';});
+  return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><cols><col min="1" max="1" width="6"/><col min="2" max="2" width="16"/><col min="3" max="3" width="46"/><col min="4" max="4" width="16"/><col min="5" max="5" width="8"/><col min="6" max="6" width="12"/></cols><sheetData>'+rows+'</sheetData></worksheet>';
+ }
+ var CRCT=(function(){var t=[];for(var n=0;n<256;n++){var c=n;for(var k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0;}return t;})();
+ function crc32(b){var c=0xFFFFFFFF;for(var i=0;i<b.length;i++)c=CRCT[(c^b[i])&0xFF]^(c>>>8);return (c^0xFFFFFFFF)>>>0;}
+ function enc(s){return new TextEncoder().encode(s);}
+ function zipStore(files){
+  var u16=function(n){return [n&255,(n>>>8)&255];},u32=function(n){return [n&255,(n>>>8)&255,(n>>>16)&255,(n>>>24)&255];};
+  var parts=[],central=[],off=0;
+  files.forEach(function(f){var nb=enc(f.name),d=f.data,crc=crc32(d);
+   var lh=[].concat(u32(0x04034b50),u16(20),u16(0),u16(0),u16(0),u16(0),u32(crc),u32(d.length),u32(d.length),u16(nb.length),u16(0));
+   parts.push(new Uint8Array(lh),nb,d);
+   var ch=[].concat(u32(0x02014b50),u16(20),u16(20),u16(0),u16(0),u16(0),u16(0),u32(crc),u32(d.length),u32(d.length),u16(nb.length),u16(0),u16(0),u16(0),u16(0),u32(0),u32(off));
+   central.push(new Uint8Array(ch),nb);off+=lh.length+nb.length+d.length;});
+  var cs=off,csz=0;central.forEach(function(p){csz+=p.length;});
+  var end=[].concat(u32(0x06054b50),u16(0),u16(0),u16(files.length),u16(files.length),u32(csz),u32(cs),u16(0));
+  var all=parts.concat(central);all.push(new Uint8Array(end));
+  var tot=0;all.forEach(function(p){tot+=p.length;});
+  var out=new Uint8Array(tot),o=0;all.forEach(function(p){out.set(p,o);o+=p.length;});return out;
+ }
+ function buildXlsx(aoa){
+  var CT='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/></Types>';
+  var RR='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>';
+  var WB='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Anfrage" sheetId="1" r:id="rId1"/></sheets></workbook>';
+  var WR='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/></Relationships>';
+  return zipStore([
+   {name:"[Content_Types].xml",data:enc(CT)},
+   {name:"_rels/.rels",data:enc(RR)},
+   {name:"xl/workbook.xml",data:enc(WB)},
+   {name:"xl/_rels/workbook.xml.rels",data:enc(WR)},
+   {name:"xl/worksheets/sheet1.xml",data:enc(sheetXml(aoa))}
+  ]);
+ }
+ function exportXlsx(){
+  var L=lines();if(!L.length){toast(t("alert_empty"));return;}
+  if(!validateRequired())return;
+  var date=new Date().toLocaleDateString(LOCALE[lang]||"de-DE",{day:"2-digit",month:"2-digit",year:"numeric"});
+  var aoa=[[t("doc_title")],[t("doc_date"),date],[t("lbl_firma"),fv("c_firma")],[t("lbl_name"),fv("c_name")],[t("lbl_mail"),fv("c_mail")]];
+  if(fv("c_tel"))aoa.push([t("lbl_tel"),fv("c_tel")]);
+  aoa.push([t("lbl_masch"),fv("c_masch")]);
+  aoa.push([t("lbl_baujahr"),fv("c_baujahr")]);
+  aoa.push([t("lbl_liefer"),t("liefer_"+(fv("c_liefer")||"standard"))]);
+  aoa.push([]);
+  aoa.push([t("col_pos"),t("col_art"),t("col_name"),t("col_zoll"),t("col_qty"),t("col_weight")]);
+  L.forEach(function(l,i){aoa.push([i+1,l.p.art,pName(l.p),l.p.zoll||"",l.q,(l.p.weight>0?+(l.p.weight*l.q).toFixed(2):0)]);});
+  var tw=totalWeight();aoa.push([]);aoa.push(["","",t("weight_total"),"","",+tw.toFixed(2)]);
+  var firm=((fv("c_firma")||"Alzinger").trim()||"Alzinger").replace(/[^A-Za-z0-9\-_]+/g,"_").replace(/^_+|_+$/g,"")||"Alzinger";
+  var name="Ersatzteilanfrage_"+firm+"_"+new Date().toISOString().slice(0,10)+".xlsx";
+  var blob=new Blob([buildXlsx(aoa)],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});
+  var url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=name;document.body.appendChild(a);a.click();
+  setTimeout(function(){URL.revokeObjectURL(url);a.remove();},1500);
  }
  // ---- i18n apply ----
  function applyLang(){
@@ -965,6 +1045,8 @@ const ICONS={
   document.getElementById("partSearch").addEventListener("input",function(e){renderPartList((e.target.value||"").toLowerCase());});
   document.getElementById("sendMail").addEventListener("click",sendMail);
   document.getElementById("printReq").addEventListener("click",printReq);
+  document.getElementById("exportXlsx").addEventListener("click",exportXlsx);
+  REQFLDS.concat(["c_tel","c_msg"]).forEach(function(id){var e=document.getElementById(id);if(e)e.addEventListener("input",function(){e.classList.remove("invalid");});});
   document.getElementById("clearCart").addEventListener("click",function(){cart={};saveCart();updateBadge();renderCatalog();renderCart();});
   FLDS.forEach(function(id){var e=document.getElementById(id);if(e)e.addEventListener("input",saveFields);});
   document.querySelectorAll("#lieferSeg button").forEach(function(b){b.addEventListener("click",function(){document.getElementById("c_liefer").value=b.getAttribute("data-liefer");syncLiefer();saveFields();});});
