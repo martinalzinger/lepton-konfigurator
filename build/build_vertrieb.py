@@ -1,0 +1,944 @@
+#!/usr/bin/env python3
+# Baut die eigenständige Vertriebs-/CRM-Seite ./vertrieb/index.html.
+# Vollständig getrennt vom Konfigurator und vom Ersatzteilkatalog:
+#  - eigener Ordner/URL  (…/vertrieb/)
+#  - eigener Service-Worker (vertrieb/sw.js, Scope /vertrieb/, Cache-Namespace "vertrieb-")
+#  - eigenes Manifest/Icons
+# Daten liegen offline im Browser (localStorage "amb_lepton_crm"), pro Gerät.
+# Verknüpfung zum Konfigurator: gleicher Origin -> liest gespeicherte Angebote
+# (localStorage "amb_lepton_configs") und nutzt dieselbe Anmeldung
+# (amb_lepton_auth / amb_lepton_user), um den eingeloggten Vertriebler zu kennen.
+#
+# Aufruf:  python3 build/build_vertrieb.py
+import os, json, shutil
+
+HERE=os.path.dirname(os.path.abspath(__file__))
+ROOT=os.path.normpath(os.path.join(HERE,".."))
+OUTDIR=os.path.join(ROOT,"vertrieb")
+os.makedirs(OUTDIR,exist_ok=True)
+
+def jload(name): return json.load(open(os.path.join(HERE,name),encoding="utf8"))
+
+A=jload("assets.b64.json")
+LOGO_L=A["LOGO_L"]; LOGO_D=A["LOGO_D"]; RED=A["RED"]; RED2=A["RED2"]
+
+# Dieselbe Anmelde-Benutzerliste wie der Konfigurator (build.py). Bewusst gespiegelt,
+# damit /vertrieb/ eigenständig funktioniert und den eingeloggten Vertriebler kennt.
+USERS_JS='[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324",n:""},{h:"378b467d56232e509fc568bfc3849a9d1fb40c6a248a35d755cb9db1053c33bf",n:"Johannes Rudel"},{h:"2c5ce471a6a1e91a47b4a357064cdab49fbc11e76982da2371b15c0c6608b80f",n:"Tobias Ermel"},{h:"50b9f421b5a362836fbb38ba11d8d59b76c287ef29d6c445df771a0c8f1116df",n:"Richard Alzinger",tel:"+49 170 3336025",mail:"richard@alzinger-maschinenbau.de"},{h:"9833d8644a16501b9eab7a849a294b8b209e32db63366041b50bbfa0107da4d3",n:"Adam Domaradzki"},{h:"0ad1350f32d0d469d4c044cb1ad38b4964763caf497112c76bfc462a81ccda9b",n:"Łukasz Zdziennicki"},{h:"6dce472c58a319f6b55518c7ddcb0e438cdc50c1566ff46ec420a12289df2980",n:"Martin Alzinger",tel:"+49 170 3128533",mail:"martin@alzinger-maschinenbau.de"}]'
+
+TPL = r'''<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Alzinger · Vertrieb / CRM</title>
+<meta name="theme-color" content="#c00000">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Vertrieb CRM">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--red:%%RED%%;--red2:%%RED2%%;--paper:#f1f1ee;--surface:#fff;--ink:#16181a;--muted:#5e6166;--faint:#9a9aa0;--line:#e4e2db;--line-strong:#d3cfc4;--field:#f7f6f2;--gold:#a28231;--slate:#4e5258;--pos:#15803d;--warn:#b45309;--red-soft:rgba(192,0,0,.08);--sans:'Manrope','Helvetica Neue',Arial,sans-serif;--mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{font-family:var(--sans);background:var(--paper);color:var(--ink);line-height:1.45;font-size:15px;-webkit-font-smoothing:antialiased;padding-bottom:env(safe-area-inset-bottom)}
+button{font-family:inherit}
+input,select,textarea{font-family:var(--sans);font-size:15px}
+.mono{font-family:var(--mono)}
+.hidden{display:none!important}
+
+/* Topbar */
+.topbar{position:sticky;top:0;z-index:80;background:var(--red);color:#fff}
+.topbar-in{max-width:1120px;margin:0 auto;padding:12px 16px calc(12px + env(safe-area-inset-top)) 16px;padding-top:max(12px,env(safe-area-inset-top))}
+.tb-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.tb-logo img{height:30px;display:block}
+.tb-title{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;opacity:.92}
+.tb-user{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600}
+.tb-user .av{width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.18);display:inline-flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:12px;font-weight:600}
+.tb-user button{background:none;border:0;color:rgba(255,255,255,.85);font-size:11px;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+
+/* Tab-Navigation */
+.nav{position:sticky;top:0;z-index:70;background:#fff;border-bottom:1px solid var(--line);box-shadow:0 1px 0 rgba(0,0,0,.02)}
+.nav-in{max-width:1120px;margin:0 auto;display:flex;gap:2px;padding:0 8px;overflow-x:auto}
+.nav button{position:relative;background:none;border:0;padding:13px 14px;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent}
+.nav button.active{color:var(--red);border-bottom-color:var(--red)}
+.nav button .badge{position:absolute;top:7px;right:2px;min-width:16px;height:16px;padding:0 4px;border-radius:9px;background:var(--red);color:#fff;font-family:var(--mono);font-size:9px;font-weight:600;display:inline-flex;align-items:center;justify-content:center}
+
+.wrap{max-width:1120px;margin:0 auto;padding:18px 16px 40px}
+.view{display:none}
+.view.active{display:block;animation:fade .18s ease}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+h2.vh{font-size:20px;font-weight:800;letter-spacing:-.01em;margin-bottom:2px}
+.sub{color:var(--muted);font-size:13px;margin-bottom:16px}
+
+/* Karten / Statistik */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:20px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:13px 14px}
+.stat .n{font-family:var(--mono);font-size:24px;font-weight:600;line-height:1}
+.stat .l{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-top:6px}
+.stat.accent{border-color:var(--red);background:var(--red-soft)}
+.stat.accent .n{color:var(--red)}
+
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:12px}
+.card h3{font-size:13px;font-family:var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.card h3 .cnt{margin-left:auto;font-family:var(--mono);font-size:11px;background:var(--field);border:1px solid var(--line);border-radius:20px;padding:2px 8px;color:var(--ink)}
+
+/* Kontaktliste */
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.toolbar input.search{flex:1;min-width:180px}
+.field,input.search,select.filter{width:100%;border:1px solid var(--line-strong);background:var(--field);border-radius:9px;padding:10px 11px;color:var(--ink);outline:none}
+.field:focus,input.search:focus,select.filter:focus{border-color:var(--red);background:#fff}
+select.filter{width:auto;min-width:120px;flex:0 0 auto}
+
+.clist{display:grid;gap:9px}
+.crow{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:13px 14px;cursor:pointer;display:flex;gap:12px;align-items:flex-start;transition:.12s}
+.crow:hover{border-color:var(--line-strong);box-shadow:0 2px 10px rgba(0,0,0,.04)}
+.crow .av{flex:0 0 auto;width:40px;height:40px;border-radius:10px;background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-weight:600;font-size:14px}
+.crow .mid{flex:1;min-width:0}
+.crow .nm{font-weight:700;font-size:15px}
+.crow .meta{font-size:12px;color:var(--muted);margin-top:2px;display:flex;flex-wrap:wrap;gap:4px 10px}
+.crow .meta .flag{font-family:var(--mono);font-weight:600;color:var(--ink)}
+.crow .right{flex:0 0 auto;display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+
+.pill{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;padding:3px 8px;border-radius:20px;white-space:nowrap}
+.pill.lead{background:#eef1f4;color:var(--slate)}
+.pill.interessent{background:#fff3e0;color:var(--warn)}
+.pill.angebot{background:#e7f0ff;color:#1d4ed8}
+.pill.kunde{background:#e6f4ea;color:var(--pos)}
+.pill.verloren{background:#f3eceb;color:#8a8a8a}
+
+.due{font-family:var(--mono);font-size:10px;font-weight:600;padding:3px 8px;border-radius:20px;white-space:nowrap}
+.due.over{background:var(--red);color:#fff}
+.due.today{background:var(--warn);color:#fff}
+.due.soon{background:var(--field);color:var(--muted);border:1px solid var(--line)}
+
+.empty{text-align:center;color:var(--faint);padding:42px 16px;font-size:14px}
+.empty svg{width:42px;height:42px;stroke:var(--line-strong);fill:none;stroke-width:1.4;margin-bottom:10px}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;border:1px solid var(--line-strong);background:#fff;color:var(--ink);border-radius:9px;padding:10px 14px;font-size:13px;font-weight:600;cursor:pointer;transition:.12s}
+.btn:hover{border-color:var(--ink)}
+.btn svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.7}
+.btn.primary{background:var(--red);border-color:var(--red);color:#fff}
+.btn.primary:hover{background:#a30000;border-color:#a30000}
+.btn.ghost{background:none;border-color:transparent;color:var(--muted)}
+.btn.ghost:hover{color:var(--ink);border-color:transparent}
+.btn.sm{padding:7px 11px;font-size:12px}
+.btn.danger{color:var(--red);border-color:rgba(192,0,0,.35)}
+.btn.danger:hover{border-color:var(--red);background:var(--red-soft)}
+.btn.block{width:100%}
+.fab{position:fixed;right:18px;bottom:calc(18px + env(safe-area-inset-bottom));z-index:60;width:54px;height:54px;border-radius:50%;background:var(--red);color:#fff;border:0;box-shadow:0 8px 22px rgba(192,0,0,.4);cursor:pointer;display:flex;align-items:center;justify-content:center}
+.fab svg{width:26px;height:26px;stroke:#fff;fill:none;stroke-width:2}
+
+/* Formular */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.fg{display:flex;flex-direction:column;gap:5px}
+.fg.full{grid-column:1/-1}
+.fg label{font-size:11px;font-family:var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+textarea.field{min-height:74px;resize:vertical;line-height:1.5}
+.form-actions{display:flex;gap:8px;margin-top:18px;flex-wrap:wrap}
+
+/* Detail */
+.detail-head{display:flex;gap:14px;align-items:flex-start;margin-bottom:6px}
+.detail-head .av{width:52px;height:52px;border-radius:12px;background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-weight:600;font-size:18px;flex:0 0 auto}
+.detail-head h2{font-size:21px;font-weight:800;letter-spacing:-.01em}
+.detail-head .who{color:var(--muted);font-size:13px;margin-top:2px}
+.quick{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 4px}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:14px;margin:8px 0}
+.kv dt{font-family:var(--mono);font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);align-self:center}
+.kv dd a{color:var(--red);text-decoration:none}
+.kv dd a:hover{text-decoration:underline}
+
+/* Aktivitäten-Timeline */
+.tl{position:relative;margin-top:6px;padding-left:22px}
+.tl:before{content:"";position:absolute;left:7px;top:4px;bottom:4px;width:2px;background:var(--line)}
+.tl-item{position:relative;padding:0 0 16px}
+.tl-item:last-child{padding-bottom:2px}
+.tl-dot{position:absolute;left:-22px;top:2px;width:16px;height:16px;border-radius:50%;background:#fff;border:2px solid var(--line-strong);display:flex;align-items:center;justify-content:center}
+.tl-dot svg{width:9px;height:9px;stroke:var(--muted);fill:none;stroke-width:2}
+.tl-item.t-anruf .tl-dot{border-color:var(--pos)}.tl-item.t-anruf .tl-dot svg{stroke:var(--pos)}
+.tl-item.t-angebot .tl-dot{border-color:#1d4ed8}.tl-item.t-angebot .tl-dot svg{stroke:#1d4ed8}
+.tl-item.t-mailout .tl-dot,.tl-item.t-mailin .tl-dot{border-color:var(--gold)}.tl-item.t-mailout .tl-dot svg,.tl-item.t-mailin .tl-dot svg{stroke:var(--gold)}
+.tl-item.t-besuch .tl-dot{border-color:var(--red)}.tl-item.t-besuch .tl-dot svg{stroke:var(--red)}
+.tl-top{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.tl-type{font-weight:700;font-size:14px}
+.tl-when{font-family:var(--mono);font-size:11px;color:var(--muted)}
+.tl-by{font-size:11px;color:var(--faint)}
+.tl-note{font-size:13px;color:var(--ink);margin-top:2px;white-space:pre-wrap}
+.tl-offer{margin-top:5px;display:inline-flex;align-items:center;gap:6px;font-size:12px;background:#e7f0ff;color:#1d4ed8;border-radius:8px;padding:4px 9px;text-decoration:none}
+.tl-offer svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:1.8}
+.tl-del{margin-left:auto;background:none;border:0;color:var(--faint);cursor:pointer;font-size:11px}
+.tl-del:hover{color:var(--red)}
+
+/* Wiedervorlage-Box im Detail */
+.fu-box{background:var(--field);border:1px solid var(--line);border-radius:12px;padding:13px;margin:12px 0}
+.fu-box.active-fu{background:#fff7ed;border-color:#fed7aa}
+
+/* Modal */
+.modal-bg{position:fixed;inset:0;background:rgba(16,17,19,.45);z-index:100;display:none;align-items:flex-end;justify-content:center}
+.modal-bg.open{display:flex}
+.modal{background:#fff;width:100%;max-width:520px;border-radius:16px 16px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom));max-height:90vh;overflow:auto}
+.modal h3{font-size:17px;font-weight:800;margin-bottom:14px}
+.seg{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.seg button{flex:1;min-width:84px;border:1px solid var(--line-strong);background:#fff;border-radius:9px;padding:9px 6px;font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px}
+.seg button svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.7}
+.seg button.on{border-color:var(--red);color:var(--red);background:var(--red-soft)}
+.chk{display:flex;align-items:center;gap:9px;font-size:13px;color:var(--ink);margin:8px 0;cursor:pointer}
+.chk input{width:18px;height:18px;accent-color:var(--red)}
+
+@media(min-width:560px){.modal-bg{align-items:center}.modal{border-radius:16px}}
+@media(max-width:520px){.form-grid{grid-template-columns:1fr}}
+
+.foot{text-align:center;color:var(--faint);font-size:11px;margin-top:26px;line-height:1.7}
+.foot a{color:var(--muted)}
+
+/* Login-Gate */
+#gate{position:fixed;inset:0;background:var(--ink);z-index:200;display:flex;align-items:center;justify-content:center;padding:24px}
+#gate.hidden{display:none}
+#gate .gc{background:#fff;border-radius:16px;padding:28px 24px;width:100%;max-width:340px;text-align:center;box-shadow:0 24px 60px rgba(0,0,0,.4)}
+#gate .gl{height:34px;margin-bottom:18px}
+#gate .gh{font-size:18px;font-weight:800}
+#gate .gs{color:var(--muted);font-size:13px;margin:2px 0 18px}
+#gate input{width:100%;border:1px solid var(--line-strong);background:var(--field);border-radius:9px;padding:11px 12px;margin-bottom:10px;outline:none}
+#gate input:focus{border-color:var(--red);background:#fff}
+#gate button{width:100%;background:var(--red);color:#fff;border:0;border-radius:9px;padding:12px;font-weight:700;cursor:pointer}
+#gate .ge{color:var(--red);font-size:12px;margin-top:10px;min-height:16px}
+</style>
+</head>
+<body>
+
+<!-- Login -->
+<div id="gate">
+  <div class="gc">
+    <img class="gl" src="%%LOGOD%%" alt="Alzinger">
+    <div class="gh">Vertrieb / CRM</div>
+    <div class="gs">Anmeldung</div>
+    <form id="gateForm" autocomplete="on">
+      <input id="gu" name="username" placeholder="Benutzername" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false">
+      <input id="gp" name="password" type="password" placeholder="Passwort" autocomplete="current-password">
+      <button type="submit">Anmelden</button>
+      <div class="ge" id="gerr"></div>
+    </form>
+  </div>
+</div>
+
+<header class="topbar">
+  <div class="topbar-in">
+    <div class="tb-row">
+      <div style="display:flex;align-items:center;gap:12px;min-width:0">
+        <div class="tb-logo"><img src="%%LOGOL%%" alt="Alzinger"></div>
+        <div class="tb-title">Vertrieb&nbsp;·&nbsp;CRM</div>
+      </div>
+      <div class="tb-user">
+        <span class="av" id="uAv">–</span>
+        <div style="display:flex;flex-direction:column;line-height:1.2">
+          <span id="uName">—</span>
+          <button id="logoutBtn" type="button">Abmelden</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<nav class="nav">
+  <div class="nav-in" id="nav">
+    <button data-view="dashboard" class="active">Übersicht<span class="badge hidden" id="navBadge"></span></button>
+    <button data-view="list">Kontakte</button>
+    <button data-view="leads">Leads</button>
+    <button data-view="data">Daten</button>
+  </div>
+</nav>
+
+<div class="wrap">
+
+  <!-- ÜBERSICHT -->
+  <section class="view active" id="view-dashboard">
+    <h2 class="vh" id="greet">Übersicht</h2>
+    <div class="sub" id="greetSub">Dein Vertriebs-Cockpit</div>
+
+    <div class="stats" id="stats"></div>
+
+    <div class="card">
+      <h3>
+        <svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:var(--red);fill:none;stroke-width:1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        Wiedervorlagen / Rückrufe<span class="cnt" id="fuCnt">0</span>
+      </h3>
+      <div id="fuList"></div>
+    </div>
+
+    <div class="card">
+      <h3>
+        <svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:var(--muted);fill:none;stroke-width:1.8"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+        Letzte Aktivitäten
+      </h3>
+      <div id="recent"></div>
+    </div>
+
+    <div class="card" id="notifCard">
+      <h3><svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:var(--muted);fill:none;stroke-width:1.8"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg> Erinnerungen</h3>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:10px">Lass dich automatisch an fällige Rückrufe &amp; Nachfass-Termine erinnern (Browser-Benachrichtigung).</p>
+      <button class="btn sm" id="notifBtn" type="button">Erinnerungen aktivieren</button>
+    </div>
+  </section>
+
+  <!-- KONTAKTE -->
+  <section class="view" id="view-list">
+    <h2 class="vh">Kontakte</h2>
+    <div class="sub" id="listSub">Adressen, Ansprechpartner &amp; Verlauf</div>
+    <div class="toolbar">
+      <input class="search" id="q" placeholder="Suchen: Firma, Name, Ort, Telefon, E-Mail…">
+    </div>
+    <div class="toolbar">
+      <select class="filter" id="fStatus"><option value="">Alle Status</option></select>
+      <select class="filter" id="fLand"><option value="">Alle Länder</option></select>
+      <select class="filter" id="fOwner"><option value="">Alle Vertriebler</option></select>
+      <select class="filter" id="fSort"><option value="updated">Zuletzt aktiv</option><option value="name">Name A–Z</option><option value="created">Neueste</option><option value="due">Wiedervorlage</option></select>
+    </div>
+    <div class="clist" id="clist"></div>
+  </section>
+
+  <!-- LEADS -->
+  <section class="view" id="view-leads">
+    <h2 class="vh">Leads</h2>
+    <div class="sub">Potenzielle Kunden in DE, CH, AT &amp; Co. erfassen und nachverfolgen.</div>
+    <div class="card" style="background:#fff7ed;border-color:#fed7aa">
+      <p style="font-size:13px;color:#7c4a02">
+        <b>Hinweis:</b> Automatische Internet-Suche nach Leads (Firmenregister, Branchen-Listen)
+        und automatisches Beantworten von E-Mails brauchen einen Server-Dienst und sind in dieser
+        Offline-App bewusst <b>nicht</b> enthalten. Hier verwaltest du Leads manuell oder per Import
+        (Reiter „Daten" → CSV). Leads mit Status <b>Lead</b>/<b>Interessent</b> erscheinen hier.
+      </p>
+    </div>
+    <div class="toolbar">
+      <input class="search" id="qLead" placeholder="Leads durchsuchen…">
+      <select class="filter" id="fLeadLand"><option value="">Alle Länder</option></select>
+    </div>
+    <div class="clist" id="leadlist"></div>
+  </section>
+
+  <!-- DATEN -->
+  <section class="view" id="view-data">
+    <h2 class="vh">Daten</h2>
+    <div class="sub">Sichern, übertragen und importieren. Alles bleibt offline auf diesem Gerät.</div>
+    <div class="card">
+      <h3>Sichern &amp; Übertragen</h3>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:12px">Exportiere alle Kontakte &amp; Aktivitäten als Datei – zur Sicherung oder um sie auf ein anderes Gerät / zu Kollegen zu übertragen.</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn primary" id="expBtn" type="button"><svg viewBox="0 0 24 24"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14"/></svg>Export (JSON)</button>
+        <button class="btn" id="impBtn" type="button"><svg viewBox="0 0 24 24"><path d="M12 21V9m0 0l-4 4m4-4l4 4M5 3h14"/></svg>Import (JSON)</button>
+        <input type="file" id="impFile" accept="application/json,.json" class="hidden">
+      </div>
+    </div>
+    <div class="card">
+      <h3>Leads importieren (CSV)</h3>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:12px">CSV mit Kopfzeile. Erkannte Spalten (DE/EN, beliebige Reihenfolge):
+        <span class="mono" style="font-size:11px">firma, anrede, vorname, nachname, strasse, plz, ort, land, tel, mobil, mail, web, ustid, quelle, notiz, status</span>.
+        Trennzeichen Komma oder Semikolon.</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn" id="csvBtn" type="button"><svg viewBox="0 0 24 24"><path d="M12 21V9m0 0l-4 4m4-4l4 4M5 3h14"/></svg>CSV wählen</button>
+        <input type="file" id="csvFile" accept=".csv,text/csv" class="hidden">
+        <a class="btn ghost sm" id="csvTpl" href="#" download="leads-vorlage.csv">Vorlage herunterladen</a>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Verknüpfung</h3>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <a class="btn" href="../index.html"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M7 20h10"/></svg>Lepton Konfigurator</a>
+        <a class="btn" href="../ersatzteile/"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 00-.1-1l2-1.6-2-3.4-2.4 1a7 7 0 00-1.7-1l-.3-2.5H10l-.3 2.5a7 7 0 00-1.7 1l-2.4-1-2 3.4 2 1.6a7 7 0 000 2l-2 1.6 2 3.4 2.4-1a7 7 0 001.7 1l.3 2.5h3.8l.3-2.5a7 7 0 001.7-1l2.4 1 2-3.4-2-1.6c.07-.33.1-.66.1-1z"/></svg>Ersatzteilkatalog</a>
+      </div>
+    </div>
+    <div class="card">
+      <h3 style="color:var(--red)">Gefahrenzone</h3>
+      <button class="btn danger" id="wipeBtn" type="button">Alle CRM-Daten auf diesem Gerät löschen</button>
+    </div>
+  </section>
+
+  <!-- KONTAKT-DETAIL -->
+  <section class="view" id="view-detail"></section>
+
+  <!-- KONTAKT-FORMULAR -->
+  <section class="view" id="view-form"></section>
+
+  <div class="foot">
+    Alzinger Maschinenbau · Vertrieb / CRM — Offline-PWA, Daten nur auf diesem Gerät.<br>
+    <a href="../index.html">Konfigurator</a> · <a href="../ersatzteile/">Ersatzteile</a>
+  </div>
+</div>
+
+<button class="fab" id="fab" type="button" aria-label="Neuer Kontakt">
+  <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+</button>
+
+<!-- Aktivität-Modal -->
+<div class="modal-bg" id="actModal">
+  <div class="modal">
+    <h3>Aktivität erfassen</h3>
+    <div class="seg" id="actSeg">
+      <button data-t="anruf" class="on"><svg viewBox="0 0 24 24"><path d="M5 4h4l2 5-3 2a13 13 0 006 6l2-3 5 2v4a2 2 0 01-2 2A17 17 0 013 6a2 2 0 012-2"/></svg>Anruf</button>
+      <button data-t="mailout"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>Mail raus</button>
+      <button data-t="mailin"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>Mail rein</button>
+      <button data-t="angebot"><svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/><path d="M14 3v5h5"/></svg>Angebot</button>
+      <button data-t="besuch"><svg viewBox="0 0 24 24"><path d="M12 21s-7-5.2-7-11a7 7 0 0114 0c0 5.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>Besuch</button>
+      <button data-t="notiz"><svg viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h10"/></svg>Notiz</button>
+    </div>
+    <div class="fg" style="margin-bottom:10px">
+      <label>Datum &amp; Uhrzeit</label>
+      <input class="field" type="datetime-local" id="actDate">
+    </div>
+    <div class="fg" id="actOfferWrap" style="margin-bottom:10px">
+      <label>Verknüpftes Angebot aus dem Konfigurator</label>
+      <select class="field" id="actOffer"><option value="">— keines —</option></select>
+    </div>
+    <div class="fg" style="margin-bottom:6px">
+      <label>Notiz</label>
+      <textarea class="field" id="actNote" placeholder="Worum ging es? Ergebnis, Vereinbarung…"></textarea>
+    </div>
+    <label class="chk"><input type="checkbox" id="actFu" checked> Wiedervorlage anlegen in
+      <input type="number" id="actFuDays" value="7" min="1" max="180" style="width:58px;border:1px solid var(--line-strong);border-radius:7px;padding:4px 6px;text-align:center"> Tagen</label>
+    <div class="form-actions">
+      <button class="btn primary block" id="actSave" type="button">Speichern</button>
+      <button class="btn ghost block" id="actCancel" type="button">Abbrechen</button>
+    </div>
+  </div>
+</div>
+
+<script>
+var USERS=%%USERS%%;
+</script>
+<script>
+(function(){
+ "use strict";
+ /* ---------- SHA-256 (für Login, identisch zum Konfigurator) ---------- */
+ function sha256(ascii){function r(v,a){return (v>>>a)|(v<<(32-a));}var mp=Math.pow,mw=mp(2,32),res="",words=[],bl=ascii.length*8;var hash=sha256.h=sha256.h||[],k=sha256.k=sha256.k||[],pc=k.length,ic={},i,j;for(var c=2;pc<64;c++){if(!ic[c]){for(i=0;i<313;i+=c)ic[i]=c;hash[pc]=(mp(c,.5)*mw)|0;k[pc++]=(mp(c,1/3)*mw)|0;}}ascii+="\x80";while(ascii.length%64-56)ascii+="\x00";for(i=0;i<ascii.length;i++){j=ascii.charCodeAt(i);if(j>>8)return;words[i>>2]|=j<<((3-i)%4)*8;}words[words.length]=((bl/mw)|0);words[words.length]=bl;for(j=0;j<words.length;){var w=words.slice(j,j+=16),oh=hash;hash=hash.slice(0,8);for(i=0;i<64;i++){var w15=w[i-15],w2=w[i-2],a=hash[0],e=hash[4],t1=hash[7]+(r(e,6)^r(e,11)^r(e,25))+((e&hash[5])^((~e)&hash[6]))+k[i]+(w[i]=i<16?w[i]:(w[i-16]+(r(w15,7)^r(w15,18)^(w15>>>3))+w[i-7]+(r(w2,17)^r(w2,19)^(w2>>>10)))|0),t2=(r(a,2)^r(a,13)^r(a,22))+((a&hash[1])^(a&hash[2])^(hash[1]&hash[2]));hash=[(t1+t2)|0].concat(hash);hash[4]=(hash[4]+t1)|0;}for(i=0;i<8;i++)hash[i]=(hash[i]+oh[i])|0;}for(i=0;i<8;i++){for(j=3;j+1;j--){var b=(hash[i]>>(j*8))&255;res+=((b<16)?0:"")+b.toString(16);}}return res;}
+ var AKEY="amb_lepton_auth",UKEY="amb_lepton_user";
+ function findUser(hash){for(var i=0;i<USERS.length;i++)if(USERS[i].h===hash)return USERS[i];return null;}
+ var CUR=null; // eingeloggter Vertriebler {n,tel,mail}
+ var gate=document.getElementById("gate");
+ function setUser(u){CUR=u||{n:""};try{localStorage.setItem(UKEY,JSON.stringify({n:u.n||"",tel:u.tel||"",mail:u.mail||""}));}catch(_){}
+   document.getElementById("uName").textContent=u.n||"Vertrieb";
+   document.getElementById("uAv").textContent=initials(u.n||"?");}
+ function pass(u){setUser(u);gate.classList.add("hidden");boot();}
+ try{var existing=findUser(localStorage.getItem(AKEY));if(existing)pass(existing);}catch(e){}
+ document.getElementById("gateForm").addEventListener("submit",function(ev){ev.preventDefault();
+  var u=(document.getElementById("gu").value||"").trim().toLowerCase(),p=(document.getElementById("gp").value||"");
+  var hit=findUser(sha256(u+":"+p));
+  if(hit){try{localStorage.setItem(AKEY,hit.h);}catch(_){}document.getElementById("gerr").textContent="";pass(hit);}
+  else{document.getElementById("gerr").textContent="Benutzername oder Passwort falsch.";var gp=document.getElementById("gp");gp.value="";gp.focus();}
+ });
+ document.getElementById("logoutBtn").addEventListener("click",function(){try{localStorage.removeItem(AKEY);}catch(_){}location.reload();});
+
+ /* ---------- Konstanten ---------- */
+ var KEY="amb_lepton_crm";
+ var CFG_KEY="amb_lepton_configs"; // gespeicherte Angebote des Konfigurators (gleicher Origin)
+ var STATUS=[["lead","Lead"],["interessent","Interessent"],["angebot","Angebot offen"],["kunde","Kunde"],["verloren","Verloren"]];
+ var LANDS=[["DE","Deutschland"],["AT","Österreich"],["CH","Schweiz"],["IT","Italien"],["FR","Frankreich"],["PL","Polen"],["NL","Niederlande"],["BE","Belgien"],["LU","Luxemburg"],["CZ","Tschechien"],["DK","Dänemark"],["SE","Schweden"],["ES","Spanien"],["GB","Großbritannien"],["XX","Sonstige"]];
+ var ACT=[["anruf","Anruf"],["mailout","E-Mail (raus)"],["mailin","E-Mail (rein)"],["angebot","Angebot gesendet"],["besuch","Besuch"],["notiz","Notiz"]];
+ function statusLabel(s){for(var i=0;i<STATUS.length;i++)if(STATUS[i][0]===s)return STATUS[i][1];return "Lead";}
+ function landLabel(c){for(var i=0;i<LANDS.length;i++)if(LANDS[i][0]===c)return LANDS[i][1];return c||"";}
+ function actLabel(t){for(var i=0;i<ACT.length;i++)if(ACT[i][0]===t)return ACT[i][1];return t;}
+
+ /* ---------- Store ---------- */
+ function load(){try{var o=JSON.parse(localStorage.getItem(KEY)||"{}");if(!o.contacts)o.contacts=[];return o;}catch(e){return {contacts:[]};}}
+ function save(o){try{localStorage.setItem(KEY,JSON.stringify(o));return true;}catch(e){alert("Speichern fehlgeschlagen (Speicher voll oder gesperrt).");return false;}}
+ var DB=load();
+ function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
+ function byId(id){for(var i=0;i<DB.contacts.length;i++)if(DB.contacts[i].id===id)return DB.contacts[i];return null;}
+ function persist(){save(DB);}
+
+ /* gespeicherte Angebote des Konfigurators lesen (read-only) */
+ function loadOffers(){try{var o=JSON.parse(localStorage.getItem(CFG_KEY)||"{}");return o||{};}catch(e){return {};}}
+
+ /* ---------- Helfer ---------- */
+ function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c];});}
+ function initials(n){n=(n||"").trim();if(!n)return "?";var p=n.split(/\s+/);return ((p[0][0]||"")+(p.length>1?p[p.length-1][0]:"")).toUpperCase();}
+ function fullName(c){var n=[c.vorname,c.nachname].filter(Boolean).join(" ").trim();return n;}
+ function displayName(c){return c.firma||fullName(c)||"(ohne Namen)";}
+ function pad(n){return n<10?"0"+n:""+n;}
+ function todayStr(){var d=new Date();return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());}
+ function nowLocalInput(){var d=new Date();return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())+"T"+pad(d.getHours())+":"+pad(d.getMinutes());}
+ function fmtDate(ts){if(!ts)return "";var d=new Date(ts);return pad(d.getDate())+"."+pad(d.getMonth()+1)+"."+d.getFullYear();}
+ function fmtDateTime(ts){if(!ts)return "";var d=new Date(ts);return pad(d.getDate())+"."+pad(d.getMonth()+1)+"."+d.getFullYear()+" "+pad(d.getHours())+":"+pad(d.getMinutes());}
+ function relDays(ts){var d=Math.round((startOfDay(ts)-startOfDay(Date.now()))/86400000);return d;}
+ function startOfDay(ts){var d=new Date(ts);d.setHours(0,0,0,0);return d.getTime();}
+ function dueClass(ts){var d=relDays(ts);if(d<0)return "over";if(d===0)return "today";return "soon";}
+ function dueLabel(ts){var d=relDays(ts);if(d<0)return "überfällig ("+(-d)+"T)";if(d===0)return "heute";if(d===1)return "morgen";return "in "+d+" Tagen";}
+ function lastActivityTs(c){var t=c.updated||c.created||0;(c.activities||[]).forEach(function(a){if(a.date>t)t=a.date;});return t;}
+
+ /* ---------- Navigation ---------- */
+ var curView="dashboard";
+ function show(view){
+   curView=view;
+   var vs=document.querySelectorAll(".view");for(var i=0;i<vs.length;i++)vs[i].classList.remove("active");
+   var el=document.getElementById("view-"+view);if(el)el.classList.add("active");
+   var nb=document.querySelectorAll("#nav button");for(i=0;i<nb.length;i++)nb[i].classList.toggle("active",nb[i].getAttribute("data-view")===view);
+   window.scrollTo(0,0);
+   document.getElementById("fab").style.display=(view==="detail"||view==="form")?"none":"flex";
+ }
+ document.getElementById("nav").addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;var v=b.getAttribute("data-view");if(v){if(v==="dashboard")renderDashboard();if(v==="list")renderList();if(v==="leads")renderLeads();show(v);}});
+
+ /* ---------- Übersicht ---------- */
+ function dueFollowups(){var out=[];DB.contacts.forEach(function(c){if(c.followup&&!c.followup.done&&c.followup.due){out.push(c);}});out.sort(function(a,b){return a.followup.due-b.followup.due;});return out;}
+ function overdueOrToday(){return dueFollowups().filter(function(c){return relDays(c.followup.due)<=0;});}
+
+ function renderDashboard(){
+   var name=(CUR&&CUR.n)?CUR.n.split(" ")[0]:"";
+   document.getElementById("greet").textContent=name?("Servus, "+name+"!"):"Übersicht";
+   var st={lead:0,interessent:0,angebot:0,kunde:0,verloren:0};
+   DB.contacts.forEach(function(c){if(st[c.status]!=null)st[c.status]++;});
+   var fu=dueFollowups(),od=overdueOrToday();
+   var stats=document.getElementById("stats");
+   stats.innerHTML=
+     '<div class="stat'+(od.length?' accent':'')+'"><div class="n">'+od.length+'</div><div class="l">Rückrufe fällig</div></div>'+
+     '<div class="stat"><div class="n">'+DB.contacts.length+'</div><div class="l">Kontakte</div></div>'+
+     '<div class="stat"><div class="n">'+(st.lead+st.interessent)+'</div><div class="l">Offene Leads</div></div>'+
+     '<div class="stat"><div class="n">'+st.angebot+'</div><div class="l">Angebote offen</div></div>'+
+     '<div class="stat"><div class="n">'+st.kunde+'</div><div class="l">Kunden</div></div>';
+   // Wiedervorlagen
+   document.getElementById("fuCnt").textContent=fu.length;
+   var fl=document.getElementById("fuList");
+   if(!fu.length){fl.innerHTML='<div style="font-size:13px;color:var(--faint);padding:6px 0">Keine offenen Wiedervorlagen. Sauber! 👍</div>';}
+   else{fl.innerHTML=fu.slice(0,12).map(function(c){
+     var d=c.followup;
+     return '<div class="crow" data-id="'+c.id+'" style="margin-bottom:8px">'+
+       '<div class="av">'+esc(initials(displayName(c)))+'</div>'+
+       '<div class="mid"><div class="nm">'+esc(displayName(c))+'</div>'+
+       '<div class="meta">'+(d.note?'<span>'+esc(d.note)+'</span>':'<span>Wiedervorlage</span>')+(c.tel?'<span class="flag">'+esc(c.tel)+'</span>':'')+'</div></div>'+
+       '<div class="right"><span class="due '+dueClass(d.due)+'">'+dueLabel(d.due)+'</span>'+
+       (c.tel?'<a class="btn sm" href="tel:'+esc(c.tel)+'" onclick="event.stopPropagation()">Anrufen</a>':'')+
+       '</div></div>';
+   }).join("");}
+   // letzte Aktivitäten
+   var acts=[];
+   DB.contacts.forEach(function(c){(c.activities||[]).forEach(function(a){acts.push({c:c,a:a});});});
+   acts.sort(function(x,y){return y.a.date-x.a.date;});
+   var rc=document.getElementById("recent");
+   if(!acts.length){rc.innerHTML='<div style="font-size:13px;color:var(--faint);padding:6px 0">Noch keine Aktivitäten erfasst.</div>';}
+   else{rc.innerHTML=acts.slice(0,10).map(function(o){
+     return '<div class="crow" data-id="'+o.c.id+'" style="margin-bottom:8px;padding:11px 12px">'+
+       '<div class="mid"><div class="nm" style="font-size:14px">'+esc(actLabel(o.a.type))+' · '+esc(displayName(o.c))+'</div>'+
+       '<div class="meta"><span>'+fmtDateTime(o.a.date)+'</span>'+(o.a.by?'<span>'+esc(o.a.by)+'</span>':'')+(o.a.note?'<span>'+esc(o.a.note.slice(0,60))+'</span>':'')+'</div></div></div>';
+   }).join("");}
+   updateBadge();
+ }
+ function updateBadge(){var n=overdueOrToday().length;var b=document.getElementById("navBadge");if(n>0){b.textContent=n;b.classList.remove("hidden");}else b.classList.add("hidden");}
+
+ /* ---------- Kontaktliste ---------- */
+ function fillSelect(sel,opts,all){sel.innerHTML='<option value="">'+all+'</option>'+opts.map(function(o){return '<option value="'+o[0]+'">'+esc(o[1])+'</option>';}).join("");}
+ function ownerOpts(){var seen={},out=[];DB.contacts.forEach(function(c){if(c.owner&&!seen[c.owner]){seen[c.owner]=1;out.push([c.owner,c.owner]);}});return out;}
+ function initFilters(){
+   fillSelect(document.getElementById("fStatus"),STATUS,"Alle Status");
+   fillSelect(document.getElementById("fLand"),LANDS,"Alle Länder");
+   fillSelect(document.getElementById("fOwner"),ownerOpts(),"Alle Vertriebler");
+   fillSelect(document.getElementById("fLeadLand"),LANDS,"Alle Länder");
+ }
+ function matchQ(c,q){if(!q)return true;q=q.toLowerCase();var hay=[c.firma,c.firma2,c.vorname,c.nachname,c.ort,c.plz,c.tel,c.mobil,c.mail,c.quelle,c.notiz].join(" ").toLowerCase();return hay.indexOf(q)>=0;}
+ function contactRow(c){
+   var due=(c.followup&&!c.followup.done&&c.followup.due)?'<span class="due '+dueClass(c.followup.due)+'">'+dueLabel(c.followup.due)+'</span>':'';
+   var sub=fullName(c);var loc=[c.plz,c.ort].filter(Boolean).join(" ");
+   return '<div class="crow" data-id="'+c.id+'">'+
+     '<div class="av">'+esc(initials(displayName(c)))+'</div>'+
+     '<div class="mid"><div class="nm">'+esc(displayName(c))+'</div>'+
+     '<div class="meta">'+
+       (c.firma&&sub?'<span>'+esc(sub)+'</span>':'')+
+       (c.land?'<span class="flag">'+esc(c.land)+'</span>':'')+
+       (loc?'<span>'+esc(loc)+'</span>':'')+
+       (c.tel?'<span>'+esc(c.tel)+'</span>':'')+
+     '</div></div>'+
+     '<div class="right"><span class="pill '+esc(c.status||"lead")+'">'+esc(statusLabel(c.status))+'</span>'+due+'</div>'+
+   '</div>';
+ }
+ function renderList(){
+   var q=document.getElementById("q").value.trim();
+   var fs=document.getElementById("fStatus").value,fl=document.getElementById("fLand").value,fo=document.getElementById("fOwner").value,so=document.getElementById("fSort").value;
+   var arr=DB.contacts.filter(function(c){return matchQ(c,q)&&(!fs||c.status===fs)&&(!fl||c.land===fl)&&(!fo||c.owner===fo);});
+   arr.sort(function(a,b){
+     if(so==="name")return displayName(a).localeCompare(displayName(b),"de");
+     if(so==="created")return (b.created||0)-(a.created||0);
+     if(so==="due"){var da=(a.followup&&!a.followup.done&&a.followup.due)||9e15,db=(b.followup&&!b.followup.done&&b.followup.due)||9e15;return da-db;}
+     return lastActivityTs(b)-lastActivityTs(a);
+   });
+   document.getElementById("listSub").textContent=arr.length+" von "+DB.contacts.length+" Kontakten";
+   var el=document.getElementById("clist");
+   if(!arr.length){el.innerHTML=emptyState(DB.contacts.length?"Keine Treffer für diese Filter.":"Noch keine Kontakte. Lege den ersten an (+ unten rechts).");return;}
+   el.innerHTML=arr.map(contactRow).join("");
+ }
+ function emptyState(msg){return '<div class="empty"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 00-4-4H7a4 4 0 00-4 4v2"/><circle cx="9.5" cy="8" r="3.5"/><path d="M19 8v6M22 11h-6"/></svg><div>'+esc(msg)+'</div></div>';}
+
+ /* ---------- Leads ---------- */
+ function renderLeads(){
+   var q=document.getElementById("qLead").value.trim();var fl=document.getElementById("fLeadLand").value;
+   var arr=DB.contacts.filter(function(c){return (c.status==="lead"||c.status==="interessent")&&matchQ(c,q)&&(!fl||c.land===fl);});
+   arr.sort(function(a,b){return lastActivityTs(b)-lastActivityTs(a);});
+   var el=document.getElementById("leadlist");
+   if(!arr.length){el.innerHTML=emptyState("Keine offenen Leads. Neue Leads als Kontakt mit Status „Lead“ anlegen oder per CSV importieren (Reiter „Daten“).");return;}
+   el.innerHTML=arr.map(contactRow).join("");
+ }
+
+ /* ---------- Klick auf Kontaktzeile ---------- */
+ document.body.addEventListener("click",function(e){
+   if(e.target.closest("a"))return;
+   var row=e.target.closest(".crow");if(row&&row.getAttribute("data-id")){openDetail(row.getAttribute("data-id"));}
+ });
+
+ /* ---------- Detail ---------- */
+ var curId=null;
+ function offerLink(name){return "../index.html"; }
+ function openDetail(id){
+   var c=byId(id);if(!c)return;curId=id;
+   var loc=[c.str,[c.plz,c.ort].filter(Boolean).join(" ")].filter(Boolean);
+   var addr=[c.strasse,[c.plz,c.ort].filter(Boolean).join(" "),landLabel(c.land)].filter(Boolean).join(", ");
+   var acts=(c.activities||[]).slice().sort(function(a,b){return b.date-a.date;});
+   var fu=c.followup&&!c.followup.done&&c.followup.due?c.followup:null;
+   var html=''+
+   '<button class="btn ghost sm" id="backBtn" style="margin-bottom:10px">← Zurück</button>'+
+   '<div class="detail-head">'+
+     '<div class="av">'+esc(initials(displayName(c)))+'</div>'+
+     '<div style="flex:1;min-width:0"><h2>'+esc(displayName(c))+'</h2>'+
+       '<div class="who">'+esc([fullName(c),c.firma&&fullName(c)?"":""].filter(Boolean).join(""))+
+         (fullName(c)&&c.firma?esc(fullName(c)):"")+(c.anrede?' · '+esc(c.anrede):'')+'</div>'+
+     '</div>'+
+     '<span class="pill '+esc(c.status||"lead")+'" style="align-self:flex-start">'+esc(statusLabel(c.status))+'</span>'+
+   '</div>'+
+   '<div class="quick">'+
+     (c.tel?'<a class="btn sm primary" href="tel:'+esc(c.tel)+'"><svg viewBox="0 0 24 24"><path d="M5 4h4l2 5-3 2a13 13 0 006 6l2-3 5 2v4a2 2 0 01-2 2A17 17 0 013 6a2 2 0 012-2"/></svg>Anrufen</a>':'')+
+     (c.mobil?'<a class="btn sm" href="tel:'+esc(c.mobil)+'">Mobil</a>':'')+
+     (c.mail?'<a class="btn sm" href="mailto:'+esc(c.mail)+'"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>E-Mail</a>':'')+
+     '<button class="btn sm" id="addActBtn"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Aktivität</button>'+
+     '<button class="btn sm" id="editBtn">Bearbeiten</button>'+
+   '</div>'+
+   // Status-Schnellwechsel
+   '<div class="fg" style="max-width:240px;margin:8px 0"><label>Status ändern</label><select class="field" id="dStatus">'+
+     STATUS.map(function(s){return '<option value="'+s[0]+'"'+(c.status===s[0]?' selected':'')+'>'+esc(s[1])+'</option>';}).join("")+'</select></div>'+
+   // Stammdaten
+   '<dl class="kv">'+
+     (c.firma2?'<dt>Zusatz</dt><dd>'+esc(c.firma2)+'</dd>':'')+
+     (addr?'<dt>Adresse</dt><dd>'+esc(addr)+'</dd>':'')+
+     (c.tel?'<dt>Telefon</dt><dd><a href="tel:'+esc(c.tel)+'">'+esc(c.tel)+'</a></dd>':'')+
+     (c.mobil?'<dt>Mobil</dt><dd><a href="tel:'+esc(c.mobil)+'">'+esc(c.mobil)+'</a></dd>':'')+
+     (c.mail?'<dt>E-Mail</dt><dd><a href="mailto:'+esc(c.mail)+'">'+esc(c.mail)+'</a></dd>':'')+
+     (c.web?'<dt>Web</dt><dd><a href="'+esc(/^https?:/.test(c.web)?c.web:"https://"+c.web)+'" target="_blank" rel="noopener">'+esc(c.web)+'</a></dd>':'')+
+     (c.ustid?'<dt>USt-IdNr.</dt><dd>'+esc(c.ustid)+'</dd>':'')+
+     (c.quelle?'<dt>Quelle</dt><dd>'+esc(c.quelle)+'</dd>':'')+
+     (c.owner?'<dt>Betreuer</dt><dd>'+esc(c.owner)+'</dd>':'')+
+   '</dl>'+
+   (c.notiz?'<div class="card" style="background:var(--field)"><div style="white-space:pre-wrap;font-size:14px">'+esc(c.notiz)+'</div></div>':'')+
+   // Wiedervorlage
+   '<div class="fu-box'+(fu?' active-fu':'')+'" id="fuBox">'+
+     '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><b style="font-size:13px">Wiedervorlage / Rückruf</b>'+
+       (fu?'<span class="due '+dueClass(fu.due)+'">'+dueLabel(fu.due)+'</span>':'<span style="font-size:12px;color:var(--muted)">keine</span>')+'</div>'+
+     (fu&&fu.note?'<div style="font-size:13px;margin-bottom:8px">'+esc(fu.note)+'</div>':'')+
+     '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">'+
+       '<input class="field" type="date" id="fuDate" value="'+(fu?new Date(fu.due).toISOString().slice(0,10):"")+'" style="width:auto">'+
+       '<input class="field" id="fuNote" placeholder="Notiz (optional)" value="'+(fu?esc(fu.note||""):"")+'" style="flex:1;min-width:140px">'+
+       '<button class="btn sm" id="fuSet">Setzen</button>'+
+       (fu?'<button class="btn sm danger" id="fuDone">Erledigt</button>':'')+
+     '</div>'+
+   '</div>'+
+   // Aktivitäten
+   '<h3 style="font-family:var(--mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:18px 0 10px">Verlauf ('+acts.length+')</h3>'+
+   (acts.length?'<div class="tl">'+acts.map(actItem).join("")+'</div>':'<div style="font-size:13px;color:var(--faint);padding:4px 0 14px">Noch nichts erfasst. Erfasse den ersten Anruf, eine Mail oder ein Angebot.</div>')+
+   '<div style="margin:22px 0 8px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn danger sm" id="delBtn">Kontakt löschen</button></div>';
+   var v=document.getElementById("view-detail");v.innerHTML=html;show("detail");
+   document.getElementById("backBtn").onclick=function(){renderList();show("list");};
+   document.getElementById("editBtn").onclick=function(){openForm(curId);};
+   document.getElementById("addActBtn").onclick=function(){openActModal(curId);};
+   document.getElementById("dStatus").onchange=function(){c.status=this.value;c.updated=Date.now();persist();openDetail(curId);};
+   document.getElementById("fuSet").onclick=function(){var d=document.getElementById("fuDate").value;if(!d){alert("Bitte ein Datum wählen.");return;}c.followup={due:new Date(d+"T09:00").getTime(),note:document.getElementById("fuNote").value.trim(),done:false};c.updated=Date.now();persist();openDetail(curId);};
+   var fd=document.getElementById("fuDone");if(fd)fd.onclick=function(){if(c.followup)c.followup.done=true;c.updated=Date.now();persist();openDetail(curId);};
+   document.getElementById("delBtn").onclick=function(){if(confirm("Diesen Kontakt mit gesamtem Verlauf endgültig löschen?")){DB.contacts=DB.contacts.filter(function(x){return x.id!==curId;});persist();renderList();show("list");}};
+ }
+ function actItem(a){
+   var cls="t-"+a.type;
+   var icon={anruf:'<path d="M5 4h4l2 5-3 2a13 13 0 006 6l2-3 5 2v4a2 2 0 01-2 2A17 17 0 013 6a2 2 0 012-2"/>',
+     angebot:'<path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/>',
+     mailout:'<path d="M3 7l9 6 9-6"/>',mailin:'<path d="M3 7l9 6 9-6"/>',
+     besuch:'<path d="M12 21s-7-5.2-7-11a7 7 0 0114 0c0 5.8-7 11-7 11z"/>',notiz:'<path d="M5 7h14M5 12h14M5 17h9"/>'}[a.type]||'<circle cx="12" cy="12" r="6"/>';
+   var offer="";
+   if(a.offer){offer='<a class="tl-offer" href="../index.html" title="Im Konfigurator gespeichertes Angebot"><svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/><path d="M14 3v5h5"/></svg>'+esc(a.offer)+'</a>';}
+   return '<div class="tl-item '+cls+'">'+
+     '<div class="tl-dot"><svg viewBox="0 0 24 24">'+icon+'</svg></div>'+
+     '<div class="tl-top"><span class="tl-type">'+esc(actLabel(a.type))+'</span>'+
+       '<span class="tl-when">'+fmtDateTime(a.date)+'</span>'+(a.by?'<span class="tl-by">· '+esc(a.by)+'</span>':'')+
+       '<button class="tl-del" data-act="'+a.id+'">löschen</button></div>'+
+     (a.note?'<div class="tl-note">'+esc(a.note)+'</div>':'')+offer+
+   '</div>';
+ }
+ // Aktivität löschen
+ document.getElementById("view-detail").addEventListener("click",function(e){
+   var d=e.target.closest(".tl-del");if(!d)return;var aid=d.getAttribute("data-act");var c=byId(curId);if(!c)return;
+   c.activities=(c.activities||[]).filter(function(x){return x.id!==aid;});c.updated=Date.now();persist();openDetail(curId);
+ });
+
+ /* ---------- Aktivität-Modal ---------- */
+ var actType="anruf",actForId=null;
+ var modal=document.getElementById("actModal");
+ document.getElementById("actSeg").addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;actType=b.getAttribute("data-t");var bs=this.querySelectorAll("button");for(var i=0;i<bs.length;i++)bs[i].classList.toggle("on",bs[i]===b);toggleOfferField();});
+ function toggleOfferField(){document.getElementById("actOfferWrap").style.display=(actType==="angebot")?"":"none";}
+ function openActModal(id){
+   actForId=id;actType="anruf";
+   var bs=document.querySelectorAll("#actSeg button");for(var i=0;i<bs.length;i++)bs[i].classList.toggle("on",bs[i].getAttribute("data-t")==="anruf");
+   document.getElementById("actDate").value=nowLocalInput();
+   document.getElementById("actNote").value="";
+   document.getElementById("actFu").checked=true;document.getElementById("actFuDays").value=7;
+   // Angebote aus Konfigurator füllen
+   var offers=loadOffers();var sel=document.getElementById("actOffer");
+   var names=Object.keys(offers).sort();
+   sel.innerHTML='<option value="">— keines —</option>'+names.map(function(n){
+     var o=offers[n]||{};var nr=(o.fields&&o.fields.m_nr)?(" · Nr "+o.fields.m_nr):"";
+     return '<option value="'+esc(n)+'">'+esc(n)+esc(nr)+'</option>';
+   }).join("");
+   toggleOfferField();
+   modal.classList.add("open");
+ }
+ document.getElementById("actCancel").onclick=function(){modal.classList.remove("open");};
+ modal.addEventListener("click",function(e){if(e.target===modal)modal.classList.remove("open");});
+ document.getElementById("actSave").onclick=function(){
+   var c=byId(actForId);if(!c)return;
+   var dv=document.getElementById("actDate").value;var ts=dv?new Date(dv).getTime():Date.now();
+   var a={id:uid(),type:actType,date:ts,note:document.getElementById("actNote").value.trim(),by:(CUR&&CUR.n)||""};
+   if(actType==="angebot"){var off=document.getElementById("actOffer").value;if(off)a.offer=off;}
+   c.activities=c.activities||[];c.activities.push(a);
+   // Status automatisch hochstufen
+   if(actType==="angebot"&&(c.status==="lead"||c.status==="interessent"))c.status="angebot";
+   else if((actType==="anruf"||actType==="mailin"||actType==="besuch")&&c.status==="lead")c.status="interessent";
+   // Automatische Wiedervorlage
+   if(document.getElementById("actFu").checked){
+     var days=parseInt(document.getElementById("actFuDays").value,10)||7;
+     var due=startOfDay(ts+days*86400000)+9*3600000;
+     var note=actType==="angebot"?"Angebot nachfassen":(actType==="anruf"?"Erneut anrufen":"Nachfassen");
+     c.followup={due:due,note:note,done:false};
+   }
+   c.updated=Date.now();persist();modal.classList.remove("open");openDetail(actForId);
+ };
+
+ /* ---------- Formular (Neu/Bearbeiten) ---------- */
+ function fInput(id,label,val,type,full,ph){return '<div class="fg'+(full?' full':'')+'"><label>'+label+'</label><input class="field" id="f_'+id+'" type="'+(type||"text")+'" value="'+esc(val||"")+'"'+(ph?' placeholder="'+esc(ph)+'"':'')+'></div>';}
+ function openForm(id){
+   var c=id?byId(id):null;var isNew=!c;c=c||{};
+   var statusSel='<div class="fg"><label>Status</label><select class="field" id="f_status">'+STATUS.map(function(s){return '<option value="'+s[0]+'"'+((c.status||"lead")===s[0]?' selected':'')+'>'+esc(s[1])+'</option>';}).join("")+'</select></div>';
+   var landSel='<div class="fg"><label>Land</label><select class="field" id="f_land">'+LANDS.map(function(l){return '<option value="'+l[0]+'"'+((c.land||"DE")===l[0]?' selected':'')+'>'+esc(l[1])+'</option>';}).join("")+'</select></div>';
+   var ownerSel='<div class="fg"><label>Betreuer (Vertriebler)</label><select class="field" id="f_owner"><option value="">—</option>'+
+     USERS.filter(function(u){return u.n;}).map(function(u){var sel=(c.owner||(CUR&&CUR.n))===u.n?' selected':'';return '<option'+sel+'>'+esc(u.n)+'</option>';}).join("")+'</select></div>';
+   var html=''+
+   '<button class="btn ghost sm" id="fBack" style="margin-bottom:10px">← Zurück</button>'+
+   '<h2 class="vh">'+(isNew?"Neuer Kontakt / Lead":"Kontakt bearbeiten")+'</h2>'+
+   '<div class="sub">Pflicht ist nur ein Name (Firma oder Person).</div>'+
+   '<div class="form-grid">'+
+     fInput("firma","Firma",c.firma,"text",true)+
+     fInput("firma2","Zusatz / Abteilung",c.firma2,"text",true)+
+     fInput("anrede","Anrede / Titel",c.anrede)+
+     '<div class="fg"></div>'+
+     fInput("vorname","Vorname",c.vorname)+
+     fInput("nachname","Nachname",c.nachname)+
+     fInput("strasse","Straße &amp; Nr.",c.strasse,"text",true)+
+     fInput("plz","PLZ",c.plz)+
+     fInput("ort","Ort",c.ort)+
+     landSel+statusSel+
+     fInput("tel","Telefon",c.tel,"tel")+
+     fInput("mobil","Mobil",c.mobil,"tel")+
+     fInput("mail","E-Mail",c.mail,"email")+
+     fInput("web","Webseite",c.web)+
+     fInput("ustid","USt-IdNr.",c.ustid)+
+     fInput("quelle","Quelle (Messe, Empfehlung…)",c.quelle)+
+     ownerSel+
+     '<div class="fg full"><label>Notizen</label><textarea class="field" id="f_notiz" placeholder="Bedarf, Maschinen, Besonderheiten…">'+esc(c.notiz||"")+'</textarea></div>'+
+   '</div>'+
+   '<div class="form-actions">'+
+     '<button class="btn primary" id="fSave">Speichern</button>'+
+     '<button class="btn ghost" id="fCancel">Abbrechen</button>'+
+   '</div>';
+   var v=document.getElementById("view-form");v.innerHTML=html;show("form");
+   function done(){if(id){openDetail(id);}else{renderList();show("list");}}
+   document.getElementById("fBack").onclick=done;
+   document.getElementById("fCancel").onclick=done;
+   document.getElementById("fSave").onclick=function(){
+     function g(k){var e=document.getElementById("f_"+k);return e?e.value.trim():"";}
+     var rec=c.id?c:{id:uid(),created:Date.now(),activities:[]};
+     ["firma","firma2","anrede","vorname","nachname","strasse","plz","ort","land","status","tel","mobil","mail","web","ustid","quelle","owner","notiz"].forEach(function(k){rec[k]=g(k);});
+     if(!rec.firma&&!rec.vorname&&!rec.nachname){alert("Bitte mindestens eine Firma oder einen Namen angeben.");return;}
+     rec.updated=Date.now();
+     if(!c.id)DB.contacts.push(rec);
+     persist();openDetail(rec.id);
+   };
+ }
+
+ /* ---------- FAB ---------- */
+ document.getElementById("fab").onclick=function(){openForm(null);};
+
+ /* ---------- Suche/Filter Listener ---------- */
+ ["q"].forEach(function(id){document.getElementById(id).addEventListener("input",renderList);});
+ ["fStatus","fLand","fOwner","fSort"].forEach(function(id){document.getElementById(id).addEventListener("change",renderList);});
+ document.getElementById("qLead").addEventListener("input",renderLeads);
+ document.getElementById("fLeadLand").addEventListener("change",renderLeads);
+
+ /* ---------- Daten: Export/Import ---------- */
+ document.getElementById("expBtn").onclick=function(){
+   var blob=new Blob([JSON.stringify(DB,null,2)],{type:"application/json"});
+   var a=document.createElement("a");a.href=URL.createObjectURL(blob);
+   a.download="amb-crm-"+todayStr()+".json";a.click();setTimeout(function(){URL.revokeObjectURL(a.href);},2000);
+ };
+ document.getElementById("impBtn").onclick=function(){document.getElementById("impFile").click();};
+ document.getElementById("impFile").onchange=function(e){
+   var f=e.target.files[0];if(!f)return;var rd=new FileReader();
+   rd.onload=function(){try{var inc=JSON.parse(rd.result);var list=inc.contacts||inc;if(!Array.isArray(list))throw 0;
+     var mode=confirm("Importierte Kontakte ZUSAMMENFÜHREN (OK) oder bestehende ERSETZEN (Abbrechen)?");
+     if(mode){var have={};DB.contacts.forEach(function(c){have[c.id]=c;});list.forEach(function(c){if(c.id&&have[c.id]){}else{if(!c.id)c.id=uid();DB.contacts.push(c);}});}
+     else{DB.contacts=list.map(function(c){if(!c.id)c.id=uid();if(!c.activities)c.activities=[];return c;});}
+     persist();alert("Import abgeschlossen: "+list.length+" Kontakte verarbeitet.");renderList();renderDashboard();show("list");
+   }catch(err){alert("Datei konnte nicht gelesen werden (kein gültiges CRM-JSON).");}};
+   rd.readAsText(f);e.target.value="";
+ };
+ // CSV
+ document.getElementById("csvBtn").onclick=function(){document.getElementById("csvFile").click();};
+ document.getElementById("csvFile").onchange=function(e){var f=e.target.files[0];if(!f)return;var rd=new FileReader();rd.onload=function(){var n=importCSV(rd.result);alert(n+" Leads importiert.");renderList();renderDashboard();show("list");};rd.readAsText(f);e.target.value="";};
+ var CSV_COLS={firma:"firma",company:"firma",zusatz:"firma2",anrede:"anrede",vorname:"vorname",firstname:"vorname",nachname:"nachname",lastname:"nachname",name:"nachname",strasse:"strasse","straße":"strasse",street:"strasse",plz:"plz",zip:"plz",ort:"ort",city:"ort",land:"land",country:"land",tel:"tel",telefon:"tel",phone:"tel",mobil:"mobil",mobile:"mobil",mail:"mail",email:"mail","e-mail":"mail",web:"web",website:"web",url:"web",ustid:"ustid",vat:"ustid",quelle:"quelle",source:"quelle",notiz:"notiz",note:"notiz",notes:"notiz",status:"status"};
+ function splitCSVLine(line,sep){var out=[],cur="",q=false;for(var i=0;i<line.length;i++){var ch=line[i];if(q){if(ch==='"'){if(line[i+1]==='"'){cur+='"';i++;}else q=false;}else cur+=ch;}else{if(ch==='"')q=true;else if(ch===sep){out.push(cur);cur="";}else cur+=ch;}}out.push(cur);return out;}
+ function importCSV(text){
+   text=text.replace(/^﻿/,"");var lines=text.split(/\r?\n/).filter(function(l){return l.trim();});if(lines.length<2)return 0;
+   var sep=(lines[0].split(";").length>lines[0].split(",").length)?";":",";
+   var head=splitCSVLine(lines[0],sep).map(function(h){return CSV_COLS[h.trim().toLowerCase()]||null;});
+   var n=0;
+   for(var r=1;r<lines.length;r++){var cells=splitCSVLine(lines[r],sep);var rec={id:uid(),created:Date.now(),updated:Date.now(),status:"lead",land:"DE",activities:[]};var has=false;
+     for(var c=0;c<head.length;c++){if(head[c]&&cells[c]!=null){var val=cells[c].trim();if(val){rec[head[c]]=val;has=true;}}}
+     if(!has)continue;if(rec.land)rec.land=rec.land.toUpperCase().slice(0,2)||"DE";if(!findStatus(rec.status))rec.status="lead";
+     DB.contacts.push(rec);n++;}
+   persist();return n;
+ }
+ function findStatus(s){for(var i=0;i<STATUS.length;i++)if(STATUS[i][0]===s)return true;return false;}
+ (function(){var tpl="firma;anrede;vorname;nachname;strasse;plz;ort;land;tel;mobil;mail;web;quelle;notiz\n"+
+   "Mustermann GmbH;Herr;Max;Mustermann;Industriestr. 1;80331;München;DE;+49 89 123456;;info@mustermann.de;mustermann.de;Messe Bauma;Interesse Lepton 5100\n";
+   document.getElementById("csvTpl").href="data:text/csv;charset=utf-8,"+encodeURIComponent(tpl);})();
+ document.getElementById("wipeBtn").onclick=function(){if(confirm("Wirklich ALLE CRM-Daten auf diesem Gerät löschen? Das kann nicht rückgängig gemacht werden.")){if(confirm("Sicher? Letzte Warnung.")){DB={contacts:[]};persist();renderDashboard();renderList();show("dashboard");}}};
+
+ /* ---------- Erinnerungen (Browser-Benachrichtigungen) ---------- */
+ var NKEY="amb_crm_notified";
+ function notifiedSet(){try{return JSON.parse(localStorage.getItem(NKEY)||"{}");}catch(e){return {};}}
+ function setNotified(o){try{localStorage.setItem(NKEY,JSON.stringify(o));}catch(e){}}
+ function refreshNotifBtn(){var b=document.getElementById("notifBtn");var card=document.getElementById("notifCard");
+   if(!("Notification" in window)){card.querySelector("p").textContent="Dieser Browser unterstützt keine Benachrichtigungen. Fällige Rückrufe siehst du oben in der Liste.";b.style.display="none";return;}
+   if(Notification.permission==="granted"){b.textContent="Erinnerungen sind aktiv ✓";b.disabled=true;b.style.opacity=.7;}
+   else if(Notification.permission==="denied"){b.textContent="Im Browser blockiert";b.disabled=true;}
+ }
+ document.getElementById("notifBtn").onclick=function(){if(!("Notification" in window))return;Notification.requestPermission().then(function(){refreshNotifBtn();checkReminders();});};
+ function checkReminders(){
+   if(!("Notification" in window)||Notification.permission!=="granted")return;
+   var seen=notifiedSet();var today=todayStr();
+   overdueOrToday().forEach(function(c){
+     var key=c.id+"|"+today+"|"+(c.followup.due);
+     if(seen[key])return;seen[key]=1;
+     try{var n=new Notification("Rückruf fällig: "+displayName(c),{body:(c.followup.note||"Wiedervorlage")+(c.tel?" · "+c.tel:""),tag:"crm-"+c.id,icon:"icon-192.png"});
+       n.onclick=function(){window.focus();openDetail(c.id);n.close();};}catch(e){}
+   });
+   setNotified(seen);
+ }
+
+ /* ---------- Start ---------- */
+ var booted=false;
+ function boot(){
+   if(booted)return;booted=true;
+   initFilters();renderDashboard();renderList();show("dashboard");
+   refreshNotifBtn();checkReminders();
+   setInterval(function(){checkReminders();if(curView==="dashboard")updateBadge();},5*60*1000);
+   document.addEventListener("visibilitychange",function(){if(!document.hidden){checkReminders();if(curView==="dashboard")renderDashboard();}});
+ }
+
+ if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){});});}
+})();
+</script>
+</body>
+</html>
+'''
+
+# Manifest + Service-Worker (eigenständig, Scope /vertrieb/)
+MANIFEST = {
+  "name": "Alzinger Vertrieb / CRM",
+  "short_name": "Vertrieb CRM",
+  "description": "CRM für den Alzinger-Vertrieb: Kontakte, Leads, Aktivitäten (Anruf/Angebot) und Wiedervorlagen – offline.",
+  "lang": "de",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#16181a",
+  "theme_color": "#c00000",
+  "icons": [
+    {"src":"icon-192.png","sizes":"192x192","type":"image/png","purpose":"any maskable"},
+    {"src":"icon-512.png","sizes":"512x512","type":"image/png","purpose":"any maskable"}
+  ]
+}
+
+SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
+// Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
+const CACHE="vertrieb-v1";
+const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png"];
+
+self.addEventListener("install",e=>{
+  e.waitUntil(
+    caches.open(CACHE)
+      .then(c=>Promise.all(ASSETS.map(u=>c.add(u).catch(()=>{}))))
+      .then(()=>self.skipWaiting())
+  );
+});
+
+self.addEventListener("activate",e=>{
+  // NUR eigene (vertrieb-) Caches aufräumen – fremde bleiben unberührt
+  e.waitUntil(
+    caches.keys()
+      .then(k=>Promise.all(k.filter(x=>x.startsWith("vertrieb-")&&x!==CACHE).map(x=>caches.delete(x))))
+      .then(()=>self.clients.claim())
+  );
+});
+
+self.addEventListener("fetch",e=>{
+  const req=e.request;
+  if(req.method!=="GET")return;
+  const isHTML=req.mode==="navigate"||(req.headers.get("accept")||"").includes("text/html");
+  if(isHTML){
+    e.respondWith(
+      fetch(req).then(resp=>{
+        const cp=resp.clone();
+        caches.open(CACHE).then(c=>{c.put("./index.html",cp).catch(()=>{});}).catch(()=>{});
+        return resp;
+      }).catch(()=>
+        caches.match("./index.html",{ignoreSearch:true}).then(r=>r||caches.match("./",{ignoreSearch:true}))
+      )
+    );
+    return;
+  }
+  e.respondWith(
+    caches.match(req,{ignoreVary:true}).then(r=>r||fetch(req).then(resp=>{
+      const cp=resp.clone();
+      caches.open(CACHE).then(c=>c.put(req,cp)).catch(()=>{});
+      return resp;
+    }).catch(()=>caches.match("./index.html",{ignoreSearch:true})))
+  );
+});
+'''
+
+# ---- Ausgabe schreiben ----
+out=TPL
+out=out.replace("%%RED%%",RED).replace("%%RED2%%",RED2)
+out=out.replace("%%LOGOL%%",LOGO_L).replace("%%LOGOD%%",LOGO_D)
+out=out.replace("%%USERS%%",USERS_JS)
+
+for tok in ["%%RED%%","%%RED2%%","%%LOGOL%%","%%LOGOD%%","%%USERS%%"]:
+    assert tok not in out, "Token übrig: "+tok
+for need in ['id="gateForm"','id="clist"','id="actModal"','renderDashboard','amb_lepton_crm','amb_lepton_configs','checkReminders']:
+    assert need in out, "Pflicht-Markierung fehlt: "+need
+
+open(os.path.join(OUTDIR,"index.html"),"w",encoding="utf8").write(out)
+open(os.path.join(OUTDIR,"manifest.webmanifest"),"w",encoding="utf8").write(json.dumps(MANIFEST,ensure_ascii=False,indent=2))
+open(os.path.join(OUTDIR,"sw.js"),"w",encoding="utf8").write(SW)
+# Icons aus dem Wurzelverzeichnis übernehmen (gleiche Marke)
+for ic in ["icon-192.png","icon-512.png"]:
+    src=os.path.join(ROOT,ic)
+    if os.path.exists(src): shutil.copyfile(src,os.path.join(OUTDIR,ic))
+
+print("vertrieb/index.html erzeugt – bytes",len(out.encode("utf8")))
+print("vertrieb/manifest.webmanifest, vertrieb/sw.js, Icons geschrieben")
