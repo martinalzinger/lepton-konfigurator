@@ -52,7 +52,8 @@
     {
       "h": "Feinkornband 3", "h_en": "Fine-grain conveyor 3",
       "teile": [
-        { "id": "FKB3-MAIN", "art": "—", "name": "Feinkornband 3 mit Magnetabscheider", "name_en": "Fine-grain conveyor 3 with magnetic separator", "desc": "Komplette Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar", "desc_en": "Complete assembly – pick and order all individual parts in 3D", "price": 0, "model": "feinkornband-3.glb", "img": "feinkornband_3", "rot": [90, 0, 0] }
+        { "id": "FKB3-MAIN", "art": "—", "name": "Feinkornband 3 mit Magnetabscheider", "name_en": "Fine-grain conveyor 3 with magnetic separator", "desc": "Komplette Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar", "desc_en": "Complete assembly – pick and order all individual parts in 3D", "price": 0, "model": "feinkornband-3.glb", "img": "feinkornband_3", "rot": [90, 0, 0] },
+        { "id": "FKB3-OHNE-MAGNET", "art": "—", "name": "Feinkornband 3 ohne Magnetabscheider", "name_en": "Fine-grain conveyor 3 without magnetic separator", "desc": "Komplette Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar", "desc_en": "Complete assembly – pick and order all individual parts in 3D", "price": 0, "model": "feinkornband-3-ohne-magnet.glb", "img": "feinkornband_3_ohne_magnet", "rot": [90, 0, 0] }
       ]
     },
     {
