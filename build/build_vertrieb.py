@@ -42,6 +42,7 @@ TPL = r'''<!DOCTYPE html>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="vendor/leaflet.css">
 <style>
 :root{--red:%%RED%%;--red2:%%RED2%%;--paper:#f1f1ee;--surface:#fff;--ink:#16181a;--muted:#5e6166;--faint:#9a9aa0;--line:#e4e2db;--line-strong:#d3cfc4;--field:#f7f6f2;--gold:#a28231;--slate:#4e5258;--pos:#15803d;--warn:#b45309;--red-soft:rgba(192,0,0,.08);--sans:'Manrope','Helvetica Neue',Arial,sans-serif;--mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;}
 *{box-sizing:border-box;margin:0;padding:0}
@@ -320,6 +321,7 @@ textarea.field{min-height:74px;resize:vertical;line-height:1.5}
         <button class="btn primary" id="osmSearch" type="button"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>Suchen</button>
       </div>
       <div id="osmStatus" style="font-size:13px;color:var(--muted);margin-top:10px"></div>
+      <div id="osmMap" style="height:340px;border:1px solid var(--line);border-radius:12px;margin-top:10px;display:none"></div>
       <div class="clist" id="osmResults" style="margin-top:10px"></div>
       <p style="font-size:11px;color:var(--faint);margin-top:10px;line-height:1.6">
         Quelle: © OpenStreetMap-Mitwirkende. Findet erfasste Betriebe – <b>keine amtliche Vollständigkeit</b>; Treffer kurz prüfen, dann als Lead übernehmen. Nur online. Funktioniert <b>bundesland- und landesweit</b> (z. B. „Bayern" oder „Deutschland") – sehr große Gebiete können einige Sekunden dauern.<br>
@@ -738,6 +740,45 @@ var USERS=%%USERS%%;
        '<div class="right">'+(have?'<span class="pill" style="background:#eef1f4;color:#6b7280">erfasst</span>':'<button class="btn sm primary" data-osm="'+key+'">+ Lead</button>')+'</div>'+
      '</div>';
    }).join("")+(anyNew?'<button class="btn block" id="osmAddAll" style="margin-top:8px">Alle neuen als Leads übernehmen</button>':'');
+   osmShowMap(els);
+ }
+ /* ---------- Karte (Leaflet, lokal mitgeliefert; Kacheln von OSM, nur online) ---------- */
+ var _leafletP=null,_map=null,_markers=null;
+ function ensureLeaflet(){
+   if(window.L)return Promise.resolve(window.L);
+   if(_leafletP)return _leafletP;
+   _leafletP=new Promise(function(res,rej){
+     var s=document.createElement("script");s.src="vendor/leaflet.js";
+     s.onload=function(){try{L.Icon.Default.mergeOptions({iconUrl:"vendor/images/marker-icon.png",iconRetinaUrl:"vendor/images/marker-icon-2x.png",shadowUrl:"vendor/images/marker-shadow.png"});}catch(e){}res(window.L);};
+     s.onerror=function(){rej(new Error("leaflet"));};
+     document.head.appendChild(s);
+   });
+   return _leafletP;
+ }
+ function osmShowMap(els){
+   var mapDiv=document.getElementById("osmMap");
+   var pts=(els||[]).filter(function(el){return el.lat||(el.center&&el.center.lat);});
+   if(!pts.length){mapDiv.style.display="none";return;}
+   mapDiv.style.display="block";
+   ensureLeaflet().then(function(L){
+     if(!_map){
+       _map=L.map(mapDiv,{scrollWheelZoom:true});
+       L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"© OpenStreetMap-Mitwirkende"}).addTo(_map);
+     }
+     if(_markers)_markers.remove();
+     _markers=L.layerGroup().addTo(_map);
+     var bounds=[],ex=osmExisting();
+     pts.forEach(function(el){
+       var lat=el.lat||el.center.lat,lon=el.lon||el.center.lon,t=el.tags||{},a=osmAddr(t),key=el.type+"/"+el.id;
+       var have=ex[key]||ex[((t.name||"")+"|"+(a.ort||"")).toLowerCase()];
+       var addr=esc([a.strasse,[a.plz,a.ort].filter(Boolean).join(" ")].filter(Boolean).join(", "));
+       var btn=have?'<span style="color:#15803d;font:600 12px sans-serif">✓ schon Lead</span>':'<button class="lf-add" data-osm-map="'+key+'" style="margin-top:6px;border:0;background:#c00000;color:#fff;border-radius:6px;padding:6px 10px;font:600 12px sans-serif;cursor:pointer">+ Als Lead</button>';
+       L.marker([lat,lon]).addTo(_markers).bindPopup('<b>'+esc(t.name||"")+'</b>'+(addr?'<br>'+addr:'')+'<br>'+btn);
+       bounds.push([lat,lon]);
+     });
+     if(bounds.length)_map.fitBounds(bounds,{padding:[28,28],maxZoom:13});
+     setTimeout(function(){try{_map.invalidateSize();}catch(e){}},120);
+   }).catch(function(){mapDiv.style.display="none";});
  }
  function osmRun(){
    var was=(document.getElementById("osmWas").value||"").trim(),wo=(document.getElementById("osmWo").value||"").trim();
@@ -766,6 +807,11 @@ var USERS=%%USERS%%;
    var b=e.target.closest("[data-osm]");
    if(b){var c=osmMake(b.getAttribute("data-osm"));if(c)saveContact(c);b.outerHTML='<span class="pill" style="background:#e6f4ea;color:#15803d">✓ Lead</span>';renderLeads();return;}
    if(e.target.id==="osmAddAll"){var ex=osmExisting(),added=[];Object.keys(osmLast).forEach(function(k){var el=osmLast[k],t=el.tags||{},a=osmAddr(t);if(ex[k]||ex[((t.name||"")+"|"+(a.ort||"")).toLowerCase()])return;var c=osmMake(k);if(c)added.push(c);});if(added.length)bulkSave(added,false);renderOsm(osmEls);renderLeads();osmStatus(added.length+" neue Leads übernommen – sie stehen unten in deiner Lead-Liste.");}
+ });
+ // „+ Als Lead" aus einem Karten-Popup
+ document.getElementById("osmMap").addEventListener("click",function(e){
+   var b=e.target.closest("[data-osm-map]");if(!b)return;
+   var c=osmMake(b.getAttribute("data-osm-map"));if(c){saveContact(c);b.outerHTML='<span style="color:#15803d;font:600 12px sans-serif">✓ Als Lead übernommen</span>';renderLeads();}
  });
 
  /* ---------- Klick auf Kontaktzeile ---------- */
@@ -1085,8 +1131,10 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v4";
-const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png"];
+const CACHE="vertrieb-v5";
+const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png",
+  "./vendor/leaflet.js","./vendor/leaflet.css",
+  "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
 
 self.addEventListener("install",e=>{
   e.waitUntil(
@@ -1110,6 +1158,7 @@ self.addEventListener("fetch",e=>{
   if(req.method!=="GET")return;
   if(req.url.indexOf("api.php")>=0)return;            // dynamische API immer direkt ans Netz, nie cachen
   if(req.url.indexOf("nominatim")>=0||req.url.indexOf("overpass")>=0)return; // Karten-Lead-Suche: immer live
+  if(req.url.indexOf("tile.openstreetmap")>=0)return;  // Karten-Kacheln nicht cachen (Browser-Cache reicht)
   const isHTML=req.mode==="navigate"||(req.headers.get("accept")||"").includes("text/html");
   if(isHTML){
     e.respondWith(
@@ -1234,8 +1283,11 @@ out=out.replace("%%USERS%%",USERS_JS)
 
 for tok in ["%%RED%%","%%RED2%%","%%LOGOL%%","%%LOGOD%%","%%USERS%%"]:
     assert tok not in out, "Token übrig: "+tok
-for need in ['id="gateForm"','id="clist"','id="actModal"','renderDashboard','amb_lepton_crm','amb_lepton_configs','checkReminders','initServer','api.php','id="connState"','id="osmSearch"','overpass-api.de','osmToContact']:
+for need in ['id="gateForm"','id="clist"','id="actModal"','renderDashboard','amb_lepton_crm','amb_lepton_configs','checkReminders','initServer','api.php','id="connState"','id="osmSearch"','overpass-api.de','osmToContact','id="osmMap"','ensureLeaflet','tile.openstreetmap']:
     assert need in out, "Pflicht-Markierung fehlt: "+need
+# Leaflet (Karten-Bibliothek) muss lokal vorhanden sein (Laufzeit-Abhängigkeit der Standort-Karte)
+for vf in ["leaflet.js","leaflet.css","images/marker-icon.png","images/marker-shadow.png"]:
+    assert os.path.exists(os.path.join(OUTDIR,"vendor",vf)), "vendor fehlt: vertrieb/vendor/"+vf
 
 open(os.path.join(OUTDIR,"index.html"),"w",encoding="utf8").write(out)
 open(os.path.join(OUTDIR,"manifest.webmanifest"),"w",encoding="utf8").write(json.dumps(MANIFEST,ensure_ascii=False,indent=2))
