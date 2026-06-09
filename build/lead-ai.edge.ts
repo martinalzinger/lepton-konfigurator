@@ -52,9 +52,13 @@ Deno.serve(async (req: Request) => {
 Sternsiebanlage Lepton 5100 – ideale Kunden sind Betriebe in Kompostierung, Recycling/
 Entsorgung, Erden-/Substratwerke, Steinbruch/Schotter, Garten-/Landschaftsbau, Biogas.
 
-Suche im Web nach REALEN Firmen, die zu "${was}" in der Region "${wo}" passen, und
-ermittle die wichtigsten Eckdaten pro Firma (Website/Impressum, ggf. Presse).
-Arbeite ZÜGIG – nutze nur wenige, gezielte Web-Suchen.
+Suche GRÜNDLICH im Web nach REALEN Firmen, die zu "${was}" in der Region "${wo}" passen,
+und ermittle die wichtigsten Eckdaten pro Firma (Website/Impressum, ggf. Presse).
+Recherchiere wie ein echter Vertriebsprofi: nutze MEHRERE, unterschiedliche Web-Suchen –
+verschiedene Synonyme/Begriffe (z.B. Kompost, Kompostierung, Erdenwerk, Substrat,
+Recycling, Entsorgung, Bauschutt, Grünschnitt), Branchenverzeichnisse/Gelbe Seiten und
+einzelne Teilregionen/Landkreise/Städte der angefragten Region. Ziel ist eine möglichst
+VOLLSTÄNDIGE Liste echter Betriebe – lieber eine Firma mehr finden als eine übersehen.
 Antworte AUSSCHLIESSLICH mit einem JSON-Array (kein Fließtext, kein Markdown, keine \`\`\`).
 Jedes Element exakt so:
 {"firma":"","strasse":"","plz":"","ort":"","land":"DE","web":"","tel":"","email":"","geschaeftsfuehrer":"","betriebsleiter":"","jahresmenge":"","siebtechnik":"","news":"","quelle":""}
@@ -69,19 +73,19 @@ Jedes Element exakt so:
 - news: ein relevanter aktueller Punkt mit Jahr (z.B. Erweiterung, Investition, neue Anlage), sonst "".
 - quelle: kurz, woher die Infos stammen (z.B. Website, Handelsregister, Presseartikel).
 - WICHTIG: Unbekannte Felder als leerer String "". Nichts erfinden – lieber leer lassen.
-- Höchstens 10 Firmen. Nur echte, im Web auffindbare Betriebe.`;
+- Bis zu 12 Firmen pro Antwort. Nur echte, im Web auffindbare Betriebe (keine Dubletten).`;
 
     const base = {
       model: MODEL,
-      max_tokens: 12000,
-      // max_uses begrenzt die Anzahl der Web-Suchen -> deutlich schneller.
-      tools: [{ type: "web_search_20260209", name: "web_search", max_uses: 8 }],
+      max_tokens: 14000,
+      // max_uses begrenzt die Anzahl der Web-Suchen. Mehr = gründlicher (aber langsamer).
+      tools: [{ type: "web_search_20260209", name: "web_search", max_uses: 12 }],
     };
 
     // Web-Suche kann mehrere Runden brauchen -> pause_turn-Schleife
     let messages: unknown[] = [{ role: "user", content: prompt }];
     let data: any = null;
-    for (let i = 0; i < 6; i++) {
+    for (let i = 0; i < 10; i++) {
       const r = await fetch(ANTHROPIC_URL, {
         method: "POST",
         headers: {
