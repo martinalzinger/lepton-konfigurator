@@ -682,7 +682,13 @@ var lang="de";
   // Aus dem CRM: für ein bereits gespeichertes Angebot nachträglich das PDF erzeugen
   // und am Kontakt ablegen – vollautomatisch (lädt die Konfig, baut das PDF, springt zurück).
   try{var mp=localStorage.getItem("amb_lepton_offer_makepdf");if(mp){localStorage.removeItem("amb_lepton_offer_makepdf");var mpo=JSON.parse(mp);render();
-    buildPdf(function(pdf){var done={makepdfActId:(mpo&&mpo.actId)||"",contactId:(mpo&&mpo.contactId)||""};try{var uri=pdf.output("datauristring");if(uri&&uri.length<3500000)done.pdf=uri;}catch(e){}try{localStorage.setItem("amb_lepton_offer_done",JSON.stringify(done));}catch(e){}location.href="vertrieb/";},function(){location.href="vertrieb/";});}}catch(e){}
+    var _mpBase={makepdfActId:(mpo&&mpo.actId)||"",contactId:(mpo&&mpo.contactId)||""};
+    function _mpFinish(done){
+      // Im unsichtbaren iFrame (CRM erzeugt im Hintergrund): nur zurückmelden, nicht navigieren.
+      if(mpo&&mpo.iframe){try{parent.postMessage({ambOfferDone:done},"*");}catch(_){}return;}
+      try{localStorage.setItem("amb_lepton_offer_done",JSON.stringify(done));}catch(e){}location.href="vertrieb/";
+    }
+    buildPdf(function(pdf){var done={makepdfActId:_mpBase.makepdfActId,contactId:_mpBase.contactId};try{var uri=pdf.output("datauristring");if(uri&&uri.length<3500000)done.pdf=uri;}catch(e){}_mpFinish(done);},function(){_mpFinish(_mpBase);});}}catch(e){}
   var _sb=document.getElementById("saveBtn");if(_sb)_sb.addEventListener("click",doSave);
   var _lb=document.getElementById("loadBtn");if(_lb)_lb.addEventListener("click",doLoad);
   var _db=document.getElementById("delBtn");if(_db)_db.addEventListener("click",doDelete);

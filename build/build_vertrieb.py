@@ -1118,6 +1118,8 @@ var USERS=%%USERS%%;
    (acts.length?'<div class="tl">'+acts.map(actItem).join("")+'</div>':'<div style="font-size:13px;color:var(--muted);background:var(--field);border:1px dashed var(--line-strong);border-radius:12px;padding:14px;text-align:center">Hier entsteht der komplette Verlauf: <b>wann</b> war Kontakt, <b>wer</b>, Anrufe, E-Mails, <b>Angebote</b> (mit Nr./Betrag) und Notizen.<br><button class="btn sm primary" id="emptyAddAct" style="margin-top:10px">+ Erste Aktivität erfassen</button></div>')+
    '<div style="margin:22px 0 8px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn danger sm" id="delBtn">Kontakt löschen</button></div>';
    var v=document.getElementById("view-detail");v.innerHTML=html;show("detail");
+   // Fehlende Angebots-PDFs automatisch im Hintergrund erzeugen (ohne Klick).
+   acts.forEach(function(a){if(a.type==="angebot"&&a.config&&!a.pdf)queuePdfGen(c.id,a.id,false);});
    document.getElementById("backBtn").onclick=function(){renderList();show("list");};
    document.getElementById("editBtn").onclick=function(){openForm(curId);};
    document.getElementById("addActBtn").onclick=function(){openActModal(curId);};
@@ -1157,6 +1159,41 @@ var USERS=%%USERS%%;
      setTimeout(function(){URL.revokeObjectURL(url);},60000);
    }catch(e){try{window.open(uri,"_blank");}catch(_){}}
  }
+ // ---- PDF im Hintergrund erzeugen (unsichtbarer Konfigurator-iFrame) ----
+ // Bestehende Angebote (Konfig vorhanden, aber noch kein PDF) bekommen ihr PDF
+ // automatisch, ohne dass man etwas anklicken oder die Seite verlassen muss.
+ var _pdfQ=[], _pdfBusy=false, _pdfTried={}, _pdfActive={};
+ function queuePdfGen(contactId,actId,force){
+   var k=contactId+"/"+actId;
+   if(force)delete _pdfTried[k];
+   if(_pdfTried[k]||_pdfActive[k])return;
+   _pdfTried[k]=1;_pdfQ.push({contactId:contactId,actId:actId});runPdfGen();
+ }
+ function runPdfGen(){
+   if(_pdfBusy||!_pdfQ.length)return;
+   var job=_pdfQ.shift();var c=byId(job.contactId);if(!c){return runPdfGen();}
+   var a=(c.activities||[]).filter(function(x){return x.id===job.actId;})[0];
+   if(!a||!a.config||a.pdf){return runPdfGen();}
+   if(navigator.onLine===false){_pdfBusy=false;return;} // offline -> später erneut versuchen
+   _pdfBusy=true;var k=job.contactId+"/"+job.actId;_pdfActive[k]=1;
+   if(curId===job.contactId&&curView==="detail")openDetail(curId); // Label „wird erstellt …"
+   try{localStorage.setItem("amb_lepton_loadoffer_data",JSON.stringify(a.config));
+       localStorage.setItem("amb_lepton_offer_makepdf",JSON.stringify({contactId:job.contactId,actId:job.actId,iframe:true}));
+   }catch(e){_pdfBusy=false;delete _pdfActive[k];return runPdfGen();}
+   var ifr=document.createElement("iframe");ifr.setAttribute("aria-hidden","true");
+   ifr.style.cssText="position:fixed;left:-10000px;top:0;width:980px;height:1400px;border:0;opacity:0;pointer-events:none";
+   var fin=false;
+   function done(){if(fin)return;fin=true;clearTimeout(tmr);window.removeEventListener("message",onMsg);try{ifr.remove();}catch(_){}delete _pdfActive[k];_pdfBusy=false;setTimeout(runPdfGen,150);}
+   var tmr=setTimeout(done,90000);
+   function onMsg(ev){
+     var d=ev.data&&ev.data.ambOfferDone;if(!d||d.makepdfActId!==job.actId)return;
+     if(d.pdf){var cc=byId(job.contactId);if(cc){var aa=(cc.activities||[]).filter(function(x){return x.id===job.actId;})[0];
+       if(aa){aa.pdf=d.pdf;cc.updated=Date.now();saveContact(cc);}}}
+     done();if(curId===job.contactId&&curView==="detail")openDetail(curId);
+   }
+   window.addEventListener("message",onMsg);
+   ifr.src="../index.html";document.body.appendChild(ifr);
+ }
  function actItem(a){
    var cls="t-"+a.type;
    var icon={anruf:'<path d="M5 4h4l2 5-3 2a13 13 0 006 6l2-3 5 2v4a2 2 0 01-2 2A17 17 0 013 6a2 2 0 012-2"/>',
@@ -1173,7 +1210,10 @@ var USERS=%%USERS%%;
      else offer='<span class="tl-offer" style="cursor:default">'+_osvg+bits.join(" · ")+'</span>';}
    var _psvg='<svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/><path d="M14 3v5h5"/></svg>';
    if(a.pdf)offer+='<button class="tl-offer" data-pdfact="'+a.id+'" title="Fertiges PDF ansehen (ohne Konfigurator)">'+_psvg+'PDF ansehen</button>';
-   else if(a.config)offer+='<button class="tl-offer" data-makepdf="'+a.id+'" title="PDF aus der gespeicherten Konfiguration erzeugen und hier ablegen">'+_psvg+'PDF erstellen</button>';
+   else if(a.config){
+     if(_pdfActive[curId+"/"+a.id])offer+='<span class="tl-offer" style="cursor:default;opacity:.7">'+_psvg+'PDF wird erstellt …</span>';
+     else offer+='<button class="tl-offer" data-makepdf="'+a.id+'" title="PDF jetzt erzeugen und hier ablegen">'+_psvg+'PDF erstellen</button>';
+   }
    return '<div class="tl-item '+cls+'">'+
      '<div class="tl-dot"><svg viewBox="0 0 24 24">'+icon+'</svg></div>'+
      '<div class="tl-top"><span class="tl-type">'+esc(actLabel(a.type))+'</span>'+
@@ -1186,7 +1226,7 @@ var USERS=%%USERS%%;
  // Aktivität löschen
  document.getElementById("view-detail").addEventListener("click",function(e){
    var pb=e.target.closest("[data-pdfact]");if(pb){e.preventDefault();var pid=pb.getAttribute("data-pdfact");var pc=byId(curId);var pa=pc&&(pc.activities||[]).filter(function(x){return x.id===pid;})[0];if(pa&&pa.pdf)openPdfUri(pa.pdf);return;}
-   var mb=e.target.closest("[data-makepdf]");if(mb){e.preventDefault();var mid=mb.getAttribute("data-makepdf");var mc=byId(curId);var ma=mc&&(mc.activities||[]).filter(function(x){return x.id===mid;})[0];if(ma&&ma.config){try{localStorage.setItem("amb_lepton_loadoffer_data",JSON.stringify(ma.config));localStorage.setItem("amb_lepton_offer_makepdf",JSON.stringify({contactId:curId,actId:mid}));}catch(_){}location.href="../index.html";}return;}
+   var mb=e.target.closest("[data-makepdf]");if(mb){e.preventDefault();var mid=mb.getAttribute("data-makepdf");if(navigator.onLine===false){alert("Zum Erstellen des PDFs bitte einmal online gehen.");return;}queuePdfGen(curId,mid,true);return;}
    var lo=e.target.closest("[data-actid]");if(lo){var aid=lo.getAttribute("data-actid");var cc=byId(curId);var act=cc&&(cc.activities||[]).filter(function(x){return x.id===aid;})[0];try{if(act&&act.config)localStorage.setItem("amb_lepton_loadoffer_data",JSON.stringify(act.config));else if(act&&act.offer)localStorage.setItem("amb_lepton_loadoffer",act.offer);}catch(_){}return;} // Link navigiert selbst zum Konfigurator
    var d=e.target.closest(".tl-del");if(!d)return;var aid=d.getAttribute("data-act");var c=byId(curId);if(!c)return;
    c.activities=(c.activities||[]).filter(function(x){return x.id!==aid;});c.updated=Date.now();saveContact(c);openDetail(curId);
@@ -1469,7 +1509,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v10";
+const CACHE="vertrieb-v11";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png",
   "./vendor/leaflet.js","./vendor/leaflet.css",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
