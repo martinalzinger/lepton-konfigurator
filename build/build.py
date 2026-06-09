@@ -594,7 +594,7 @@ var lang="de";
  function refreshSaved(){var sel=document.getElementById("savedList");if(!sel)return;var o=loadAll(),names=Object.keys(o).sort();var cur=sel.value;sel.innerHTML='<option value="">'+(names.length?tf("saved_count",{n:names.length}):t("saved_none"))+'</option>'+names.map(function(n){return '<option value="'+esc(n)+'">'+esc(n)+'</option>';}).join("");if(cur)sel.value=cur;}
  function doSave(){var name=window.prompt(t("prompt_save_name"),suggestName());if(name===null)return;name=name.trim();if(!name)return;var o=loadAll();o[name]=gatherState();if(!saveAll(o)){window.alert(t("alert_save_fail"));return;}refreshSaved();document.getElementById("savedList").value=name;
   // Aus dem Vertriebs-CRM gekommen? -> mit Angebots-Infos zurückspringen.
-  try{var ret=localStorage.getItem("amb_lepton_offer_return");if(ret){localStorage.removeItem("amb_lepton_offer_return");var rc=JSON.parse(ret);var cc=compute();localStorage.setItem("amb_lepton_offer_done",JSON.stringify({contactId:(rc&&rc.contactId)||"",name:name,nr:v("m_nr")||"",betrag:(cc&&cc.na)||0,ts:Date.now()}));location.href="vertrieb/";}}catch(e){}}
+  try{var ret=localStorage.getItem("amb_lepton_offer_return");if(ret){localStorage.removeItem("amb_lepton_offer_return");var rc=JSON.parse(ret);var cc=compute();localStorage.setItem("amb_lepton_offer_done",JSON.stringify({contactId:(rc&&rc.contactId)||"",name:name,nr:v("m_nr")||"",betrag:(cc&&cc.na)||0,state:o[name],ts:Date.now()}));location.href="vertrieb/";}}catch(e){}}
  function doLoad(){var n=document.getElementById("savedList").value;if(!n)return;var o=loadAll();if(o[n])applyState(o[n]);}
  function doDelete(){var n=document.getElementById("savedList").value;if(!n)return;if(!window.confirm(tf("confirm_delete",{n:n})))return;var o=loadAll();delete o[n];saveAll(o);refreshSaved();}
  function docFilename(){var who=v("k_firma")||pers()||"",nr=v("m_nr")||"";var parts=[t("pill_"+state.mode),who,nr].filter(Boolean);var name=parts.join(" ").replace(/[\/\\:*?"<>|#]/g,"").trim().replace(/\s+/g,"_");return name||t("pill_"+state.mode);}
@@ -664,8 +664,10 @@ var lang="de";
   applyLang();
   applyMode("angebot");
   refreshSaved();
-  // Aus dem CRM: ein bestimmtes gespeichertes Angebot direkt öffnen.
-  try{var lo=localStorage.getItem("amb_lepton_loadoffer");if(lo){localStorage.removeItem("amb_lepton_loadoffer");var all=loadAll();if(all[lo]){applyState(all[lo]);var slu=document.getElementById("savedList");if(slu)slu.value=lo;}}}catch(e){}
+  // Aus dem CRM: Angebot direkt öffnen. Bevorzugt der mitgegebene volle Zustand
+  // (im CRM gespeichert, geräteübergreifend); sonst per Name aus den lokalen Angeboten.
+  try{var lod=localStorage.getItem("amb_lepton_loadoffer_data");if(lod){localStorage.removeItem("amb_lepton_loadoffer_data");var st=JSON.parse(lod);if(st&&st.fields)applyState(st);}
+    else{var lo=localStorage.getItem("amb_lepton_loadoffer");if(lo){localStorage.removeItem("amb_lepton_loadoffer");var all=loadAll();if(all[lo]){applyState(all[lo]);var slu=document.getElementById("savedList");if(slu)slu.value=lo;}}}}catch(e){}
   // Vorausfüllung aus dem Vertriebs-CRM (gleicher Origin): Kundendaten übernehmen.
   try{var pf=localStorage.getItem("amb_lepton_prefill");if(pf){localStorage.removeItem("amb_lepton_prefill");var po=JSON.parse(pf);if(po&&po.fields){Object.keys(po.fields).forEach(function(k){var e=document.getElementById(k);if(e&&po.fields[k]!=null&&po.fields[k]!=="")e.value=po.fields[k];});}if(po&&po.mode)applyMode(po.mode);render();}}catch(e){}
   var _sb=document.getElementById("saveBtn");if(_sb)_sb.addEventListener("click",doSave);
