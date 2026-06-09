@@ -557,10 +557,13 @@ var USERS=%%USERS%%;
 
  /* --- KI-Lead-Suche über Supabase Edge Function "lead-ai" (Claude + Web-Suche) --- */
  function aiReady(){return !!(SB&&SB.url&&SB.key&&AISECRET);}
- function aiFnUrl(){return SB.url.replace(/\/+$/,"")+"/functions/v1/lead-ai";}
+ function aiPost(name,was,wo){
+   return fetch(SB.url.replace(/\/+$/,"")+"/functions/v1/"+name,{method:"POST",headers:{"Authorization":"Bearer "+SB.key,"apikey":SB.key,"Content-Type":"application/json","x-crm-secret":AISECRET},body:JSON.stringify({was:was,wo:wo})})
+     .then(function(r){if(!r.ok)return r.json().catch(function(){return {};}).then(function(e){var err=new Error("ai "+r.status+(e&&e.error?(": "+e.error):""));err.status=r.status;throw err;});return r.json();});
+ }
  function apiAi(was,wo){
-   return fetch(aiFnUrl(),{method:"POST",headers:{"Authorization":"Bearer "+SB.key,"apikey":SB.key,"Content-Type":"application/json","x-crm-secret":AISECRET},body:JSON.stringify({was:was,wo:wo})})
-     .then(function(r){if(!r.ok)return r.json().catch(function(){return {};}).then(function(e){throw new Error("ai "+r.status+(e&&e.error?(": "+e.error):""));});return r.json();})
+   // Edge-Function-Name kann „lead-ai" oder „lead-ai-" sein -> bei 404 die zweite Variante versuchen.
+   return aiPost("lead-ai",was,wo).catch(function(e){if(e&&e.status===404)return aiPost("lead-ai-",was,wo);throw e;})
      .then(function(d){return (d.leads||[]).filter(function(x){return x&&(x.firma||x.name);});});
  }
 
