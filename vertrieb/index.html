@@ -126,6 +126,9 @@ select.filter{width:auto;min-width:120px;flex:0 0 auto}
 .fg.full{grid-column:1/-1}
 .fg label{font-size:11px;font-family:var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 textarea.field{min-height:74px;resize:vertical;line-height:1.5}
+[contenteditable].field{line-height:1.5}
+[contenteditable][data-ph]:empty:before{content:attr(data-ph);color:var(--faint)}
+[contenteditable] img{max-width:180px;max-height:120px;border-radius:8px;margin:4px 6px 4px 0;vertical-align:middle}
 .form-actions{display:flex;gap:8px;margin-top:18px;flex-wrap:wrap}
 
 /* Detail */
@@ -398,10 +401,13 @@ create policy "crm all" on contacts
     </div>
     <div class="card">
       <h3>Aus OneNote / Notiz importieren (KI)</h3>
-      <p style="font-size:13px;color:var(--muted);margin-bottom:10px">OneNote-Seite öffnen → alles markieren (Strg+A) → kopieren (Strg+C) → hier einfügen. Die KI erkennt Firma, Ansprechpartner, Adresse und legt den Kontakt <b>mit komplettem Verlauf</b> (datierte Anrufe, Mails, Besuche …) an. Eine Seite/Firma pro Durchgang.</p>
-      <textarea class="field" id="noteIn" placeholder="OneNote-Seite hier einfügen … (Firma, Ansprechpartner, Adresse, datierte Notizen)" style="width:100%;min-height:130px;resize:vertical"></textarea>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:10px">OneNote-Seite öffnen → alles markieren (Strg+A) → kopieren (Strg+C) → unten einfügen (Strg+V). <b>Bilder werden mit eingefügt</b> und am Kontakt gespeichert. Die KI erkennt Firma, Ansprechpartner, Adresse und legt den Kontakt <b>mit komplettem Verlauf</b> an. Eine Seite/Firma pro Durchgang.</p>
+      <div class="field" id="noteIn" contenteditable="true" data-ph="OneNote-Seite hier einfügen (Strg+V) – Text und Bilder …" style="width:100%;min-height:140px;max-height:340px;overflow:auto;white-space:pre-wrap"></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px">
         <button class="btn primary" id="noteBtn" type="button"><svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/><path d="M14 3v5h5"/></svg>Per KI auswerten & anlegen</button>
+        <button class="btn" id="noteImgBtn" type="button"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>Bild(er) hinzufügen</button>
+        <input type="file" id="noteImgs" accept="image/*" multiple class="hidden">
+        <button class="btn ghost sm" id="noteClear" type="button">Leeren</button>
         <span id="noteMsg" style="font-size:13px;color:var(--muted)"></span>
       </div>
     </div>
@@ -1354,6 +1360,7 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
    '</dl>'+
    (c.news?'<div class="card" style="background:#eef4ff;border-color:#cfe0ff"><div style="font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#1d4ed8;margin-bottom:4px">News</div><div style="white-space:pre-wrap;font-size:14px">'+esc(c.news)+'</div></div>':'')+
    (notizClean?'<div class="card" style="background:var(--field)"><div style="white-space:pre-wrap;font-size:14px">'+esc(notizClean)+'</div></div>':'')+
+   ((c.bilder&&c.bilder.length)?'<div class="card"><div style="font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Bilder ('+c.bilder.length+')</div><div style="display:flex;gap:8px;flex-wrap:wrap">'+c.bilder.map(function(b,i){return '<img src="'+esc(b)+'" data-bild="'+i+'" title="Klick öffnet das Bild groß" style="width:150px;height:104px;object-fit:cover;border-radius:8px;border:1px solid var(--line);cursor:pointer">';}).join("")+'</div></div>':'')+
    // Standort-Karte des Kontakts
    (function(){var mq=ll?(ll.lat+","+ll.lon):(addr||"");if(!mq)return "";var eq=encodeURIComponent(mq);
      return '<div style="margin:8px 0"><iframe id="detMap" title="Standort-Karte (Satellit)" src="https://maps.google.com/maps?q='+eq+'&z=15&t=k&output=embed" style="width:100%;height:220px;border:0;border-radius:12px" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>'+
@@ -1486,6 +1493,7 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
  function fmtEur(v){var n=parseFloat(String(v).replace(/[^0-9.,-]/g,"").replace(/\./g,"").replace(",","."));if(isNaN(n))return String(v);return n.toLocaleString("de-DE")+" €";}
  // Aktivität löschen
  document.getElementById("view-detail").addEventListener("click",function(e){
+   var ib=e.target.closest("[data-bild]");if(ib){e.preventDefault();var bc=byId(curId);var bi=parseInt(ib.getAttribute("data-bild"),10);if(bc&&bc.bilder&&bc.bilder[bi])openPdfUri(bc.bilder[bi]);return;}
    var pb=e.target.closest("[data-pdfact]");if(pb){e.preventDefault();var pid=pb.getAttribute("data-pdfact");var pc=byId(curId);var pa=pc&&(pc.activities||[]).filter(function(x){return x.id===pid;})[0];if(pa&&pa.pdf)openPdfUri(pa.pdf);return;}
    var mb=e.target.closest("[data-makepdf]");if(mb){e.preventDefault();var mid=mb.getAttribute("data-makepdf");if(navigator.onLine===false){alert("Zum Erstellen des PDFs bitte einmal online gehen.");return;}queuePdfGen(curId,mid,true);return;}
    var lo=e.target.closest("[data-actid]");if(lo){var aid=lo.getAttribute("data-actid");var cc=byId(curId);var act=cc&&(cc.activities||[]).filter(function(x){return x.id===aid;})[0];try{if(act&&act.config)localStorage.setItem("amb_lepton_loadoffer_data",JSON.stringify(act.config));else if(act&&act.offer)localStorage.setItem("amb_lepton_loadoffer",act.offer);}catch(_){}return;} // Link navigiert selbst zum Konfigurator
@@ -1692,24 +1700,47 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
  // OneNote/Notiz -> Kontakt + Verlauf per KI
  var NOTE_ATYPES={anruf:1,mailout:1,mailin:1,besuch:1,angebot:1,notiz:1};
  function noteDateTs(s){s=String(s||"").trim();var m=s.match(/^(\d{4})-(\d{2})-(\d{2})/);if(m){var d=new Date(+m[1],+m[2]-1,+m[3],9,0,0);if(!isNaN(d))return d.getTime();}var d2=new Date(s);return isNaN(d2)?Date.now():d2.getTime();}
+ // Bild aus Data-/Blob-URL verkleinern (für eingefügte/angehängte Bilder).
+ function downscaleSrc(src,maxDim,cb){
+   try{var img=new Image();img.onload=function(){try{var w=img.width,h=img.height,s=Math.min(1,maxDim/Math.max(w,h||1));var cw=Math.max(1,Math.round(w*s)),ch=Math.max(1,Math.round(h*s));var cv=document.createElement("canvas");cv.width=cw;cv.height=ch;cv.getContext("2d").drawImage(img,0,0,cw,ch);cb(cv.toDataURL("image/jpeg",0.8));}catch(e){cb(null);}};img.onerror=function(){cb(null);};img.src=src;}catch(e){cb(null);}
+ }
+ // Bilder einsammeln: aus dem eingefügten Inhalt (img) + aus der Datei-Auswahl. Max 6.
+ function gatherNoteImages(cb){
+   var tasks=[],ne=document.getElementById("noteIn");
+   if(ne){var imgs=ne.querySelectorAll("img");for(var i=0;i<imgs.length&&tasks.length<6;i++){var s=imgs[i].src||"";if(/^data:image\//i.test(s)||/^blob:/i.test(s))tasks.push({t:"src",v:s});}}
+   var fi=document.getElementById("noteImgs");if(fi&&fi.files)for(var j=0;j<fi.files.length&&tasks.length<6;j++)tasks.push({t:"file",v:fi.files[j]});
+   if(!tasks.length){cb([]);return;}
+   var out=[],done=0;function fin(){done++;if(done>=tasks.length)cb(out.filter(Boolean));}
+   tasks.forEach(function(tk){if(tk.t==="file")downscaleImage(tk.v,1400,function(u){if(u&&u.length<2500000)out.push(u);fin();});else downscaleSrc(tk.v,1400,function(u){if(u&&u.length<2500000)out.push(u);fin();});});
+ }
  (function(){var nb=document.getElementById("noteBtn");if(!nb)return;
+   var ne=document.getElementById("noteIn"),imgBtn=document.getElementById("noteImgBtn"),imgIn=document.getElementById("noteImgs"),clr=document.getElementById("noteClear"),msg=document.getElementById("noteMsg");
+   function imgCount(){var n=0;if(ne)n+=ne.querySelectorAll("img").length;if(imgIn&&imgIn.files)n+=imgIn.files.length;return n;}
+   function setMsg(){var n=imgCount();msg.style.color="var(--muted)";msg.textContent=n?(n+" Bild(er) erkannt"):"";}
+   if(imgBtn)imgBtn.onclick=function(){imgIn.click();};
+   if(imgIn)imgIn.onchange=function(){setMsg();};
+   if(ne)ne.addEventListener("input",setMsg);
+   if(clr)clr.onclick=function(){if(ne)ne.innerHTML="";if(imgIn)imgIn.value="";msg.textContent="";};
    nb.onclick=function(){
-     var txt=(document.getElementById("noteIn").value||"").trim();var msg=document.getElementById("noteMsg");
+     var txt=(ne?(ne.innerText||ne.textContent||""):"").trim();
      if(!txt){msg.style.color="var(--muted)";msg.textContent="Bitte zuerst eine OneNote-Seite einfügen.";return;}
      if(!aiReady()){msg.style.color="#b91c1c";msg.textContent="KI ist nicht eingerichtet (Reiter Daten → KI-Schlüssel).";return;}
      msg.style.color="var(--muted)";msg.textContent="KI wertet die Notiz aus … (ein paar Sekunden)";nb.disabled=true;
-     apiNoteScan(txt).then(function(res){
-       var c=res.contact||{};var rec={id:uid(),created:Date.now(),updated:Date.now(),status:"lead",land:(String(c.land||"DE").toUpperCase().slice(0,2)||"DE"),activities:[],owner:(CUR&&CUR.n)||""};
-       ["firma","anrede","vorname","nachname","strasse","plz","ort","bundesland","tel","mobil","mail","web","ustid"].forEach(function(k){var v=c[k]&&String(c[k]).trim();if(v)rec[k]=v;});
-       if(c.position)rec.firma2=c.position;
-       if(rec.plz&&rec.land==="DE"&&/^\d{1,4}$/.test(rec.plz)){while(rec.plz.length<5)rec.plz="0"+rec.plz;}
-       (res.activities||[]).forEach(function(a){var ty=(a&&a.type||"notiz");if(!NOTE_ATYPES[ty])ty="notiz";rec.activities.push({id:uid(),type:ty,date:noteDateTs(a&&a.date),note:(a&&a.note)||"",by:(CUR&&CUR.n)||""});});
-       rec.activities.sort(function(x,y){return (x.date||0)-(y.date||0);});
-       if(!rec.firma&&!rec.nachname){msg.style.color="#b91c1c";msg.textContent="Konnte keine Firma/Person erkennen. Bitte mehr Text einfügen.";nb.disabled=false;return;}
-       DB.contacts.push(rec);saveContact(rec);
-       document.getElementById("noteIn").value="";nb.disabled=false;msg.textContent="";
-       openDetail(rec.id);
-     }).catch(function(err){msg.style.color="#b91c1c";msg.textContent="Auswertung fehlgeschlagen: "+String((err&&err.message)||err);nb.disabled=false;});
+     gatherNoteImages(function(bilder){
+       apiNoteScan(txt).then(function(res){
+         var c=res.contact||{};var rec={id:uid(),created:Date.now(),updated:Date.now(),status:"lead",land:(String(c.land||"DE").toUpperCase().slice(0,2)||"DE"),activities:[],owner:(CUR&&CUR.n)||""};
+         ["firma","anrede","vorname","nachname","strasse","plz","ort","bundesland","tel","mobil","mail","web","ustid"].forEach(function(k){var v=c[k]&&String(c[k]).trim();if(v)rec[k]=v;});
+         if(c.position)rec.firma2=c.position;
+         if(rec.plz&&rec.land==="DE"&&/^\d{1,4}$/.test(rec.plz)){while(rec.plz.length<5)rec.plz="0"+rec.plz;}
+         (res.activities||[]).forEach(function(a){var ty=(a&&a.type||"notiz");if(!NOTE_ATYPES[ty])ty="notiz";rec.activities.push({id:uid(),type:ty,date:noteDateTs(a&&a.date),note:(a&&a.note)||"",by:(CUR&&CUR.n)||""});});
+         rec.activities.sort(function(x,y){return (x.date||0)-(y.date||0);});
+         if(bilder&&bilder.length)rec.bilder=bilder;
+         if(!rec.firma&&!rec.nachname){msg.style.color="#b91c1c";msg.textContent="Konnte keine Firma/Person erkennen. Bitte mehr Text einfügen.";nb.disabled=false;return;}
+         DB.contacts.push(rec);saveContact(rec);
+         if(ne)ne.innerHTML="";if(imgIn)imgIn.value="";nb.disabled=false;msg.textContent="";
+         openDetail(rec.id);
+       }).catch(function(err){msg.style.color="#b91c1c";msg.textContent="Auswertung fehlgeschlagen: "+String((err&&err.message)||err);nb.disabled=false;});
+     });
    };
  })();
  var CSV_COLS={firma:"firma",company:"firma",zusatz:"firma2",anrede:"anrede",vorname:"vorname",firstname:"vorname",nachname:"nachname",lastname:"nachname",name:"nachname",strasse:"strasse","straße":"strasse",street:"strasse",plz:"plz",zip:"plz",ort:"ort",city:"ort",land:"land",country:"land",bundesland:"bundesland",state:"bundesland",region:"bundesland",tel:"tel",telefon:"tel",phone:"tel",mobil:"mobil",mobile:"mobil",mail:"mail",email:"mail","e-mail":"mail",web:"web",website:"web",url:"web",ustid:"ustid",vat:"ustid",quelle:"quelle",source:"quelle",notiz:"notiz",note:"notiz",notes:"notiz",status:"status"};
