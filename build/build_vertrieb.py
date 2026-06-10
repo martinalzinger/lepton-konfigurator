@@ -309,6 +309,7 @@ textarea.field{min-height:74px;resize:vertical;line-height:1.5}
     <div class="toolbar">
       <select class="filter" id="fStatus"><option value="">Alle Status</option></select>
       <select class="filter" id="fLand"><option value="">Alle Länder</option></select>
+      <select class="filter" id="fBL"><option value="">Alle Bundesländer</option></select>
       <select class="filter" id="fOwner"><option value="">Alle Vertriebler</option></select>
       <select class="filter" id="fSort"><option value="updated">Zuletzt aktiv</option><option value="name">Name A–Z</option><option value="created">Neueste</option><option value="due">Wiedervorlage</option></select>
       <button class="btn sm" id="mapToggle" type="button"><svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.7"><path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"/><path d="M9 4v14M15 6v14"/></svg>Karte</button>
@@ -642,6 +643,7 @@ var USERS=%%USERS%%;
  }
  function rerenderCurrent(){
    updateBadge();
+   if(typeof initFilters==="function")initFilters(); // Filter-Optionen nach Daten-Sync aktualisieren
    if(curView==="dashboard")renderDashboard();
    else if(curView==="list")renderList();
    else if(curView==="leads")renderLeads();
@@ -778,11 +780,21 @@ var USERS=%%USERS%%;
  function ownerOpts(){var seen={},out=[];DB.contacts.forEach(function(c){if(c.owner&&!seen[c.owner]){seen[c.owner]=1;out.push([c.owner,c.owner]);}});return out;}
  // Länder-Filter = bekannte Liste + alle in den Kontakten tatsächlich vorkommenden Codes
  function landOpts(){var seen={},out=[];LANDS.forEach(function(l){seen[l[0]]=1;out.push(l);});DB.contacts.forEach(function(c){var cc=(c.land||"").toUpperCase();if(cc&&!seen[cc]){seen[cc]=1;out.push([cc,landLabel(cc)]);}});return out;}
+ // Bundesländer (DE). contactBundesland() nimmt das gesetzte Feld oder leitet es aus der Notiz ab
+ // (z. B. importierte Leads haben das Bundesland in der Notiz) -> Bestandsdaten sind sofort filterbar.
+ var BL=["Baden-Württemberg","Bayern","Berlin","Brandenburg","Bremen","Hamburg","Hessen","Mecklenburg-Vorpommern","Niedersachsen","Nordrhein-Westfalen","Rheinland-Pfalz","Saarland","Sachsen","Sachsen-Anhalt","Schleswig-Holstein","Thüringen"];
+ var BLM=BL.slice().sort(function(a,b){return b.length-a.length;}); // längere zuerst (Sachsen-Anhalt vor Sachsen)
+ function blFromText(t){t=String(t||"");for(var i=0;i<BLM.length;i++){if(t.indexOf(BLM[i])>=0)return BLM[i];}return "";}
+ function contactBundesland(c){return (c&&c.bundesland)||blFromText(c&&c.notiz)||"";}
+ function blOpts(){var seen={};DB.contacts.forEach(function(c){var b=contactBundesland(c);if(b)seen[b]=1;});return BL.filter(function(b){return seen[b];}).map(function(b){return [b,b];});}
+ // Auswahl bewahren, damit initFilters() jederzeit erneut laufen kann (nach Import/Cloud-Sync).
+ function refillSel(id,opts,all){var s=document.getElementById(id);if(!s)return;var cur=s.value;fillSelect(s,opts,all);if(cur)s.value=cur;}
  function initFilters(){
-   fillSelect(document.getElementById("fStatus"),STATUS,"Alle Status");
-   fillSelect(document.getElementById("fLand"),landOpts(),"Alle Länder");
-   fillSelect(document.getElementById("fOwner"),ownerOpts(),"Alle Vertriebler");
-   fillSelect(document.getElementById("fLeadLand"),landOpts(),"Alle Länder");
+   refillSel("fStatus",STATUS,"Alle Status");
+   refillSel("fLand",landOpts(),"Alle Länder");
+   refillSel("fBL",blOpts(),"Alle Bundesländer");
+   refillSel("fOwner",ownerOpts(),"Alle Vertriebler");
+   refillSel("fLeadLand",landOpts(),"Alle Länder");
  }
  function matchQ(c,q){if(!q)return true;q=q.toLowerCase();var hay=[c.firma,c.firma2,c.vorname,c.nachname,c.ort,c.plz,c.tel,c.mobil,c.mail,c.quelle,c.notiz].join(" ").toLowerCase();return hay.indexOf(q)>=0;}
  function contactRow(c){
@@ -802,8 +814,8 @@ var USERS=%%USERS%%;
  }
  function renderList(){
    var q=document.getElementById("q").value.trim();
-   var fs=document.getElementById("fStatus").value,fl=document.getElementById("fLand").value,fo=document.getElementById("fOwner").value,so=document.getElementById("fSort").value;
-   var arr=DB.contacts.filter(function(c){return matchQ(c,q)&&(!fs||c.status===fs)&&(!fl||c.land===fl)&&(!fo||c.owner===fo);});
+   var fs=document.getElementById("fStatus").value,fl=document.getElementById("fLand").value,fbl=document.getElementById("fBL").value,fo=document.getElementById("fOwner").value,so=document.getElementById("fSort").value;
+   var arr=DB.contacts.filter(function(c){return matchQ(c,q)&&(!fs||c.status===fs)&&(!fl||c.land===fl)&&(!fbl||contactBundesland(c)===fbl)&&(!fo||c.owner===fo);});
    arr.sort(function(a,b){
      if(so==="name")return displayName(a).localeCompare(displayName(b),"de");
      if(so==="created")return (b.created||0)-(a.created||0);
@@ -821,7 +833,8 @@ var USERS=%%USERS%%;
 
  /* ---------- Kontakte-Karte (Standorte mit Fahnen-Markern) ---------- */
  var lastListArr=[],cMapOpen=false,_cmap=null,_cmarkers=null,_geoBusy=false;
- function flagIcon(L){return L.divIcon({className:"flag-mark",html:'<div style="font-size:22px;line-height:1;filter:drop-shadow(0 1px 1px rgba(0,0,0,.45))">🚩</div>',iconSize:[24,24],iconAnchor:[3,22],popupAnchor:[8,-20]});}
+ // SVG-Fahne (kein Emoji/PNG) -> rendert identisch auf Windows, Mac, iPhone.
+ function flagIcon(L){return L.divIcon({className:"flag-mark",html:'<svg width="22" height="27" viewBox="0 0 22 27" style="filter:drop-shadow(0 1px 1.5px rgba(0,0,0,.45))"><line x1="3" y1="1" x2="3" y2="26" stroke="#2b2b2b" stroke-width="2.2"/><path d="M3 1.5 H19 L15 6.5 L19 11.5 H3 Z" fill="#c00000"/></svg>',iconSize:[22,27],iconAnchor:[3,26],popupAnchor:[8,-22]});}
  function addContactMarker(L,c){
    if(!_cmarkers||c.lat==null||c.lon==null)return;
    var loc=[c.plz,c.ort].filter(Boolean).join(" ");
@@ -1023,7 +1036,7 @@ var USERS=%%USERS%%;
        var have=ex[key]||ex[((t.name||"")+"|"+(a.ort||"")).toLowerCase()];
        var addr=esc([a.strasse,[a.plz,a.ort].filter(Boolean).join(" ")].filter(Boolean).join(", "));
        var btn=have?'<span style="color:#15803d;font:600 12px sans-serif">✓ schon Lead</span>':'<button class="lf-add" data-osm-map="'+key+'" style="margin-top:6px;border:0;background:#c00000;color:#fff;border-radius:6px;padding:6px 10px;font:600 12px sans-serif;cursor:pointer">+ Als Lead</button>';
-       L.marker([lat,lon]).addTo(_markers).bindPopup('<b>'+esc(t.name||"")+'</b>'+(addr?'<br>'+addr:'')+'<br>'+btn);
+       L.marker([lat,lon],{icon:flagIcon(L)}).addTo(_markers).bindPopup('<b>'+esc(t.name||"")+'</b>'+(addr?'<br>'+addr:'')+'<br>'+btn);
        bounds.push([lat,lon]);
      });
      if(bounds.length)_map.fitBounds(bounds,{padding:[28,28],maxZoom:13});
@@ -1164,6 +1177,7 @@ var USERS=%%USERS%%;
    '<dl class="kv">'+
      (c.firma2?'<dt>Zusatz</dt><dd>'+esc(c.firma2)+'</dd>':'')+
      (addr?'<dt>Adresse</dt><dd>'+esc(addr)+'</dd>':'')+
+     (contactBundesland(c)?'<dt>Bundesland</dt><dd>'+esc(contactBundesland(c))+'</dd>':'')+
      (c.tel?'<dt>Telefon</dt><dd><a href="tel:'+esc(c.tel)+'">'+esc(c.tel)+'</a></dd>':'')+
      (c.mobil?'<dt>Mobil</dt><dd><a href="tel:'+esc(c.mobil)+'">'+esc(c.mobil)+'</a></dd>':'')+
      (c.mail?'<dt>E-Mail</dt><dd><a href="mailto:'+esc(c.mail)+'">'+esc(c.mail)+'</a></dd>':'')+
@@ -1393,6 +1407,7 @@ var USERS=%%USERS%%;
    var c=id?byId(id):null;var isNew=!c;c=c||{};
    var statusSel='<div class="fg"><label>Status</label><select class="field" id="f_status">'+STATUS.map(function(s){return '<option value="'+s[0]+'"'+((c.status||"lead")===s[0]?' selected':'')+'>'+esc(s[1])+'</option>';}).join("")+'</select></div>';
    var landSel='<div class="fg"><label>Land</label><select class="field" id="f_land">'+LANDS.map(function(l){return '<option value="'+l[0]+'"'+((c.land||"DE")===l[0]?' selected':'')+'>'+esc(l[1])+'</option>';}).join("")+'</select></div>';
+   var blandSel='<div class="fg"><label>Bundesland</label><select class="field" id="f_bundesland"><option value="">—</option>'+BL.map(function(b){return '<option'+(contactBundesland(c)===b?' selected':'')+'>'+esc(b)+'</option>';}).join("")+'</select></div>';
    var ownerSel='<div class="fg"><label>Betreuer (Vertriebler)</label><select class="field" id="f_owner"><option value="">—</option>'+
      USERS.filter(function(u){return u.n;}).map(function(u){var sel=(c.owner||(CUR&&CUR.n))===u.n?' selected':'';return '<option'+sel+'>'+esc(u.n)+'</option>';}).join("")+'</select></div>';
    var html=''+
@@ -1409,6 +1424,7 @@ var USERS=%%USERS%%;
      fInput("strasse","Straße &amp; Nr.",c.strasse,"text",true)+
      fInput("plz","PLZ",c.plz)+
      fInput("ort","Ort",c.ort)+
+     blandSel+
      landSel+statusSel+
      fInput("tel","Telefon",c.tel,"tel")+
      fInput("mobil","Mobil",c.mobil,"tel")+
@@ -1436,7 +1452,7 @@ var USERS=%%USERS%%;
    document.getElementById("fSave").onclick=function(){
      function g(k){var e=document.getElementById("f_"+k);return e?e.value.trim():"";}
      var rec=c.id?c:{id:uid(),created:Date.now(),activities:[]};
-     ["firma","firma2","anrede","vorname","nachname","strasse","plz","ort","land","status","tel","mobil","mail","web","ustid","gf","bl","menge","sieb","news","quelle","owner","notiz"].forEach(function(k){rec[k]=g(k);});
+     ["firma","firma2","anrede","vorname","nachname","strasse","plz","ort","bundesland","land","status","tel","mobil","mail","web","ustid","gf","bl","menge","sieb","news","quelle","owner","notiz"].forEach(function(k){rec[k]=g(k);});
      if(!rec.firma&&!rec.vorname&&!rec.nachname){alert("Bitte mindestens eine Firma oder einen Namen angeben.");return;}
      rec.updated=Date.now();
      if(!c.id)DB.contacts.push(rec);
@@ -1449,7 +1465,7 @@ var USERS=%%USERS%%;
 
  /* ---------- Suche/Filter Listener ---------- */
  ["q"].forEach(function(id){document.getElementById(id).addEventListener("input",renderList);});
- ["fStatus","fLand","fOwner","fSort"].forEach(function(id){document.getElementById(id).addEventListener("change",renderList);});
+ ["fStatus","fLand","fBL","fOwner","fSort"].forEach(function(id){document.getElementById(id).addEventListener("change",renderList);});
  document.getElementById("qLead").addEventListener("input",renderLeads);
  document.getElementById("fLeadLand").addEventListener("change",renderLeads);
 
@@ -1472,8 +1488,8 @@ var USERS=%%USERS%%;
  };
  // CSV
  document.getElementById("csvBtn").onclick=function(){document.getElementById("csvFile").click();};
- document.getElementById("csvFile").onchange=function(e){var f=e.target.files[0];if(!f)return;var rd=new FileReader();rd.onload=function(){var n=importCSV(rd.result);alert(n+" Leads importiert.");renderList();renderDashboard();show("list");};rd.readAsText(f);e.target.value="";};
- var CSV_COLS={firma:"firma",company:"firma",zusatz:"firma2",anrede:"anrede",vorname:"vorname",firstname:"vorname",nachname:"nachname",lastname:"nachname",name:"nachname",strasse:"strasse","straße":"strasse",street:"strasse",plz:"plz",zip:"plz",ort:"ort",city:"ort",land:"land",country:"land",tel:"tel",telefon:"tel",phone:"tel",mobil:"mobil",mobile:"mobil",mail:"mail",email:"mail","e-mail":"mail",web:"web",website:"web",url:"web",ustid:"ustid",vat:"ustid",quelle:"quelle",source:"quelle",notiz:"notiz",note:"notiz",notes:"notiz",status:"status"};
+ document.getElementById("csvFile").onchange=function(e){var f=e.target.files[0];if(!f)return;var rd=new FileReader();rd.onload=function(){var n=importCSV(rd.result);alert(n+" Leads importiert.");initFilters();renderList();renderDashboard();show("list");};rd.readAsText(f);e.target.value="";};
+ var CSV_COLS={firma:"firma",company:"firma",zusatz:"firma2",anrede:"anrede",vorname:"vorname",firstname:"vorname",nachname:"nachname",lastname:"nachname",name:"nachname",strasse:"strasse","straße":"strasse",street:"strasse",plz:"plz",zip:"plz",ort:"ort",city:"ort",land:"land",country:"land",bundesland:"bundesland",state:"bundesland",region:"bundesland",tel:"tel",telefon:"tel",phone:"tel",mobil:"mobil",mobile:"mobil",mail:"mail",email:"mail","e-mail":"mail",web:"web",website:"web",url:"web",ustid:"ustid",vat:"ustid",quelle:"quelle",source:"quelle",notiz:"notiz",note:"notiz",notes:"notiz",status:"status"};
  function splitCSVLine(line,sep){var out=[],cur="",q=false;for(var i=0;i<line.length;i++){var ch=line[i];if(q){if(ch==='"'){if(line[i+1]==='"'){cur+='"';i++;}else q=false;}else cur+=ch;}else{if(ch==='"')q=true;else if(ch===sep){out.push(cur);cur="";}else cur+=ch;}}out.push(cur);return out;}
  function importCSV(text){
    text=text.replace(/^﻿/,"");var lines=text.split(/\r?\n/).filter(function(l){return l.trim();});if(lines.length<2)return 0;
@@ -1489,8 +1505,8 @@ var USERS=%%USERS%%;
    bulkSave(added,false);return n;
  }
  function findStatus(s){for(var i=0;i<STATUS.length;i++)if(STATUS[i][0]===s)return true;return false;}
- (function(){var tpl="firma;anrede;vorname;nachname;strasse;plz;ort;land;tel;mobil;mail;web;quelle;notiz\n"+
-   "Mustermann GmbH;Herr;Max;Mustermann;Industriestr. 1;80331;München;DE;+49 89 123456;;info@mustermann.de;mustermann.de;Messe Bauma;Interesse Lepton 5100\n";
+ (function(){var tpl="firma;anrede;vorname;nachname;strasse;plz;ort;bundesland;land;tel;mobil;mail;web;quelle;notiz\n"+
+   "Mustermann GmbH;Herr;Max;Mustermann;Industriestr. 1;80331;München;Bayern;DE;+49 89 123456;;info@mustermann.de;mustermann.de;Messe Bauma;Interesse Lepton 5100\n";
    document.getElementById("csvTpl").href="data:text/csv;charset=utf-8,"+encodeURIComponent(tpl);})();
  document.getElementById("wipeBtn").onclick=function(){if(confirm("Wirklich ALLE CRM-Daten auf diesem Gerät löschen? Das kann nicht rückgängig gemacht werden.")){if(confirm("Sicher? Letzte Warnung.")){DB={contacts:[]};bulkSave([],true);renderDashboard();renderList();show("dashboard");}}};
 
@@ -1596,7 +1612,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v20";
+const CACHE="vertrieb-v21";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png",
   "./vendor/leaflet.js","./vendor/leaflet.css",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
