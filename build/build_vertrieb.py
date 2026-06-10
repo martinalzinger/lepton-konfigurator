@@ -2052,8 +2052,9 @@ var USERS=%%USERS%%;
                  skip++;return null;
                }
                return loadImgs(pc).then(function(bilder){
+                 // Land: zuerst aus der ADRESSE (KI), Notizbuchname nur als Fallback (z. B. Muenchner Kontakt im Afrika-Buch -> DE).
                  var lf=landFromBook(p.book),ki=String(c.land||"").toUpperCase().slice(0,2);
-                 var rec={id:uid(),created:Date.now(),updated:Date.now(),status:"lead",land:(lf||ki||"DE"),activities:[],owner:ownerByBook[p.book]||((CUR&&CUR.n)||"")};
+                 var rec={id:uid(),created:Date.now(),updated:Date.now(),status:"lead",land:(ki||lf||"DE"),activities:[],owner:ownerByBook[p.book]||((CUR&&CUR.n)||"")};
                  rec.firma=fa;["anrede","vorname","nachname","strasse","plz","ort","bundesland","tel","mobil","mail","web","ustid"].forEach(function(k){var v=c[k]&&String(c[k]).trim();if(v)rec[k]=v;});
                  if(!rec.bundesland&&p.section)rec.bundesland=p.section;
                  if(c.position)rec.firma2=c.position;
@@ -2181,7 +2182,7 @@ var USERS=%%USERS%%;
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v70";
+ var APP_VER="v71";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
@@ -2226,7 +2227,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v70";
+const CACHE="vertrieb-v71";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png",
   "./vendor/leaflet.js","./vendor/leaflet.css","./vendor/msal-browser.min.js",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
