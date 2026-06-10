@@ -172,6 +172,12 @@ textarea.field{min-height:74px;resize:vertical;line-height:1.5}
 /* Detail */
 .detail-head{display:flex;gap:14px;align-items:flex-start;margin-bottom:6px}
 .detail-head .av{width:52px;height:52px;border-radius:12px;background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-weight:600;font-size:18px;flex:0 0 auto}
+/* Initialen-Kästchen je Status einfärben */
+.av.av-lead{background:#64748b}
+.av.av-interessent{background:#d97706}
+.av.av-angebot{background:#1d4ed8}
+.av.av-kunde{background:#15803d}
+.av.av-verloren{background:#9aa0a6}
 .detail-head h2{font-size:21px;font-weight:800;letter-spacing:-.01em}
 .detail-head .who{color:var(--muted);font-size:13px;margin-top:2px}
 .quick{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 4px}
@@ -1096,7 +1102,7 @@ var USERS=%%USERS%%;
    else{fl.innerHTML=fu.slice(0,12).map(function(c){
      var d=c.followup;
      return '<div class="crow" data-id="'+c.id+'" style="margin-bottom:8px">'+
-       '<div class="av">'+esc(initials(displayName(c)))+'</div>'+
+       '<div class="av av-'+esc(c.status||"lead")+'">'+esc(initials(displayName(c)))+'</div>'+
        '<div class="mid"><div class="nm">'+esc(displayName(c))+'</div>'+
        '<div class="meta">'+(d.note?'<span>'+esc(d.note)+'</span>':'<span>Wiedervorlage</span>')+(c.tel?'<span class="flag">'+esc(c.tel)+'</span>':'')+'</div></div>'+
        '<div class="right"><span class="due '+dueClass(d.due)+'">'+dueLabel(d.due)+'</span>'+
@@ -1145,7 +1151,7 @@ var USERS=%%USERS%%;
    var due=(c.followup&&!c.followup.done&&c.followup.due)?'<span class="due '+dueClass(c.followup.due)+'">'+dueLabel(c.followup.due)+'</span>':'';
    var sub=fullName(c);var loc=[c.strasse,[c.plz,c.ort].filter(Boolean).join(" ")].filter(Boolean).join(", ");
    return '<div class="crow" data-id="'+c.id+'">'+
-     '<div class="av">'+esc(initials(displayName(c)))+'</div>'+
+     '<div class="av av-'+esc(c.status||"lead")+'">'+esc(initials(displayName(c)))+'</div>'+
      '<div class="mid"><div class="nm">'+esc(displayName(c))+'</div>'+
      '<div class="meta">'+
        (c.firma&&sub?'<span>'+esc(sub)+'</span>':'')+
@@ -1621,7 +1627,7 @@ var USERS=%%USERS%%;
    var html=''+
    '<button class="btn ghost sm" id="backBtn" style="margin-bottom:10px">← Zurück</button>'+
    '<div class="detail-head">'+
-     '<div class="av">'+esc(initials(displayName(c)))+'</div>'+
+     '<div class="av av-'+esc(c.status||"lead")+'">'+esc(initials(displayName(c)))+'</div>'+
      '<div style="flex:1;min-width:0"><h2>'+esc(displayName(c))+'</h2>'+
        '<div class="who">'+esc([fullName(c),c.firma&&fullName(c)?"":""].filter(Boolean).join(""))+
          (fullName(c)&&c.firma?esc(fullName(c)):"")+(c.anrede?' · '+esc(c.anrede):'')+'</div>'+
@@ -2395,7 +2401,7 @@ var USERS=%%USERS%%;
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v92";
+ var APP_VER="v93";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
@@ -2440,7 +2446,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v92";
+const CACHE="vertrieb-v93";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png","./icon-32.png","./favicon.ico",
   "./vendor/leaflet.js","./vendor/leaflet.css","./vendor/msal-browser.min.js",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
