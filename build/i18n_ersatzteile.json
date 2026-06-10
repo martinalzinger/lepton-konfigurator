@@ -430,5 +430,11 @@
   "en": "Log out?",
   "pl": "Wylogować się?",
   "fr": "Se déconnecter ?"
+ },
+ "logged_in": {
+  "de": "Angemeldet",
+  "en": "Logged in",
+  "pl": "Zalogowany",
+  "fr": "Connecté"
  }
 }
