@@ -154,6 +154,23 @@ async function scanCard(apiKey: string, image: string): Promise<Response> {
   return json({ contact });
 }
 
+/* ============================ HINTERGRUND-JOB (für strenge Proxies) ============================ */
+// Schreibt das Ergebnis in die Tabelle public.ai_jobs (per Service-Role-Key). Die App holt es
+// dann per normaler DB-Abfrage ab -> funktioniert auch hinter Proxies, die lange Antworten kappen.
+async function saveJob(jobId: string, result: unknown): Promise<void> {
+  const url = Deno.env.get("SUPABASE_URL");
+  const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (!url || !key) return;
+  await fetch(url + "/rest/v1/ai_jobs", {
+    method: "POST",
+    headers: {
+      apikey: key, Authorization: "Bearer " + key, "Content-Type": "application/json",
+      Prefer: "resolution=merge-duplicates,return=minimal",
+    },
+    body: JSON.stringify({ id: jobId, result, done: true }),
+  }).catch(() => {});
+}
+
 /* ============================ ROUTER ============================ */
 
 Deno.serve(async (req: Request) => {
@@ -173,9 +190,23 @@ Deno.serve(async (req: Request) => {
     catch (e) { return json({ error: String((e as Error)?.message || e) }, 500); }
   }
 
-  // A) Lead-Suche: mit Keepalive-Streaming (gegen Proxy-Timeout am Desktop).
-  const was = body?.was, wo = body?.wo;
+  // A) Lead-Suche
+  const was = body?.was, wo = body?.wo, jobId = body?.jobId;
   if (!was || !wo) return json({ error: "Bitte was+wo (Lead-Suche) oder image (Visitenkarte) senden" }, 400);
+
+  // A1) Mit jobId -> Hintergrund-Job: SOFORT antworten, Ergebnis kommt in die Tabelle ai_jobs.
+  if (jobId) {
+    const work = (async () => {
+      let out: unknown;
+      try { out = await research(apiKey, String(was), String(wo)); }
+      catch (e) { out = { leads: [], error: String((e as Error)?.message || e) }; }
+      await saveJob(String(jobId), out);
+    })();
+    try { (globalThis as any).EdgeRuntime?.waitUntil?.(work); } catch (_) { /* lokal egal */ }
+    return json({ ok: true, jobId });
+  }
+
+  // A2) Ohne jobId -> alte Streaming-Variante (abwaertskompatibel).
 
   const enc = new TextEncoder();
   const stream = new ReadableStream({
