@@ -574,8 +574,11 @@ var USERS=%%USERS%%;
    var ctl=("AbortController" in window)?new AbortController():null;
    var to=ctl?setTimeout(function(){try{ctl.abort();}catch(_){}},120000):0;
    var done=function(){if(to)clearTimeout(to);};
+   // Body als TEXT lesen (nicht .json()): die Funktion streamt während der Recherche
+   // Keepalive-Leerzeichen und hängt am Ende das JSON an -> JSON.parse(trim) verträgt beides.
+   function parse(t){try{return JSON.parse(String(t||"").trim()||"{}");}catch(_){return {};}}
    return fetch(SB.url.replace(/\/+$/,"")+"/functions/v1/"+name,{method:"POST",headers:{"Authorization":"Bearer "+SB.key,"apikey":SB.key,"Content-Type":"application/json","x-crm-secret":AISECRET},body:JSON.stringify({was:was,wo:wo}),signal:ctl?ctl.signal:undefined})
-     .then(function(r){if(!r.ok)return r.json().catch(function(){return {};}).then(function(e){var err=new Error("ai "+r.status+(e&&e.error?(": "+e.error):""));err.status=r.status;throw err;});return r.json();})
+     .then(function(r){if(!r.ok)return r.text().then(function(t){var e=parse(t);var err=new Error("ai "+r.status+(e&&e.error?(": "+e.error):""));err.status=r.status;throw err;});return r.text().then(parse);})
      .then(function(d){done();return d;},function(e){done();if(e&&(e.name==="AbortError"||/abort/i.test(String(e&&e.message)))){var er=new Error("Zeitüberschreitung – die KI-Suche hat zu lange gebraucht. Bitte Region enger fassen und erneut versuchen.");er.status=0;throw er;}throw e;});
  }
  function apiAi(was,wo){
@@ -1612,7 +1615,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v21";
+const CACHE="vertrieb-v22";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png",
   "./vendor/leaflet.js","./vendor/leaflet.css",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];

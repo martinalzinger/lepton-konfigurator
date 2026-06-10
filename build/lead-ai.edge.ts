@@ -13,6 +13,11 @@
 //  4. Deploy. Aufruf-URL: https://<projekt>.supabase.co/functions/v1/lead-ai
 //
 // Die App schickt { was, wo } und den Header x-crm-secret und bekommt { leads: [...] }.
+//
+// WICHTIG (Desktop/Firmen-Proxy): Die Antwort wird als STREAM geschickt. Während der
+// Recherche (kann ~60 s dauern) sendet die Funktion alle paar Sekunden ein Leerzeichen
+// als "Keepalive" – so kappt ein strenger Firmen-Proxy die lange Verbindung nicht.
+// Am Ende wird das JSON angehängt. Die App liest den Text und macht JSON.parse(trim()).
 
 const MODEL = "claude-opus-4-8";
 // URL gestückelt, damit sie beim Kopieren nicht automatisch in <…> verlinkt wird.
@@ -32,22 +37,25 @@ function json(obj: unknown, status = 200): Response {
   });
 }
 
-Deno.serve(async (req: Request) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
-  if (req.method !== "POST") return json({ error: "POST erforderlich" }, 405);
-
-  try {
-    const secret = Deno.env.get("CRM_SECRET") || "";
-    if (secret && req.headers.get("x-crm-secret") !== secret) {
-      return json({ error: "unauthorized" }, 401);
+// Robustes Herausziehen des JSON-Arrays von Objekten (ignoriert Quellen-Fußnoten wie [1]).
+function extractLeads(t: string): any[] | null {
+  const m = t.match(/\[\s*\{[\s\S]*\}\s*\]/);
+  if (m) { try { const a = JSON.parse(m[0]); if (Array.isArray(a)) return a; } catch (_) { /* weiter */ } }
+  try { const a = JSON.parse(t.trim()); if (Array.isArray(a)) return a; } catch (_) { /* weiter */ }
+  const start = t.indexOf("[");
+  if (start >= 0) {
+    const lastObj = t.lastIndexOf("}");
+    if (lastObj > start) {
+      const repaired = t.slice(start, lastObj + 1) + "]";
+      try { const a = JSON.parse(repaired); if (Array.isArray(a)) return a; } catch (_) { /* weiter */ }
     }
-    const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
-    if (!apiKey) return json({ error: "ANTHROPIC_API_KEY fehlt (Secret setzen)" }, 500);
+  }
+  return null;
+}
 
-    const { was, wo } = await req.json().catch(() => ({}));
-    if (!was || !wo) return json({ error: "Bitte was und wo angeben" }, 400);
-
-    const prompt =
+// Die eigentliche Recherche (Anthropic + Web-Suche). Gibt das Ergebnis-Objekt zurück.
+async function research(apiKey: string, was: string, wo: string): Promise<unknown> {
+  const prompt =
 `Du bist Vertriebs-Rechercheur für Alzinger Maschinenbau. Verkauft wird die mobile
 Sternsiebanlage Lepton 5100 – ideale Kunden sind Betriebe in Kompostierung, Recycling/
 Entsorgung, Erden-/Substratwerke, Steinbruch/Schotter, Garten-/Landschaftsbau, Biogas.
@@ -73,81 +81,89 @@ Jedes Element exakt so:
 - WICHTIG: Unbekannte Felder als leerer String "". Nichts erfinden – lieber leer lassen.
 - 6–8 Firmen pro Antwort genügen. Nur echte, im Web auffindbare Betriebe (keine Dubletten).`;
 
-    const base = {
-      model: MODEL,
-      max_tokens: 9000,
-      // Wenige Web-Suchen -> Antwort bleibt unter ~60 s und kommt auch durch strenge
-      // Firmen-Proxies durch. Tiefe entsteht durch die mehrfachen Aufrufe der App.
-      tools: [{ type: "web_search_20260209", name: "web_search", max_uses: 5 }],
-    };
+  const base = {
+    model: MODEL,
+    max_tokens: 9000,
+    tools: [{ type: "web_search_20260209", name: "web_search", max_uses: 5 }],
+  };
 
-    // Web-Suche kann mehrere Runden brauchen -> pause_turn-Schleife
-    let messages: unknown[] = [{ role: "user", content: prompt }];
-    let data: any = null;
-    for (let i = 0; i < 10; i++) {
-      const r = await fetch(ANTHROPIC_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": apiKey,
-          "anthropic-version": "2023-06-01",
-        },
-        body: JSON.stringify({ ...base, messages }),
-      });
-      if (!r.ok) {
-        const t = await r.text();
-        return json({ error: "anthropic " + r.status, detail: t.slice(0, 400) }, 502);
-      }
-      data = await r.json();
-      if (data.stop_reason === "pause_turn") {
-        messages = [...messages, { role: "assistant", content: data.content }];
-        continue;
-      }
-      break;
+  let messages: unknown[] = [{ role: "user", content: prompt }];
+  let data: any = null;
+  for (let i = 0; i < 10; i++) {
+    const r = await fetch(ANTHROPIC_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify({ ...base, messages }),
+    });
+    if (!r.ok) {
+      const t = await r.text();
+      return { leads: [], error: "anthropic " + r.status, detail: t.slice(0, 300) };
     }
-
-    let text = (data?.content || [])
-      .filter((b: any) => b.type === "text")
-      .map((b: any) => b.text)
-      .join("\n")
-      .trim();
-    // Code-Fences entfernen (```json ... ```)
-    text = text.replace(/```json/gi, "").replace(/```/g, "");
-
-    // Robustes Herausziehen des JSON-Arrays von Objekten (ignoriert Quellen-Fußnoten wie [1]).
-    function extractLeads(t: string): any[] | null {
-      // 1) Array, das mit [ { beginnt
-      const m = t.match(/\[\s*\{[\s\S]*\}\s*\]/);
-      if (m) { try { const a = JSON.parse(m[0]); if (Array.isArray(a)) return a; } catch (_) { /* weiter */ } }
-      // 2) gesamter Text
-      try { const a = JSON.parse(t.trim()); if (Array.isArray(a)) return a; } catch (_) { /* weiter */ }
-      // 3) abgeschnittenes Array retten: bis zum letzten vollständigen } abschneiden und schließen
-      const start = t.indexOf("[");
-      if (start >= 0) {
-        const lastObj = t.lastIndexOf("}");
-        if (lastObj > start) {
-          const repaired = t.slice(start, lastObj + 1) + "]";
-          try { const a = JSON.parse(repaired); if (Array.isArray(a)) return a; } catch (_) { /* weiter */ }
-        }
-      }
-      return null;
+    data = await r.json();
+    if (data.stop_reason === "pause_turn") {
+      messages = [...messages, { role: "assistant", content: data.content }];
+      continue;
     }
-
-    const leads = extractLeads(text);
-    if (leads === null) {
-      // Diagnose mitsenden, damit man im App-/Test-Ergebnis sieht, was los war.
-      return json({
-        leads: [],
-        debug: {
-          stop_reason: data?.stop_reason || null,
-          text_len: text.length,
-          truncated: data?.stop_reason === "max_tokens",
-          sample: text.slice(0, 500),
-        },
-      });
-    }
-    return json({ leads });
-  } catch (e) {
-    return json({ error: String((e as Error)?.message || e) }, 500);
+    break;
   }
+
+  let text = (data?.content || [])
+    .filter((b: any) => b.type === "text")
+    .map((b: any) => b.text)
+    .join("\n")
+    .trim();
+  text = text.replace(/```json/gi, "").replace(/```/g, "");
+
+  const leads = extractLeads(text);
+  if (leads === null) {
+    return {
+      leads: [],
+      debug: {
+        stop_reason: data?.stop_reason || null,
+        text_len: text.length,
+        truncated: data?.stop_reason === "max_tokens",
+        sample: text.slice(0, 500),
+      },
+    };
+  }
+  return { leads };
+}
+
+Deno.serve(async (req: Request) => {
+  if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
+  if (req.method !== "POST") return json({ error: "POST erforderlich" }, 405);
+
+  // Schnelle Vorab-Prüfungen -> sofortige Antwort (kein Streaming nötig).
+  const secret = Deno.env.get("CRM_SECRET") || "";
+  if (secret && req.headers.get("x-crm-secret") !== secret) return json({ error: "unauthorized" }, 401);
+  const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
+  if (!apiKey) return json({ error: "ANTHROPIC_API_KEY fehlt (Secret setzen)" }, 500);
+  const body = await req.json().catch(() => ({}));
+  const was = body?.was, wo = body?.wo;
+  if (!was || !wo) return json({ error: "Bitte was und wo angeben" }, 400);
+
+  // Streaming-Antwort mit Keepalive: hält die Verbindung "aktiv", damit strenge
+  // Firmen-Proxies die lange Recherche nicht als Leerlauf kappen.
+  const enc = new TextEncoder();
+  const stream = new ReadableStream({
+    async start(controller) {
+      const keepalive = setInterval(() => {
+        try { controller.enqueue(enc.encode(" ")); } catch (_) { /* geschlossen */ }
+      }, 7000);
+      let out: unknown;
+      try {
+        out = await research(apiKey, String(was), String(wo));
+      } catch (e) {
+        out = { leads: [], error: String((e as Error)?.message || e) };
+      }
+      clearInterval(keepalive);
+      try { controller.enqueue(enc.encode("\n" + JSON.stringify(out))); } catch (_) { /* ignore */ }
+      controller.close();
+    },
+  });
+  return new Response(stream, { status: 200, headers: { ...cors, "Content-Type": "application/json" } });
 });
