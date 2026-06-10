@@ -144,6 +144,96 @@
           ],
           "name_pl": "Taśma prosta",
           "name_fr": "Bande droite"
+        },
+        {
+          "id": "SD1-TEILUNG-36",
+          "art": "—",
+          "name": "Teilung 36",
+          "name_en": "Pitch 36",
+          "desc": "Komplette Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar",
+          "desc_en": "Complete assembly – pick and order all individual parts in 3D",
+          "price": 0,
+          "model": "sd1-teilung-36.glb",
+          "img": "sd1_teilung_36",
+          "rot": [
+            -90,
+            0,
+            0
+          ],
+          "name_pl": "Podziałka 36",
+          "name_fr": "Pas 36"
+        },
+        {
+          "id": "SD1-TEILUNG-42",
+          "art": "—",
+          "name": "Teilung 42",
+          "name_en": "Pitch 42",
+          "desc": "Komplette Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar",
+          "desc_en": "Complete assembly – pick and order all individual parts in 3D",
+          "price": 0,
+          "model": "sd1-teilung-42.glb",
+          "img": "sd1_teilung_42",
+          "rot": [
+            -90,
+            0,
+            0
+          ],
+          "name_pl": "Podziałka 42",
+          "name_fr": "Pas 42"
+        },
+        {
+          "id": "SD1-TEILUNG-46",
+          "art": "—",
+          "name": "Teilung 46",
+          "name_en": "Pitch 46",
+          "desc": "Komplette Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar",
+          "desc_en": "Complete assembly – pick and order all individual parts in 3D",
+          "price": 0,
+          "model": "sd1-teilung-46.glb",
+          "img": "sd1_teilung_46",
+          "rot": [
+            -90,
+            0,
+            0
+          ],
+          "name_pl": "Podziałka 46",
+          "name_fr": "Pas 46"
+        },
+        {
+          "id": "SD1-TEILUNG-52-35",
+          "art": "—",
+          "name": "Teilung 52 / 35",
+          "name_en": "Pitch 52 / 35",
+          "desc": "Komplette Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar",
+          "desc_en": "Complete assembly – pick and order all individual parts in 3D",
+          "price": 0,
+          "model": "sd1-teilung-52-35.glb",
+          "img": "sd1_teilung_52_35",
+          "rot": [
+            -90,
+            0,
+            0
+          ],
+          "name_pl": "Podziałka 52 / 35",
+          "name_fr": "Pas 52 / 35"
+        },
+        {
+          "id": "SD1-TEILUNG-70",
+          "art": "—",
+          "name": "Teilung 70",
+          "name_en": "Pitch 70",
+          "desc": "Komplette Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar",
+          "desc_en": "Complete assembly – pick and order all individual parts in 3D",
+          "price": 0,
+          "model": "sd1-teilung-70.glb",
+          "img": "sd1_teilung_70",
+          "rot": [
+            -90,
+            0,
+            0
+          ],
+          "name_pl": "Podziałka 70",
+          "name_fr": "Pas 70"
         }
       ],
       "h_pl": "Pokład sitowy 1",
