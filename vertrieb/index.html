@@ -1451,6 +1451,8 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
    for(var r=1;r<lines.length;r++){var cells=splitCSVLine(lines[r],sep);var rec={id:uid(),created:Date.now(),updated:Date.now(),status:"lead",land:"DE",activities:[]};var has=false;
      for(var c=0;c<head.length;c++){if(head[c]&&cells[c]!=null){var val=cells[c].trim();if(val){rec[head[c]]=val;has=true;}}}
      if(!has)continue;if(rec.land)rec.land=rec.land.toUpperCase().slice(0,2)||"DE";if(!findStatus(rec.status))rec.status="lead";
+     // PLZ-Reparatur: DE-Postleitzahlen mit verlorener führender Null (Excel-Zahl) auf 5 Stellen auffüllen.
+     if(rec.plz&&rec.land==="DE"&&/^\d{1,4}$/.test(rec.plz)){while(rec.plz.length<5)rec.plz="0"+rec.plz;}
      DB.contacts.push(rec);added.push(rec);n++;}
    bulkSave(added,false);return n;
  }
