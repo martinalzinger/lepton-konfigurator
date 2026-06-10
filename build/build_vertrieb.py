@@ -329,6 +329,11 @@ textarea.field{min-height:74px;resize:vertical;line-height:1.5}
         <input class="field" id="osmWo" placeholder="Wo? z. B. Deutschland, Bayern, München" style="flex:1;min-width:140px">
         <button class="btn primary" id="osmSearch" type="button"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>Suchen</button>
       </div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;align-items:center">
+        <button class="btn" id="osmNear" type="button"><svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.8"><path d="M12 21s-7-5.2-7-11a7 7 0 0114 0c0 5.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>Umkreis um meinen Standort</button>
+        <select class="field" id="osmRadius" style="width:auto;flex:0 0 auto"><option value="25">25 km</option><option value="50">50 km</option><option value="100" selected>100 km</option><option value="200">200 km</option></select>
+        <span style="font-size:12px;color:var(--muted)">findet Anlagen in deiner Nähe</span>
+      </div>
       <div id="osmStatus" style="font-size:13px;color:var(--muted);margin-top:10px"></div>
       <div id="osmMap" style="height:340px;border:1px solid var(--line);border-radius:12px;margin-top:10px;display:none"></div>
       <div class="clist" id="osmResults" style="margin-top:10px"></div>
@@ -965,6 +970,12 @@ var USERS=%%USERS%%;
    var url="https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=1&accept-language=de&q="+encodeURIComponent(place);
    return fetch(url,{headers:{"Accept":"application/json"}}).then(function(r){if(!r.ok)throw new Error("geo");return r.json();}).then(function(a){if(!a||!a.length)throw new Error("noplace");return a[0];});
  }
+ // Reverse-Geocoding: Koordinaten -> Land/Ort (fuer Anzeige bei der Umkreissuche).
+ function osmReverse(lat,lon){
+   return fetch("https://nominatim.openstreetmap.org/reverse?format=json&zoom=10&accept-language=de&lat="+lat+"&lon="+lon,{headers:{"Accept":"application/json"}})
+     .then(function(r){if(!r.ok)throw new Error("rev");return r.json();})
+     .then(function(j){var a=(j&&j.address)||{};return {cc:a.country_code||"",ort:a.city||a.town||a.village||a.municipality||a.county||a.state||""};});
+ }
  function osmAreaRef(g){
    if(g.osm_type==="relation")return {area:3600000000+(+g.osm_id)};
    if(g.osm_type==="way")return {area:2400000000+(+g.osm_id)};
@@ -1146,6 +1157,34 @@ var USERS=%%USERS%%;
      else osmStatus(pre||"Suche gerade nicht möglich (offline oder Kartendienst nicht erreichbar). Später erneut versuchen.");
    });
  }
+ // Umkreissuche: GPS-Standort holen und Anlagen im gewaehlten Radius finden (praezise, OSM around:).
+ function umkreisSearch(){
+   var was=(document.getElementById("osmWas").value||"").trim()||"kompostierung";
+   var km=parseInt((document.getElementById("osmRadius")||{}).value,10)||100;
+   if(navigator.onLine===false){osmStatus("Keine Internetverbindung – die Umkreissuche funktioniert nur online.");return;}
+   if(!navigator.geolocation){osmStatus("Dein Gerät unterstützt keine Standortbestimmung.");return;}
+   _aiErr="";
+   osmLoading("Standort wird ermittelt … (bitte Standort-Freigabe erlauben)");
+   navigator.geolocation.getCurrentPosition(function(pos){
+     var lat=pos.coords.latitude,lon=pos.coords.longitude;
+     lastQuery=was+" im Umkreis "+km+" km";
+     osmLoading('Suche „'+esc(was)+'“ im Umkreis '+km+' km um deinen Standort …');
+     osmReverse(lat,lon).then(function(rg){if(rg&&rg.cc)searchLand=rg.cc.toUpperCase();if(rg&&rg.ort)lastQuery=was+" im Umkreis "+km+" km um "+rg.ort;}).catch(function(){});
+     osmOverpass(osmBuildQuery({around:[km*1000,lat,lon]},osmFilters(was))).then(function(els){
+       var seen={},out=[];els.forEach(function(el){var t=el.tags||{};if(!t.name)return;var k=el.type+"/"+el.id;if(seen[k])return;seen[k]=1;out.push(el);});
+       _searchSrc="Umkreis "+km+" km";renderOsm(out);
+       if(!out.length)osmStatus('Keine Anlagen im Umkreis '+km+' km gefunden. Größeren Radius wählen oder anderen Begriff (z. B. „Recycling", „Erden") versuchen.');
+     }).catch(function(e){
+       osmClearResults();var m=String((e&&e.message)||e);
+       if(/Failed to fetch|NetworkError|Load failed|fetch resource/i.test(m))osmStatus('Die Online-Suche ist von diesem Gerät blockiert (Firewall/Browser-Schutz). Am Handy/Mobilfunk versuchen.');
+       else if(/overpass/.test(m))osmStatus('Umkreissuche fehlgeschlagen (Kartendienst überlastet). Bitte erneut versuchen.');
+       else osmStatus('Umkreissuche gerade nicht möglich. Später erneut versuchen.');
+     });
+   },function(err){
+     var c=err&&err.code;
+     osmStatus(c===1?'Standort-Freigabe wurde abgelehnt. Bitte erlaube der Seite den Zugriff auf den Standort (Browser-/Handy-Einstellungen) und tippe erneut.':'Standort konnte nicht ermittelt werden. Bitte erneut versuchen (in Gebäuden ist GPS oft ungenau).');
+   },{enableHighAccuracy:true,timeout:15000,maximumAge:60000});
+ }
  // Haupt-Einstieg der Lead-Suche: KI (falls eingerichtet) zuerst, sonst/als Fallback OSM-Karten-Suche.
  function leadSearch(){
    var was=(document.getElementById("osmWas").value||"").trim(),wo=(document.getElementById("osmWo").value||"").trim();
@@ -1183,6 +1222,7 @@ var USERS=%%USERS%%;
    });
  }
  document.getElementById("osmSearch").onclick=leadSearch;
+ document.getElementById("osmNear").onclick=umkreisSearch;
  document.getElementById("osmWas").addEventListener("keydown",function(e){if(e.key==="Enter")leadSearch();});
  document.getElementById("osmWo").addEventListener("keydown",function(e){if(e.key==="Enter")leadSearch();});
  document.getElementById("osmResults").addEventListener("click",function(e){
@@ -1727,7 +1767,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v31";
+const CACHE="vertrieb-v32";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png",
   "./vendor/leaflet.js","./vendor/leaflet.css",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
