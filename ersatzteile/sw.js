@@ -1,6 +1,6 @@
 // Eigener Service-Worker der eigenständigen Ersatzteilseite (Scope: /ersatzteile/).
 // Komplett getrennt vom Konfigurator – eigener Cache-Namespace "ersatzteile-".
-const CACHE="ersatzteile-v2";
+const CACHE="ersatzteile-v3";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png",
   "./vendor/three.module.min.js","./vendor/GLTFLoader.js","./vendor/OrbitControls.js","./vendor/BufferGeometryUtils.js","./vendor/RoomEnvironment.js"];
 
@@ -26,9 +26,10 @@ self.addEventListener("fetch",e=>{
   if(req.method!=="GET")return;
   const isHTML=req.mode==="navigate"||(req.headers.get("accept")||"").includes("text/html");
   if(isHTML){
-    // Online: frische Seite holen und cachen. Offline: gespeicherte Seite liefern.
+    // Online: IMMER frische Seite vom Netz holen (HTTP-Cache umgehen) und cachen.
+    // Offline: gespeicherte Seite liefern.
     e.respondWith(
-      fetch(req).then(resp=>{
+      fetch(req.url,{cache:"reload",credentials:"same-origin"}).then(resp=>{
         const cp=resp.clone();
         caches.open(CACHE).then(c=>{c.put("./index.html",cp).catch(()=>{});}).catch(()=>{});
         return resp;
