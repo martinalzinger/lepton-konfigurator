@@ -576,11 +576,10 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
    });
  }
  function apiAi(was,wo){
-   // Hintergrund-Job: starten (Funktionsname „lead-ai" oder „lead-ai-") + Ergebnis aus DB pollen.
-   var jobId="job_"+uid()+Date.now().toString(36);
-   return aiJobStart("lead-ai",was,wo,jobId).catch(function(e){if(e&&e.status===404)return aiJobStart("lead-ai-",was,wo,jobId);throw e;})
-     .then(function(){return aiJobPoll(jobId);})
-     .then(function(d){return ((d&&d.leads)||[]).filter(function(x){return x&&(x.firma||x.name);});});
+   // Direkter Aufruf (Streaming) – funktioniert am iPhone zuverlässig. Der Funktionsname
+   // kann „lead-ai" oder „lead-ai-" sein -> bei 404 die zweite Variante versuchen.
+   return aiPost("lead-ai",was,wo).catch(function(e){if(e&&e.status===404)return aiPost("lead-ai-",was,wo);throw e;})
+     .then(function(d){return (d.leads||[]).filter(function(x){return x&&(x.firma||x.name);});});
  }
  /* --- Visitenkarten-Scan (Claude-Vision über dieselbe Edge Function "lead-ai") --- */
  function cardPost(name,dataUri){
