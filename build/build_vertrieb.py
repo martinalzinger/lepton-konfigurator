@@ -1076,6 +1076,24 @@ var USERS=%%USERS%%;
    }).join("")+(anyNew?'<button class="btn block" id="osmAddAll" style="margin-top:8px">Alle neuen als Leads übernehmen</button>':'')+
      (_searchSrc==="KI"?'<button class="btn block" id="osmMore" style="margin-top:8px;background:#fff;color:#c00000;border:1px solid #c00000">＋ Weitersuchen – weitere Firmen finden</button>':'');
    osmShowMap(els);
+   geocodeOsmEls(els);
+ }
+ // KI-Treffer haben keine Koordinaten -> Adressen im Hintergrund geocoden (gedrosselt, max. 30),
+ // damit sie nach und nach auf der Ergebnis-Karte erscheinen. Token bricht ab, wenn neu gesucht wird.
+ var _geoTok=0;
+ function geocodeOsmEls(els){
+   _geoTok++;var tok=_geoTok;
+   var pend=[];els.forEach(function(el){if((el.lat==null)&&el.tags&&el.tags.name)pend.push(el);});
+   if(!pend.length)return;
+   pend=pend.slice(0,30);var i=0;
+   function next(){
+     if(tok!==_geoTok||i>=pend.length)return;
+     var el=pend[i++],t=el.tags||{},a=osmAddr(t);
+     var q=[a.strasse,[a.plz,a.ort].filter(Boolean).join(" "),landLabel(t._land||searchLand)].filter(Boolean).join(", ");
+     if(!q){setTimeout(next,30);return;}
+     osmGeocode(q).then(function(g){if(tok!==_geoTok)return;if(g&&g.lat){el.lat=+g.lat;el.lon=+g.lon;osmShowMap(osmEls);}}).catch(function(){}).then(function(){setTimeout(next,1100);});
+   }
+   next();
  }
  // Weitersuchen: dieselbe KI-Suche erneut, aber die schon gefundenen Firmen ausschließen
  // und die neuen Treffer unten anhängen (max. 10 echte Firmen pro Suche).
@@ -1799,7 +1817,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v35";
+const CACHE="vertrieb-v36";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png",
   "./vendor/leaflet.js","./vendor/leaflet.css",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
