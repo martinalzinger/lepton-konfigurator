@@ -739,6 +739,29 @@ var USERS=%%USERS%%;
    }
    return nextSec(0);
  }
+ // Kuerzlich geoeffnete Notizbuecher (auch GETEILTE/persoenliche) -> [{name,url}].
+ function graphRecentNotebooks(token){
+   return graphGet(token,"https://graph.microsoft.com/v1.0/me/onenote/notebooks/getRecentNotebooks(includePersonalNotebooks=true)")
+     .then(function(j){var seen={},out=[];(j.value||[]).forEach(function(r){var url=(r.links&&r.links.oneNoteWebUrl&&r.links.oneNoteWebUrl.href)||"";if(url&&!seen[url]){seen[url]=1;out.push({name:r.displayName||"(ohne Namen)",url:url});}});return out;});
+ }
+ // Notizbuch ueber seine Web-URL aufloesen (Zugriff auf geteilte) -> Notebook-Entitaet (mit id, sectionsUrl, sectionGroupsUrl).
+ function graphNotebookFromUrl(token,webUrl){
+   return fetch("https://graph.microsoft.com/v1.0/me/onenote/notebooks/getNotebookFromWebUrl",{method:"POST",headers:{Authorization:"Bearer "+token,"Content-Type":"application/json"},body:JSON.stringify({webUrl:webUrl})}).then(function(r){if(!r.ok)throw new Error("nbUrl "+r.status);return r.json();});
+ }
+ // Alle Abschnitte eines (auch geteilten) Notizbuchs, rekursiv inkl. Abschnittsgruppen, via dessen URLs.
+ function nbSections(token,nb){
+   var bookName=nb.displayName||"",bookId=nb.id||bookName,out=[];
+   function sx(url){return graphPaged(token,url+(url.indexOf("?")<0?"?":"&")+"$select=id,displayName",function(s){return {id:s.id,name:s.displayName||"",bookId:bookId,book:bookName};}).then(function(ss){ss.forEach(function(s){out.push(s);});});}
+   function gx(url){return graphPaged(token,url+(url.indexOf("?")<0?"?":"&")+"$select=id,sectionsUrl,sectionGroupsUrl",function(g){return g;}).then(function(gs){return gs.reduce(function(p,g){return p.then(function(){return Promise.all([g.sectionsUrl?sx(g.sectionsUrl):0,g.sectionGroupsUrl?gx(g.sectionGroupsUrl):0]);});},Promise.resolve());});}
+   return Promise.all([nb.sectionsUrl?sx(nb.sectionsUrl):0,nb.sectionGroupsUrl?gx(nb.sectionGroupsUrl):0]).then(function(){return out;});
+ }
+ // Abschnitte mehrerer Notizbuecher (per URL aufgeloest) einsammeln, mit Fortschritt.
+ function sectionsFromBooks(token,books,onBook){
+   var secs=[];
+   return books.reduce(function(p,b,i){return p.then(function(){if(_msStop)return;if(onBook)onBook(i,books.length,b);
+     return graphNotebookFromUrl(token,b.url).then(function(nb){nb.displayName=nb.displayName||b.name;return nbSections(token,nb);}).then(function(ss){ss.forEach(function(s){secs.push(s);});}).catch(function(){});
+   });},Promise.resolve()).then(function(){return secs;});
+ }
  // Notizbuchname -> ISO-Land (Fallback, wenn die KI kein Land erkennt).
  var NB_LAND={deutschland:"DE",polen:"PL","österreich":"AT",osterreich:"AT",schweiz:"CH",holland:"NL",niederlande:"NL",belgien:"BE",frankreich:"FR",italien:"IT",ungarn:"HU",griechenland:"GR",tschechien:"CZ",kroatien:"HR","rumänien":"RO",rumaenien:"RO",norwegen:"NO",finland:"FI",finnland:"FI",schweden:"SE",dänemark:"DK",daenemark:"DK",usa:"US",england:"GB",grossbritannien:"GB","großbritannien":"GB",spanien:"ES",portugal:"PT",slowenien:"SI",slowakei:"SK",bulgarien:"BG",serbien:"RS",türkei:"TR",tuerkei:"TR",afrika:"ZA",irland:"IE",litauen:"LT",lettland:"LV",estland:"EE"};
  function landFromBook(book){var k=String(book||"").toLowerCase();for(var key in NB_LAND){if(k.indexOf(key)>=0)return NB_LAND[key];}return "";}
@@ -1856,22 +1879,25 @@ var USERS=%%USERS%%;
    var btn=document.getElementById("msBtn");if(!btn)return;
    var stopBtn=document.getElementById("msStop"),prog=document.getElementById("msProg"),bar=document.getElementById("msBar"),msg=document.getElementById("msMsg");
    var booksBox=document.getElementById("msBooks"),bookList=document.getElementById("msBookList"),goBtn=document.getElementById("msGo");
-   var _token=null,_books=[],_sections=[];
+   var _token=null,_books=[],_sections=[],_mode="recent";
    function setBar(done,total){bar.style.width=(total?Math.round(done/total*100):0)+"%";}
    function say(t,col){prog.style.display="block";msg.style.color=col||"var(--muted)";msg.innerHTML=t;}
    stopBtn.onclick=function(){_msStop=true;say("Wird gestoppt …");};
-   // 1) Login + Abschnitte laden (auch geteilte) -> Notizbuch-Auswahl anzeigen
+   function renderBooks(){
+     bookList.innerHTML=_books.map(function(n,i){var cnt=(n.count!=null)?(' <span style="color:var(--muted)">('+n.count+' Abschnitte)</span>'):"";return '<label style="display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer"><input type="checkbox" class="msBk" data-i="'+i+'" checked> '+esc(n.name)+cnt+'</label>';}).join("");
+     booksBox.style.display="block";prog.style.display="none";btn.textContent="Erneut anmelden";
+   }
+   // 1) Login -> kuerzlich geoeffnete Notizbuecher (auch geteilte); Fallback: eigene Abschnitte
    btn.onclick=function(){
      if(!aiReady()){say("Bitte zuerst die KI einrichten (Reiter Daten → KI-Schlüssel).","#b91c1c");return;}
      _msStop=false;btn.disabled=true;booksBox.style.display="none";setBar(0,1);say("Anmeldung bei Microsoft … (Pop-up bestätigen)");
-     msToken().then(function(t){_token=t;say("Angemeldet. Lese Notizbücher &amp; Abschnitte (auch geteilte) …");return graphAllSections(t);})
-       .then(function(secs){
-         btn.disabled=false;_sections=secs;
-         if(!secs.length){say("Keine Abschnitte/Notizbücher gefunden. (Mit Notes.Read.All anmelden und im Pop-up zustimmen.)","#b91c1c");return;}
-         _books=notebooksFromSections(secs);
-         bookList.innerHTML=_books.map(function(n,i){return '<label style="display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer"><input type="checkbox" class="msBk" data-i="'+i+'" checked> '+esc(n.name)+' <span style="color:var(--muted)">('+n.count+' Abschnitte)</span></label>';}).join("");
-         booksBox.style.display="block";prog.style.display="none";
-         btn.textContent="Erneut anmelden";
+     msToken().then(function(t){_token=t;say("Angemeldet. Lese Notizbücher (auch geteilte) …");return graphRecentNotebooks(t).catch(function(){return [];});})
+       .then(function(recents){
+         if(recents&&recents.length){_mode="recent";_books=recents.slice().sort(function(a,b){return a.name.localeCompare(b.name);});btn.disabled=false;renderBooks();return;}
+         // Fallback: nur eigene Notizbuecher ueber die Abschnitte
+         return graphAllSections(_token).then(function(secs){_mode="sections";_sections=secs;btn.disabled=false;
+           if(!secs.length){say("Keine Notizbücher gefunden. Bitte im Microsoft-Pop-up der Berechtigung Notes.Read.All zustimmen.","#b91c1c");return;}
+           _books=notebooksFromSections(secs);renderBooks();});
        })
        .catch(function(e){btn.disabled=false;loginErr(e);});
    };
@@ -1879,13 +1905,18 @@ var USERS=%%USERS%%;
    document.getElementById("msNone").onclick=function(){bookList.querySelectorAll(".msBk").forEach(function(c){c.checked=false;});};
    // 2) Import der gewaehlten Notizbuecher
    goBtn.onclick=function(){
-     var ids={},names=[];bookList.querySelectorAll(".msBk").forEach(function(c){if(c.checked){var b=_books[+c.getAttribute("data-i")];ids[b.id]=1;names.push(b.name);}});
+     var chosen=[],names=[];bookList.querySelectorAll(".msBk").forEach(function(c){if(c.checked){var b=_books[+c.getAttribute("data-i")];chosen.push(b);names.push(b.name);}});
      if(!names.length){say("Bitte mindestens ein Notizbuch auswählen.","#b91c1c");return;}
-     var secs=_sections.filter(function(s){return ids[s.bookId];});
      _msStop=false;goBtn.disabled=true;btn.disabled=true;stopBtn.classList.remove("hidden");setBar(0,1);
-     say("Lese Seiten aus "+names.length+" Notizbuch(ern), "+secs.length+" Abschnitte … ("+esc(names.join(", "))+")");
+     say("Öffne "+names.length+" Notizbuch(ern) … ("+esc(names.join(", "))+")");
      var added=[],fail=0,skip=0,token=_token,pages=[];
-     pagesFromSections(token,secs,function(si,st,sec){if(si%5===0)say("Abschnitte werden gelesen … "+(si+1)+" / "+st+" &nbsp; <b>"+esc(sec.book||"")+"</b>");})
+     // Abschnitte der Auswahl ermitteln (recent: per URL aufloesen; sections: aus Cache filtern)
+     var secsP;
+     if(_mode==="recent"){secsP=sectionsFromBooks(token,chosen,function(bi,bt,b){say("Öffne Notizbuch "+(bi+1)+" / "+bt+": <b>"+esc(b.name)+"</b> …");});}
+     else{var sel={};chosen.forEach(function(b){sel[b.id]=1;});secsP=Promise.resolve(_sections.filter(function(s){return sel[s.bookId];}));}
+     secsP.then(function(secs){
+       say(secs.length+" Abschnitte – lese Seiten …");
+       return pagesFromSections(token,secs,function(si,st,sec){if(si%5===0)say("Abschnitte werden gelesen … "+(si+1)+" / "+st+" &nbsp; <b>"+esc(sec.book||"")+"</b>");});})
        .then(function(ps){pages=ps;if(!pages.length){throw new Error("Keine Seiten in den gewählten Notizbüchern gefunden.");}say(pages.length+" Seiten gefunden – Verarbeitung startet …");
          var ex=osmExisting();
          function nextPage(i){
@@ -2056,7 +2087,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v43";
+const CACHE="vertrieb-v44";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png",
   "./vendor/leaflet.js","./vendor/leaflet.css","./vendor/msal-browser.min.js",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
