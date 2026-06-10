@@ -581,10 +581,34 @@ var USERS=%%USERS%%;
      .then(function(r){if(!r.ok)return r.text().then(function(t){var e=parse(t);var err=new Error("ai "+r.status+(e&&e.error?(": "+e.error):""));err.status=r.status;throw err;});return r.text().then(parse);})
      .then(function(d){done();return d;},function(e){done();if(e&&(e.name==="AbortError"||/abort/i.test(String(e&&e.message)))){var er=new Error("Zeitüberschreitung – die KI-Suche hat zu lange gebraucht. Bitte Region enger fassen und erneut versuchen.");er.status=0;throw er;}throw e;});
  }
+ // Hintergrund-Job starten (kurzer Aufruf, < 1s -> kommt auch durch strenge Proxies).
+ function aiJobStart(name,was,wo,jobId){
+   return fetch(SB.url.replace(/\/+$/,"")+"/functions/v1/"+name,{method:"POST",headers:{"Authorization":"Bearer "+SB.key,"apikey":SB.key,"Content-Type":"application/json","x-crm-secret":AISECRET},body:JSON.stringify({was:was,wo:wo,jobId:jobId})})
+     .then(function(r){return r.text().then(function(t){var d;try{d=JSON.parse((t||"").trim()||"{}");}catch(_){d={};}if(!r.ok){var err=new Error("ai "+r.status+(d&&d.error?(": "+d.error):""));err.status=r.status;throw err;}return d;});});
+ }
+ // Ergebnis aus der DB (Tabelle ai_jobs) abholen -> normale DB-Abfrage, kommt durch Proxies.
+ function aiJobPoll(jobId){
+   var start=Date.now();
+   return new Promise(function(res,rej){
+     function tick(){
+       fetch(SB.url.replace(/\/+$/,"")+"/rest/v1/ai_jobs?id=eq."+encodeURIComponent(jobId)+"&select=result&limit=1",{cache:"no-store",headers:sbHeaders()})
+         .then(function(r){return r.ok?r.json():[];})
+         .then(function(rows){
+           if(rows&&rows[0]&&rows[0].result){res(rows[0].result);return;}
+           if(Date.now()-start>95000){rej(new Error("Zeitüberschreitung – die KI-Suche dauert zu lange."));return;}
+           setTimeout(tick,3000);
+         })
+         .catch(function(){if(Date.now()-start>95000)rej(new Error("KI-Ergebnis nicht abrufbar."));else setTimeout(tick,3000);});
+     }
+     setTimeout(tick,2500);
+   });
+ }
  function apiAi(was,wo){
-   // Edge-Function-Name kann „lead-ai" oder „lead-ai-" sein -> bei 404 die zweite Variante versuchen.
-   return aiPost("lead-ai",was,wo).catch(function(e){if(e&&e.status===404)return aiPost("lead-ai-",was,wo);throw e;})
-     .then(function(d){return (d.leads||[]).filter(function(x){return x&&(x.firma||x.name);});});
+   // Hintergrund-Job: starten (Funktionsname „lead-ai" oder „lead-ai-") + Ergebnis aus DB pollen.
+   var jobId="job_"+uid()+Date.now().toString(36);
+   return aiJobStart("lead-ai",was,wo,jobId).catch(function(e){if(e&&e.status===404)return aiJobStart("lead-ai-",was,wo,jobId);throw e;})
+     .then(function(){return aiJobPoll(jobId);})
+     .then(function(d){return ((d&&d.leads)||[]).filter(function(x){return x&&(x.firma||x.name);});});
  }
  /* --- Visitenkarten-Scan (Claude-Vision über dieselbe Edge Function "lead-ai") --- */
  function cardPost(name,dataUri){
@@ -1663,7 +1687,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v24";
+const CACHE="vertrieb-v25";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png",
   "./vendor/leaflet.js","./vendor/leaflet.css",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
