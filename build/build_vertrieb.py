@@ -1055,10 +1055,10 @@ var USERS=%%USERS%%;
    refillSel("fOwner",ownerOpts(),"Alle Vertriebler");
    refillSel("fLeadLand",landOpts(),"Alle Länder");
  }
- function matchQ(c,q){if(!q)return true;q=q.toLowerCase();var hay=[c.firma,c.firma2,c.vorname,c.nachname,c.ort,c.plz,c.tel,c.mobil,c.mail,c.quelle,c.notiz].join(" ").toLowerCase();return hay.indexOf(q)>=0;}
+ function matchQ(c,q){if(!q)return true;q=q.toLowerCase();var hay=[c.firma,c.firma2,c.vorname,c.nachname,c.strasse,c.ort,c.plz,c.tel,c.mobil,c.mail,c.quelle,c.notiz].join(" ").toLowerCase();return hay.indexOf(q)>=0;}
  function contactRow(c){
    var due=(c.followup&&!c.followup.done&&c.followup.due)?'<span class="due '+dueClass(c.followup.due)+'">'+dueLabel(c.followup.due)+'</span>':'';
-   var sub=fullName(c);var loc=[c.plz,c.ort].filter(Boolean).join(" ");
+   var sub=fullName(c);var loc=[c.strasse,[c.plz,c.ort].filter(Boolean).join(" ")].filter(Boolean).join(", ");
    return '<div class="crow" data-id="'+c.id+'">'+
      '<div class="av">'+esc(initials(displayName(c)))+'</div>'+
      '<div class="mid"><div class="nm">'+esc(displayName(c))+'</div>'+
@@ -2181,7 +2181,7 @@ var USERS=%%USERS%%;
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v69";
+ var APP_VER="v70";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
@@ -2226,7 +2226,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v69";
+const CACHE="vertrieb-v70";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png",
   "./vendor/leaflet.js","./vendor/leaflet.css","./vendor/msal-browser.min.js",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
