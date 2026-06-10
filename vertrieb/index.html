@@ -795,7 +795,7 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
  function showContactsMap(){
    var div=document.getElementById("cMap");
    ensureLeaflet().then(function(L){
-     if(!_cmap){_cmap=L.map(div).setView([47.5,9],5);L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"© OpenStreetMap-Mitwirkende"}).addTo(_cmap);}
+     if(!_cmap){_cmap=L.map(div).setView([47.5,9],5);addSat(L,_cmap);}
      if(_cmarkers)_cmarkers.remove();
      _cmarkers=L.layerGroup().addTo(_cmap);
      var bounds=[],pending=[];
@@ -950,6 +950,13 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
    });
    return _leafletP;
  }
+ // Satelliten-/Luftbild-Kacheln (Esri World Imagery, kostenlos, ohne API-Schlüssel)
+ // plus transparente Beschriftungen (Orte/Straßen), damit es lesbar bleibt – wie bei Google.
+ function addSat(L,map){
+   L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",{maxZoom:19,attribution:"Luftbild © Esri, Maxar, Earthstar Geographics"}).addTo(map);
+   L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}",{maxZoom:19,opacity:0.9}).addTo(map);
+   return map;
+ }
  function osmShowMap(els){
    var mapDiv=document.getElementById("osmMap");
    var pts=(els||[]).filter(function(el){return el.lat||(el.center&&el.center.lat);});
@@ -958,7 +965,7 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
    ensureLeaflet().then(function(L){
      if(!_map){
        _map=L.map(mapDiv,{scrollWheelZoom:true});
-       L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"© OpenStreetMap-Mitwirkende"}).addTo(_map);
+       addSat(L,_map);
      }
      if(_markers)_markers.remove();
      _markers=L.layerGroup().addTo(_map);
@@ -1149,7 +1156,7 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
      var div=document.getElementById("detMap");if(!div)return;
      if(_detMap){try{_detMap.remove();}catch(e){}_detMap=null;}
      _detMap=L.map(div,{scrollWheelZoom:false}).setView([ll.lat,ll.lon],14);
-     L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"© OpenStreetMap-Mitwirkende"}).addTo(_detMap);
+     addSat(L,_detMap);
      L.marker([ll.lat,ll.lon],{icon:flagIcon(L)}).addTo(_detMap);
      setTimeout(function(){try{_detMap.invalidateSize();}catch(e){}},150);
    }).catch(function(){});

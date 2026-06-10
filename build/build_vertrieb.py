@@ -823,7 +823,7 @@ var USERS=%%USERS%%;
  function showContactsMap(){
    var div=document.getElementById("cMap");
    ensureLeaflet().then(function(L){
-     if(!_cmap){_cmap=L.map(div).setView([47.5,9],5);L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"© OpenStreetMap-Mitwirkende"}).addTo(_cmap);}
+     if(!_cmap){_cmap=L.map(div).setView([47.5,9],5);addSat(L,_cmap);}
      if(_cmarkers)_cmarkers.remove();
      _cmarkers=L.layerGroup().addTo(_cmap);
      var bounds=[],pending=[];
@@ -978,6 +978,13 @@ var USERS=%%USERS%%;
    });
    return _leafletP;
  }
+ // Satelliten-/Luftbild-Kacheln (Esri World Imagery, kostenlos, ohne API-Schlüssel)
+ // plus transparente Beschriftungen (Orte/Straßen), damit es lesbar bleibt – wie bei Google.
+ function addSat(L,map){
+   L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",{maxZoom:19,attribution:"Luftbild © Esri, Maxar, Earthstar Geographics"}).addTo(map);
+   L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}",{maxZoom:19,opacity:0.9}).addTo(map);
+   return map;
+ }
  function osmShowMap(els){
    var mapDiv=document.getElementById("osmMap");
    var pts=(els||[]).filter(function(el){return el.lat||(el.center&&el.center.lat);});
@@ -986,7 +993,7 @@ var USERS=%%USERS%%;
    ensureLeaflet().then(function(L){
      if(!_map){
        _map=L.map(mapDiv,{scrollWheelZoom:true});
-       L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"© OpenStreetMap-Mitwirkende"}).addTo(_map);
+       addSat(L,_map);
      }
      if(_markers)_markers.remove();
      _markers=L.layerGroup().addTo(_map);
@@ -1177,7 +1184,7 @@ var USERS=%%USERS%%;
      var div=document.getElementById("detMap");if(!div)return;
      if(_detMap){try{_detMap.remove();}catch(e){}_detMap=null;}
      _detMap=L.map(div,{scrollWheelZoom:false}).setView([ll.lat,ll.lon],14);
-     L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"© OpenStreetMap-Mitwirkende"}).addTo(_detMap);
+     addSat(L,_detMap);
      L.marker([ll.lat,ll.lon],{icon:flagIcon(L)}).addTo(_detMap);
      setTimeout(function(){try{_detMap.invalidateSize();}catch(e){}},150);
    }).catch(function(){});
@@ -1543,7 +1550,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v13";
+const CACHE="vertrieb-v14";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png",
   "./vendor/leaflet.js","./vendor/leaflet.css",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
@@ -1570,7 +1577,7 @@ self.addEventListener("fetch",e=>{
   if(req.method!=="GET")return;
   if(req.url.indexOf("api.php")>=0)return;            // dynamische API immer direkt ans Netz, nie cachen
   if(req.url.indexOf("nominatim")>=0||req.url.indexOf("overpass")>=0)return; // Karten-Lead-Suche: immer live
-  if(req.url.indexOf("tile.openstreetmap")>=0)return;  // Karten-Kacheln nicht cachen (Browser-Cache reicht)
+  if(req.url.indexOf("tile.openstreetmap")>=0||req.url.indexOf("arcgisonline")>=0)return; // Karten-/Satellitenkacheln nicht cachen (Browser-Cache reicht)
   if(req.url.indexOf("supabase.co")>=0)return;          // Cloud-DB immer live, nie cachen
   const isHTML=req.mode==="navigate"||(req.headers.get("accept")||"").includes("text/html");
   if(isHTML){
@@ -1696,7 +1703,7 @@ out=out.replace("%%USERS%%",USERS_JS)
 
 for tok in ["%%RED%%","%%RED2%%","%%LOGOL%%","%%LOGOD%%","%%USERS%%"]:
     assert tok not in out, "Token übrig: "+tok
-for need in ['id="gateForm"','id="clist"','id="actModal"','renderDashboard','amb_lepton_crm','amb_lepton_configs','checkReminders','initBackend','api.php','id="connState"','id="osmSearch"','overpass-api.de','osmToContact','id="osmMap"','ensureLeaflet','tile.openstreetmap','id="sbUrl"','sbUpsert','supabase.co','id="cMap"','showContactsMap','id="actBetrag"','flagIcon','id="detMap"','contactLatLon','leadSearch','apiAi','aiPost','id="aiSecret"','/functions/v1/']:
+for need in ['id="gateForm"','id="clist"','id="actModal"','renderDashboard','amb_lepton_crm','amb_lepton_configs','checkReminders','initBackend','api.php','id="connState"','id="osmSearch"','overpass-api.de','osmToContact','id="osmMap"','ensureLeaflet','arcgisonline','addSat','id="sbUrl"','sbUpsert','supabase.co','id="cMap"','showContactsMap','id="actBetrag"','flagIcon','id="detMap"','contactLatLon','leadSearch','apiAi','aiPost','id="aiSecret"','/functions/v1/']:
     assert need in out, "Pflicht-Markierung fehlt: "+need
 # Leaflet (Karten-Bibliothek) muss lokal vorhanden sein (Laufzeit-Abhängigkeit der Standort-Karte)
 for vf in ["leaflet.js","leaflet.css","images/marker-icon.png","images/marker-shadow.png"]:
