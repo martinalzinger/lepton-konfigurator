@@ -1,6 +1,6 @@
 // Eigener Service-Worker der eigenständigen Ersatzteilseite (Scope: /ersatzteile/).
 // Komplett getrennt vom Konfigurator – eigener Cache-Namespace "ersatzteile-".
-const CACHE="ersatzteile-v3";
+const CACHE="ersatzteile-v4";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png",
   "./vendor/three.module.min.js","./vendor/GLTFLoader.js","./vendor/OrbitControls.js","./vendor/BufferGeometryUtils.js","./vendor/RoomEnvironment.js"];
 
