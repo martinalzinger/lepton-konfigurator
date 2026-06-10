@@ -39,6 +39,9 @@ TPL = r'''<!DOCTYPE html>
 <meta name="apple-mobile-web-app-title" content="Vertrieb CRM">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="32x32" href="icon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="shortcut icon" href="favicon.ico">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -2036,9 +2039,10 @@ var USERS=%%USERS%%;
        return pagesFromSections(token,secs,function(si,st,sec){if(si%5===0)say("Abschnitte werden gelesen … "+(si+1)+" / "+st+" &nbsp; <b>"+esc(sec.book||"")+"</b>");},dbg);})
        .then(function(ps){pages=ps;if(!pages.length){throw new Error("Diagnose – 0 Seiten bei Abschnitten: "+(dbg.length?dbg.join(" | "):"(kein Protokoll)"));}say(pages.length+" Seiten gefunden – Verarbeitung startet …");
          var ex=osmExisting();
-         function nextPage(i){
+         function nextPage(i,att){
+           att=att||0;
            if(_msStop||i>=pages.length){return finish();}
-           var p=pages[i];setBar(i,pages.length);say("Seite "+(i+1)+" / "+pages.length+": <b>"+esc(p.title||"(ohne Titel)")+"</b> <span style=\"color:var(--muted)\">("+esc(p.book||"")+(p.section?(" › "+esc(p.section)):"")+")</span> &nbsp; ✓ "+added.length+" angelegt, "+skip+" vorhanden, "+fail+" Fehler");
+           var p=pages[i];setBar(i,pages.length);say("Seite "+(i+1)+" / "+pages.length+": <b>"+esc(p.title||"(ohne Titel)")+"</b> <span style=\"color:var(--muted)\">("+esc(p.book||"")+(p.section?(" › "+esc(p.section)):"")+")</span>"+(att?" <span style=\"color:#b45309\">· Wiederholung "+att+"</span>":"")+" &nbsp; ✓ "+added.length+" angelegt, "+skip+" vorhanden, "+fail+" Fehler");
            graphPageContent(token,p).then(function(pc){
              var text=(p.title?(p.title+"\n"):"")+(p.book?("Land/Notizbuch: "+p.book+"\n"):"")+(p.section?("Region/Bundesland: "+p.section+"\n"):"")+pc.text;
              if(!text.trim()){skip++;return null;}
@@ -2071,7 +2075,11 @@ var USERS=%%USERS%%;
                  if(added.length%10===0)bulkSave(added.slice(),false); // zwischendurch sichern
                });
              });
-           }).catch(function(){fail++;}).then(function(){setTimeout(function(){nextPage(i+1);},250);});
+           }).then(function(){setTimeout(function(){nextPage(i+1,0);},150);},function(){
+             // Fehler (oft kurzzeitige Drosselung 429/Überlastung) -> bis zu 3x mit zunehmender Wartezeit wiederholen
+             if(!_msStop&&att<3){setTimeout(function(){nextPage(i,att+1);},1500*(att+1));}
+             else{fail++;setTimeout(function(){nextPage(i+1,0);},150);}
+           });
          }
          function finish(){
            setBar(1,1);
@@ -2186,7 +2194,7 @@ var USERS=%%USERS%%;
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v73";
+ var APP_VER="v75";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
@@ -2231,8 +2239,8 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v73";
-const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png",
+const CACHE="vertrieb-v75";
+const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png","./icon-32.png","./favicon.ico",
   "./vendor/leaflet.js","./vendor/leaflet.css","./vendor/msal-browser.min.js",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
 
