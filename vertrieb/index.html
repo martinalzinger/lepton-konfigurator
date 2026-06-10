@@ -1050,10 +1050,13 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
  // KI-Aufruf mit einer automatischen Wiederholung bei Netzwerkfehlern (z. B. Kaltstart
  // der Edge Function). Zeitüberschreitungen werden NICHT erneut versucht (zu langsam).
  function aiSearchRetry(was,wo,retries){
+   var t0=Date.now();
    return apiAi(was,wo).catch(function(e){
-     var msg=String((e&&e.message)||e);
+     var msg=String((e&&e.message)||e),dt=Date.now()-t0;
      var netErr=/NetworkError|Failed to fetch|Load failed|networkerror|fetch resource/i.test(msg)&&!/Zeitüberschreitung/.test(msg);
-     if(retries>0&&netErr){return new Promise(function(res){setTimeout(res,2500);}).then(function(){return aiSearchRetry(was,wo,retries-1);});}
+     // Nur SCHNELLE Netzwerkfehler erneut versuchen (Kaltstart). Ein spätes Abbrechen
+     // (> 20 s) ist meist ein Proxy-/Firewall-Timeout -> sofort zum Fallback, nicht warten.
+     if(retries>0&&netErr&&dt<20000){return new Promise(function(res){setTimeout(res,2000);}).then(function(){return aiSearchRetry(was,wo,retries-1);});}
      throw e;
    });
  }
