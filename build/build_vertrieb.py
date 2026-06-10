@@ -158,6 +158,8 @@ select.filter{width:auto;min-width:120px;flex:0 0 auto}
 .fg.full{grid-column:1/-1}
 .fg label{font-size:11px;font-family:var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 textarea.field{min-height:74px;resize:vertical;line-height:1.5}
+/* Notizfeld groß (mind. halbe Bildschirmhöhe) -> bequem mit Apple Pencil „Kritzeln“ (Handschrift→Text) oder Tastatur */
+#actNote{min-height:46vh;font-size:16px;line-height:1.7}
 [contenteditable].field{line-height:1.5}
 [contenteditable][data-ph]:empty:before{content:attr(data-ph);color:var(--faint)}
 [contenteditable] img{max-width:180px;max-height:120px;border-radius:8px;margin:4px 6px 4px 0;vertical-align:middle}
@@ -530,8 +532,8 @@ create policy "crm all" on contacts
       </div>
     </div>
     <div class="fg" style="margin-bottom:6px">
-      <label>Notiz</label>
-      <textarea class="field" id="actNote" placeholder="Worum ging es? Ergebnis, Vereinbarung…"></textarea>
+      <label>Notiz <span style="font-weight:400;color:var(--muted);font-size:12px">· tippen oder mit dem Apple Pencil direkt ins Feld schreiben</span></label>
+      <textarea class="field" id="actNote" placeholder="Worum ging es? Ergebnis, Vereinbarung…  (mit Stift schreiben oder tippen)"></textarea>
     </div>
     <label class="chk"><input type="checkbox" id="actFu" checked> Wiedervorlage anlegen in
       <input type="number" id="actFuDays" value="7" min="1" max="180" style="width:58px;border:1px solid var(--line-strong);border-radius:7px;padding:4px 6px;text-align:center"> Tagen</label>
@@ -2315,7 +2317,7 @@ var USERS=%%USERS%%;
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v84";
+ var APP_VER="v85";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
@@ -2360,7 +2362,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v84";
+const CACHE="vertrieb-v85";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png","./icon-32.png","./favicon.ico",
   "./vendor/leaflet.js","./vendor/leaflet.css","./vendor/msal-browser.min.js",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
