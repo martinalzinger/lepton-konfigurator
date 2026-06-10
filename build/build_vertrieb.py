@@ -689,9 +689,12 @@ var USERS=%%USERS%%;
  var MS_REDIRECT="https://alzingermaschinenbau.github.io/lepton-konfigurator/vertrieb/";
  var MS_SCOPES=["Notes.Read","User.Read"];
  var _msal=null,_msStop=false;
+ function loadScript(src){return new Promise(function(res,rej){var s=document.createElement("script");s.src=src;s.onload=function(){res();};s.onerror=function(){rej(new Error("scr "+src));};document.head.appendChild(s);});}
  function ensureMsal(){
    if(window.msal&&window.msal.PublicClientApplication)return Promise.resolve();
-   return new Promise(function(res,rej){var s=document.createElement("script");s.src="https://alcdn.msauth.net/browser/3.27.0/js/msal-browser.min.js";s.onload=function(){res();};s.onerror=function(){rej(new Error("MSAL konnte nicht geladen werden (online sein)."));};document.head.appendChild(s);});
+   // Lokal (gleicher Origin, vom SW vorgecacht) -> proxy-/offline-sicher; CDN nur als Notfall.
+   return loadScript("vendor/msal-browser.min.js").catch(function(){return loadScript("https://alcdn.msauth.net/browser/3.27.0/js/msal-browser.min.js");})
+     .then(function(){if(!(window.msal&&window.msal.PublicClientApplication))throw new Error("MSAL konnte nicht geladen werden.");});
  }
  function msalApp(){if(_msal)return Promise.resolve(_msal);_msal=new msal.PublicClientApplication({auth:{clientId:MS_CLIENT_ID,authority:"https://login.microsoftonline.com/"+MS_TENANT_ID,redirectUri:MS_REDIRECT},cache:{cacheLocation:"localStorage"}});return _msal.initialize().then(function(){return _msal;});}
  function msToken(){
@@ -1999,9 +2002,9 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v39";
+const CACHE="vertrieb-v40";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png",
-  "./vendor/leaflet.js","./vendor/leaflet.css",
+  "./vendor/leaflet.js","./vendor/leaflet.css","./vendor/msal-browser.min.js",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
 
 self.addEventListener("install",e=>{
@@ -2028,6 +2031,7 @@ self.addEventListener("fetch",e=>{
   if(req.url.indexOf("nominatim")>=0||req.url.indexOf("overpass")>=0)return; // Karten-Lead-Suche: immer live
   if(req.url.indexOf("tile.openstreetmap")>=0||req.url.indexOf("arcgisonline")>=0)return; // Karten-/Satellitenkacheln nicht cachen (Browser-Cache reicht)
   if(req.url.indexOf("supabase.co")>=0)return;          // Cloud-DB immer live, nie cachen
+  if(req.url.indexOf("login.microsoftonline.com")>=0||req.url.indexOf("graph.microsoft.com")>=0||req.url.indexOf("msauth.net")>=0)return; // Microsoft 365 / OneNote-Import: immer live, nie cachen/abfangen
   const isHTML=req.mode==="navigate"||(req.headers.get("accept")||"").includes("text/html");
   if(isHTML){
     e.respondWith(
@@ -2155,7 +2159,7 @@ for tok in ["%%RED%%","%%RED2%%","%%LOGOL%%","%%LOGOD%%","%%USERS%%"]:
 for need in ['id="gateForm"','id="clist"','id="actModal"','renderDashboard','amb_lepton_crm','amb_lepton_configs','checkReminders','initBackend','api.php','id="connState"','id="osmSearch"','overpass-api.de','osmToContact','id="osmMap"','ensureLeaflet','arcgisonline','addSat','id="sbUrl"','sbUpsert','supabase.co','id="cMap"','showContactsMap','id="actBetrag"','flagIcon','id="detMap"','contactLatLon','leadSearch','apiAi','aiPost','id="aiSecret"','/functions/v1/']:
     assert need in out, "Pflicht-Markierung fehlt: "+need
 # Leaflet (Karten-Bibliothek) muss lokal vorhanden sein (Laufzeit-Abhängigkeit der Standort-Karte)
-for vf in ["leaflet.js","leaflet.css","images/marker-icon.png","images/marker-shadow.png"]:
+for vf in ["leaflet.js","leaflet.css","images/marker-icon.png","images/marker-shadow.png","msal-browser.min.js"]:
     assert os.path.exists(os.path.join(OUTDIR,"vendor",vf)), "vendor fehlt: vertrieb/vendor/"+vf
 
 open(os.path.join(OUTDIR,"index.html"),"w",encoding="utf8").write(out)

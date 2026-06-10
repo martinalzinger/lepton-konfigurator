@@ -661,9 +661,12 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
  var MS_REDIRECT="https://alzingermaschinenbau.github.io/lepton-konfigurator/vertrieb/";
  var MS_SCOPES=["Notes.Read","User.Read"];
  var _msal=null,_msStop=false;
+ function loadScript(src){return new Promise(function(res,rej){var s=document.createElement("script");s.src=src;s.onload=function(){res();};s.onerror=function(){rej(new Error("scr "+src));};document.head.appendChild(s);});}
  function ensureMsal(){
    if(window.msal&&window.msal.PublicClientApplication)return Promise.resolve();
-   return new Promise(function(res,rej){var s=document.createElement("script");s.src="https://alcdn.msauth.net/browser/3.27.0/js/msal-browser.min.js";s.onload=function(){res();};s.onerror=function(){rej(new Error("MSAL konnte nicht geladen werden (online sein)."));};document.head.appendChild(s);});
+   // Lokal (gleicher Origin, vom SW vorgecacht) -> proxy-/offline-sicher; CDN nur als Notfall.
+   return loadScript("vendor/msal-browser.min.js").catch(function(){return loadScript("https://alcdn.msauth.net/browser/3.27.0/js/msal-browser.min.js");})
+     .then(function(){if(!(window.msal&&window.msal.PublicClientApplication))throw new Error("MSAL konnte nicht geladen werden.");});
  }
  function msalApp(){if(_msal)return Promise.resolve(_msal);_msal=new msal.PublicClientApplication({auth:{clientId:MS_CLIENT_ID,authority:"https://login.microsoftonline.com/"+MS_TENANT_ID,redirectUri:MS_REDIRECT},cache:{cacheLocation:"localStorage"}});return _msal.initialize().then(function(){return _msal;});}
  function msToken(){
