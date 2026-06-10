@@ -61,8 +61,8 @@ input,select,textarea{font-family:var(--sans);font-size:15px}
 .topbar-in{max-width:1120px;margin:0 auto;padding:9px 16px calc(9px + env(safe-area-inset-top)) 16px;padding-top:max(9px,env(safe-area-inset-top))}
 .tb-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .tb-brand{display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-width:0}
-.tb-brand img{height:38px;display:block}
-.tb-sub{font-family:var(--mono);font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:#fff;opacity:.97;font-weight:700;margin-top:6px}
+.tb-brand img{height:38px;display:block;padding-bottom:6px;border-bottom:1.6px solid rgba(255,255,255,.9)}
+.tb-sub{font-family:var(--mono);font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:#fff;opacity:.97;font-weight:700;margin-top:10px}
 .conn{font-family:var(--mono);font-size:11px;letter-spacing:.02em;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;margin-top:2px}
 .conn svg{width:14px;height:14px;flex:none}
 .conn.on{color:#bbf7d0}.conn.off{color:rgba(255,255,255,.72)}
@@ -2374,7 +2374,7 @@ var USERS=%%USERS%%;
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v87";
+ var APP_VER="v88";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
@@ -2419,7 +2419,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v87";
+const CACHE="vertrieb-v88";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png","./icon-32.png","./favicon.ico",
   "./vendor/leaflet.js","./vendor/leaflet.css","./vendor/msal-browser.min.js",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
