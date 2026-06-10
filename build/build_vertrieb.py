@@ -61,9 +61,10 @@ input,select,textarea{font-family:var(--sans);font-size:15px}
 .topbar-in{max-width:1120px;margin:0 auto;padding:12px 16px calc(12px + env(safe-area-inset-top)) 16px;padding-top:max(12px,env(safe-area-inset-top))}
 .tb-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .tb-brand{display:flex;flex-direction:column;align-items:flex-start;gap:3px;min-width:0}
-.tb-brand img{height:30px;display:block}
-.tb-sub{font-family:var(--mono);font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:#fff;opacity:.95;font-weight:600;margin-top:10px}
-.conn{font-family:var(--mono);font-size:9.5px;letter-spacing:.02em;white-space:nowrap}
+.tb-brand img{height:36px;display:block}
+.tb-sub{font-family:var(--mono);font-size:15px;letter-spacing:.12em;text-transform:uppercase;color:#fff;opacity:.97;font-weight:700;margin-top:8px}
+.conn{font-family:var(--mono);font-size:11px;letter-spacing:.02em;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;margin-top:2px}
+.conn svg{width:14px;height:14px;flex:none}
 .conn.on{color:#bbf7d0}.conn.off{color:rgba(255,255,255,.72)}
 .tb-user{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600}
 .tb-user .av{width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.18);display:inline-flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:12px;font-weight:600}
@@ -253,8 +254,8 @@ textarea.field{min-height:74px;resize:vertical;line-height:1.5}
     <div class="tb-row">
       <div class="tb-brand">
         <img src="%%LOGOL%%" alt="Alzinger">
-        <span class="tb-sub">CRM System</span>
-        <span id="connState" class="conn off" title="">● Lokal – dieses Gerät</span>
+        <span class="tb-sub">CRM Vertrieb</span>
+        <span id="connState" class="conn off" title=""></span>
       </div>
       <div class="tb-user">
         <span class="av" id="uAv">–</span>
@@ -940,10 +941,17 @@ var USERS=%%USERS%%;
      flush().then(function(){return apiGet();}).then(function(d){DB.contacts=d.contacts||[];DB.rev=d.rev||0;cacheSave();rerenderCurrent();}).catch(function(){});
    }).catch(function(){MODE="local";setConn(false);});
  }
+ // hübsche Status-Symbole (Inline-SVG, currentColor) für die Verbindungsanzeige im Kopf
+ var CONN_ICON={
+   cloud:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 18a4 4 0 01-.5-7.97 5.5 5.5 0 0110.6-1.45A3.75 3.75 0 0117 18z"/><path d="M9.6 13.8l1.8 1.8 3.2-3.4"/></svg>',
+   server:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="7" rx="1.5"/><rect x="3" y="13" width="18" height="7" rx="1.5"/><path d="M7 7.5h.01M7 16.5h.01"/></svg>',
+   local:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg>'
+ };
  function setConn(ok){
    var el=document.getElementById("connState");
-   var lab=MODE==="cloud"?"● Cloud – geteilt":(MODE==="server"?"● Server – geteilt":"● Lokal – dieses Gerät");
-   if(el){el.className="conn "+(ok?"on":"off");el.textContent=lab;el.title=ok?"Online verbunden – Daten werden für alle geteilt.":"Kein Online-Speicher verbunden. Daten nur auf diesem Gerät (Reiter „Daten“).";}
+   var k=MODE==="cloud"?"cloud":(MODE==="server"?"server":"local");
+   var lab=MODE==="cloud"?"Cloud – geteilt":(MODE==="server"?"Server – geteilt":"Lokal – dieses Gerät");
+   if(el){el.className="conn "+(ok?"on":"off");el.innerHTML=CONN_ICON[k]+"<span>"+lab+"</span>";el.title=ok?"Online verbunden – Daten werden für alle geteilt.":"Kein Online-Speicher verbunden. Daten nur auf diesem Gerät (Reiter „Daten“).";}
    var d=document.getElementById("connData");if(d)renderDataConn();
  }
  function rerenderCurrent(){
@@ -2307,7 +2315,7 @@ var USERS=%%USERS%%;
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v81";
+ var APP_VER="v82";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
@@ -2352,7 +2360,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v81";
+const CACHE="vertrieb-v82";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png","./icon-32.png","./favicon.ico",
   "./vendor/leaflet.js","./vendor/leaflet.css","./vendor/msal-browser.min.js",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
