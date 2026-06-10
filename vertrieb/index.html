@@ -1109,8 +1109,8 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
    (notizClean?'<div class="card" style="background:var(--field)"><div style="white-space:pre-wrap;font-size:14px">'+esc(notizClean)+'</div></div>':'')+
    // Standort-Karte des Kontakts
    (function(){var mq=ll?(ll.lat+","+ll.lon):(addr||"");if(!mq)return "";var eq=encodeURIComponent(mq);
-     return '<div style="margin:8px 0"><iframe id="detMap" title="Standort-Karte" src="https://maps.google.com/maps?q='+eq+'&z=14&output=embed" style="width:100%;height:220px;border:0;border-radius:12px" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>'+
-       '<div style="margin-top:6px"><a class="btn sm" href="https://www.google.com/maps?q='+eq+'" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.7"><path d="M12 21s-7-5.2-7-11a7 7 0 0114 0c0 5.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>In Google Maps öffnen</a></div></div>';})()+
+     return '<div style="margin:8px 0"><iframe id="detMap" title="Standort-Karte (Satellit)" src="https://maps.google.com/maps?q='+eq+'&z=15&t=k&output=embed" style="width:100%;height:220px;border:0;border-radius:12px" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>'+
+       '<div style="margin-top:6px"><a class="btn sm" href="https://www.google.com/maps?q='+eq+'&t=k" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.7"><path d="M12 21s-7-5.2-7-11a7 7 0 0114 0c0 5.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>In Google Maps öffnen</a></div></div>';})()+
    // Wiedervorlage
    '<div class="fu-box'+(fu?' active-fu':'')+'" id="fuBox">'+
      '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><b style="font-size:13px">Wiedervorlage / Rückruf</b>'+
