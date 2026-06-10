@@ -529,6 +529,22 @@ create policy "crm all" on contacts
   </div>
 </div>
 
+<!-- Anruf-Nachfrage (erscheint nach Rückkehr aus der Telefon-App) -->
+<div class="modal-bg" id="callModal">
+  <div class="modal">
+    <h3 id="callTitle">Anruf erfassen?</h3>
+    <div class="fg" style="margin-bottom:10px">
+      <label>Wie war das Gespräch? (kurze Notiz)</label>
+      <textarea class="field" id="callNote" rows="3" placeholder="z. B. Interesse an Vorführung, meldet sich nächste Woche …"></textarea>
+    </div>
+    <div class="form-actions">
+      <button class="btn primary block" id="callSave" type="button">Anruf speichern</button>
+      <button class="btn block" id="callNoAnswer" type="button">Nicht erreicht</button>
+      <button class="btn ghost block" id="callDiscard" type="button">Verwerfen (kein Anruf)</button>
+    </div>
+  </div>
+</div>
+
 <script>
 var USERS=%%USERS%%;
 </script>
@@ -1658,6 +1674,9 @@ var USERS=%%USERS%%;
  function fmtEur(v){var n=parseFloat(String(v).replace(/[^0-9.,-]/g,"").replace(/\./g,"").replace(",","."));if(isNaN(n))return String(v);return n.toLocaleString("de-DE")+" €";}
  // Aktivität löschen
  document.getElementById("view-detail").addEventListener("click",function(e){
+   // Anrufstart merken (tel:-Link) -> nach Rueckkehr in die App kurz nachfragen. Waehlen NICHT verhindern.
+   var tl=e.target.closest('a[href^="tel:"]');
+   if(tl){pcWrite({cid:curId,ts:Date.now()});setTimeout(checkPendingCall,15000);}
    var db=e.target.closest("[data-delbild]");if(db){e.preventDefault();var dc=byId(curId);var di=parseInt(db.getAttribute("data-delbild"),10);if(dc&&dc.bilder&&dc.bilder[di]!=null&&confirm("Dieses Bild entfernen?")){dc.bilder.splice(di,1);if(!dc.bilder.length)delete dc.bilder;dc.updated=Date.now();saveContact(dc);openDetail(curId);}return;}
    var ib=e.target.closest("[data-bild]");if(ib){e.preventDefault();var bc=byId(curId);var bi=parseInt(ib.getAttribute("data-bild"),10);if(bc&&bc.bilder&&bc.bilder[bi])openPdfUri(bc.bilder[bi]);return;}
    var pb=e.target.closest("[data-pdfact]");if(pb){e.preventDefault();var pid=pb.getAttribute("data-pdfact");var pc=byId(curId);var pa=pc&&(pc.activities||[]).filter(function(x){return x.id===pid;})[0];if(pa&&pa.pdf)openPdfUri(pa.pdf);return;}
@@ -1692,6 +1711,40 @@ var USERS=%%USERS%%;
  document.getElementById("actCancel").onclick=function(){modal.classList.remove("open");};
  document.getElementById("actCreateOffer").onclick=function(){var c=byId(actForId);if(c){modal.classList.remove("open");gotoConfigurator(c,true);}};
  modal.addEventListener("click",function(e){if(e.target===modal)modal.classList.remove("open");});
+
+ /* ---------- Anruf-Protokoll: tel:-Klick merken, nach Rueckkehr kurz nachfragen ----------
+    Browser duerfen Anrufliste/Dauer nicht lesen -> halbautomatisch: Zeitpunkt + wer automatisch,
+    Gespraechsnotiz per Kurz-Dialog. Pending ueberlebt App-Neustart (localStorage). */
+ var PCKEY="amb_crm_pendingcall";
+ function pcRead(){try{return JSON.parse(localStorage.getItem(PCKEY)||"null");}catch(e){return null;}}
+ function pcWrite(o){try{if(o)localStorage.setItem(PCKEY,JSON.stringify(o));else localStorage.removeItem(PCKEY);}catch(e){}}
+ var callBg=document.getElementById("callModal");
+ function checkPendingCall(){
+   if(callBg.classList.contains("open"))return;
+   var p=pcRead();if(!p)return;
+   var age=Date.now()-(p.ts||0);
+   if(age<5000)return;                          // Waehlvorgang laeuft evtl. noch
+   if(age>6*3600*1000){pcWrite(null);return;}   // aelter als 6h -> stillschweigend verwerfen
+   var c=byId(p.cid);if(!c){pcWrite(null);return;}
+   document.getElementById("callTitle").textContent="Anruf bei "+displayName(c)+" erfassen?";
+   document.getElementById("callNote").value="";
+   callBg.classList.add("open");
+ }
+ function pcFinish(note){
+   var p=pcRead();pcWrite(null);callBg.classList.remove("open");
+   if(note==null||!p)return;
+   var c=byId(p.cid);if(!c)return;
+   c.activities=c.activities||[];
+   c.activities.push({id:uid(),type:"anruf",date:p.ts||Date.now(),note:note,by:(CUR&&CUR.n)||""});
+   c.updated=Date.now();saveContact(c);
+   if(curView==="detail"&&curId===c.id)openDetail(c.id);
+ }
+ document.getElementById("callSave").onclick=function(){pcFinish(document.getElementById("callNote").value.trim());};
+ document.getElementById("callNoAnswer").onclick=function(){pcFinish("Nicht erreicht.");};
+ document.getElementById("callDiscard").onclick=function(){pcFinish(null);};
+ document.addEventListener("visibilitychange",function(){if(!document.hidden)setTimeout(checkPendingCall,400);});
+ window.addEventListener("focus",function(){setTimeout(checkPendingCall,400);});
+
  // Rücksprung aus dem Konfigurator: Angebot wurde gespeichert -> Aktivität „Angebot gesendet" vorbereiten.
  function checkOfferReturn(){
    try{var d=localStorage.getItem("amb_lepton_offer_done");if(!d)return;localStorage.removeItem("amb_lepton_offer_done");
@@ -2108,7 +2161,7 @@ var USERS=%%USERS%%;
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v64";
+ var APP_VER="v65";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
@@ -2116,6 +2169,7 @@ var USERS=%%USERS%%;
    refreshNotifBtn();renderDataConn();
    initBackend();                // Cloud/Server erkennen + geteilte Daten laden (sonst lokal)
    checkOfferReturn();           // aus dem Konfigurator zurückgekommen? Angebot-Aktivität vorbereiten.
+   setTimeout(checkPendingCall,1500); // offener Anruf von vorhin? -> kurz nachfragen
    checkReminders();
    setInterval(function(){syncFromServer();checkReminders();if(curView==="dashboard")updateBadge();},30*1000);
    document.addEventListener("visibilitychange",function(){if(!document.hidden){syncFromServer();checkReminders();}});
@@ -2152,7 +2206,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v64";
+const CACHE="vertrieb-v65";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png",
   "./vendor/leaflet.js","./vendor/leaflet.css","./vendor/msal-browser.min.js",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
