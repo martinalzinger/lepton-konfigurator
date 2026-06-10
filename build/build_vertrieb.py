@@ -604,11 +604,10 @@ var USERS=%%USERS%%;
    });
  }
  function apiAi(was,wo){
-   // Hintergrund-Job: starten (Funktionsname „lead-ai" oder „lead-ai-") + Ergebnis aus DB pollen.
-   var jobId="job_"+uid()+Date.now().toString(36);
-   return aiJobStart("lead-ai",was,wo,jobId).catch(function(e){if(e&&e.status===404)return aiJobStart("lead-ai-",was,wo,jobId);throw e;})
-     .then(function(){return aiJobPoll(jobId);})
-     .then(function(d){return ((d&&d.leads)||[]).filter(function(x){return x&&(x.firma||x.name);});});
+   // Direkter Aufruf (Streaming) – funktioniert am iPhone zuverlässig. Der Funktionsname
+   // kann „lead-ai" oder „lead-ai-" sein -> bei 404 die zweite Variante versuchen.
+   return aiPost("lead-ai",was,wo).catch(function(e){if(e&&e.status===404)return aiPost("lead-ai-",was,wo);throw e;})
+     .then(function(d){return (d.leads||[]).filter(function(x){return x&&(x.firma||x.name);});});
  }
  /* --- Visitenkarten-Scan (Claude-Vision über dieselbe Edge Function "lead-ai") --- */
  function cardPost(name,dataUri){
@@ -1687,7 +1686,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v25";
+const CACHE="vertrieb-v26";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png",
   "./vendor/leaflet.js","./vendor/leaflet.css",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
