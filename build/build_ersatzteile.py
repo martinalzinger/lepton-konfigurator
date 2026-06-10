@@ -1055,7 +1055,7 @@ const ICONS={
  var HASHNAMES={"002bf90b30f4b80b14ce9963042021f39b299dbdca1dfd1944d4874395da72cd":"Montage","6ef3947140f3132550fabaf56d476efb1f53c99048e46f766be08d8583f128f1":"Adam Domaradzki"};
  function prettyUser(u){return String(u||"").split(/[._\- ]+/).filter(Boolean).map(function(w){return w.charAt(0).toUpperCase()+w.slice(1);}).join(" ");}
  function currentUserName(){var h=null,u=null;try{h=localStorage.getItem("amb_ersatzteile_auth");u=localStorage.getItem("amb_ersatzteile_user");}catch(e){}if(h&&HASHNAMES[h])return HASHNAMES[h];if(u)return prettyUser(u);return null;}
- function showUser(){var chip=document.getElementById("userChip");if(!chip)return;var n=currentUserName();if(n){document.getElementById("userName").textContent=n;chip.title=t("logout");chip.style.display="";}else chip.style.display="none";}
+ function showUser(){var chip=document.getElementById("userChip");if(!chip)return;var h=null;try{h=localStorage.getItem("amb_ersatzteile_auth");}catch(e){}if(!h){chip.style.display="none";return;}var n=currentUserName()||t("logged_in");document.getElementById("userName").textContent=n;chip.title=t("logout");chip.style.display="";}
  function logout(){if(!window.confirm(t("logout_confirm")))return;try{localStorage.removeItem("amb_ersatzteile_auth");localStorage.removeItem("amb_ersatzteile_user");}catch(e){}location.reload();}
  function init(){
   document.getElementById("tbLogo").src=LOGO_L;
