@@ -1046,6 +1046,10 @@ var USERS=%%USERS%%;
    }).catch(function(e){
      osmClearResults();
      var m=String((e&&e.message)||e);
+     // Wenn BEIDE unabhängigen Dienste (KI + Karten) am Netzwerk scheitern, ist es fast
+     // sicher eine Firmen-Firewall / ein Browser-Schutz, der die Online-Suche blockiert.
+     var netty=/Failed to fetch|NetworkError|Load failed|fetch resource/i.test(m+" "+_aiErr);
+     if(netty){osmStatus('Die Online-Suche ist von diesem Rechner aus blockiert (vermutlich <b>Firmen-Firewall oder Browser-Schutz</b>) – auch die freie Karten-Suche wird abgewiesen. <b>Am Handy/Mobilfunk funktioniert die Suche.</b> Für den PC müsste die IT die Adressen <i>supabase.co</i>, <i>nominatim.openstreetmap.org</i> und <i>overpass-api.de</i> freigeben.');return;}
      var pre=_aiErr?("KI-Suche fehlgeschlagen: "+esc(_aiErr)+". Auch die Karten-Suche ist gerade nicht erreichbar. "):"";
      if(/noplace/.test(m))osmStatus(pre+'Region „'+esc(wo)+'“ nicht gefunden. Anders schreiben (z. B. „Bayern“, „München“).');
      else if(/overpass/.test(m))osmStatus(pre+"Suche fehlgeschlagen oder Region zu groß. Bitte enger eingrenzen (z. B. Stadt statt Bundesland) und erneut versuchen.");
@@ -1592,7 +1596,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v19";
+const CACHE="vertrieb-v20";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png",
   "./vendor/leaflet.js","./vendor/leaflet.css",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];

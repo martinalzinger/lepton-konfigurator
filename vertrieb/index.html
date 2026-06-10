@@ -1018,6 +1018,10 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
    }).catch(function(e){
      osmClearResults();
      var m=String((e&&e.message)||e);
+     // Wenn BEIDE unabhängigen Dienste (KI + Karten) am Netzwerk scheitern, ist es fast
+     // sicher eine Firmen-Firewall / ein Browser-Schutz, der die Online-Suche blockiert.
+     var netty=/Failed to fetch|NetworkError|Load failed|fetch resource/i.test(m+" "+_aiErr);
+     if(netty){osmStatus('Die Online-Suche ist von diesem Rechner aus blockiert (vermutlich <b>Firmen-Firewall oder Browser-Schutz</b>) – auch die freie Karten-Suche wird abgewiesen. <b>Am Handy/Mobilfunk funktioniert die Suche.</b> Für den PC müsste die IT die Adressen <i>supabase.co</i>, <i>nominatim.openstreetmap.org</i> und <i>overpass-api.de</i> freigeben.');return;}
      var pre=_aiErr?("KI-Suche fehlgeschlagen: "+esc(_aiErr)+". Auch die Karten-Suche ist gerade nicht erreichbar. "):"";
      if(/noplace/.test(m))osmStatus(pre+'Region „'+esc(wo)+'“ nicht gefunden. Anders schreiben (z. B. „Bayern“, „München“).');
      else if(/overpass/.test(m))osmStatus(pre+"Suche fehlgeschlagen oder Region zu groß. Bitte enger eingrenzen (z. B. Stadt statt Bundesland) und erneut versuchen.");
