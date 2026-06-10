@@ -1369,7 +1369,7 @@ var USERS=%%USERS%%;
    var el=document.getElementById("detMap");if(!el)return;
    function draw(L,lat,lon){
      try{if(_detmap){_detmap.remove();_detmap=null;}}catch(e){}
-     try{_detmap=L.map(el,{attributionControl:false}).setView([lat,lon],16);addSat(L,_detmap);L.marker([lat,lon]).addTo(_detmap);
+     try{_detmap=L.map(el,{attributionControl:false}).setView([lat,lon],16);addSat(L,_detmap);L.marker([lat,lon],{icon:flagIcon(L)}).addTo(_detmap);
        setTimeout(function(){try{_detmap.invalidateSize();}catch(e){}},150);}catch(e){el.style.display="none";}
    }
    var ll=contactLatLon(c);
@@ -2295,7 +2295,7 @@ var USERS=%%USERS%%;
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v79";
+ var APP_VER="v80";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
@@ -2340,7 +2340,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v79";
+const CACHE="vertrieb-v80";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png","./icon-32.png","./favicon.ico",
   "./vendor/leaflet.js","./vendor/leaflet.css","./vendor/msal-browser.min.js",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];

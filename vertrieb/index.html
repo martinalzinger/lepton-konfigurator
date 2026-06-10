@@ -1341,7 +1341,7 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
    var el=document.getElementById("detMap");if(!el)return;
    function draw(L,lat,lon){
      try{if(_detmap){_detmap.remove();_detmap=null;}}catch(e){}
-     try{_detmap=L.map(el,{attributionControl:false}).setView([lat,lon],16);addSat(L,_detmap);L.marker([lat,lon]).addTo(_detmap);
+     try{_detmap=L.map(el,{attributionControl:false}).setView([lat,lon],16);addSat(L,_detmap);L.marker([lat,lon],{icon:flagIcon(L)}).addTo(_detmap);
        setTimeout(function(){try{_detmap.invalidateSize();}catch(e){}},150);}catch(e){el.style.display="none";}
    }
    var ll=contactLatLon(c);
@@ -2267,7 +2267,7 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v79";
+ var APP_VER="v80";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
