@@ -471,6 +471,12 @@ create policy "crm all" on contacts
       </div>
     </div>
     <div class="card">
+      <h3>Aufräumen</h3>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:10px">Entfernt <b>leere Import-Kontakte</b> (aus OneNote, ohne Adresse, Kontaktdaten, Person, Verlauf oder Bilder – meist durch Drosselung beim Import entstanden). Echte Kontakte bleiben unberührt.</p>
+      <button class="btn" id="cleanEmptyBtn" type="button">Leere Import-Kontakte entfernen</button>
+      <span id="cleanEmptyMsg" style="font-size:13px;color:var(--muted);margin-left:8px"></span>
+    </div>
+    <div class="card">
       <h3 style="color:var(--red)">Gefahrenzone</h3>
       <button class="btn danger" id="wipeBtn" type="button">Alle CRM-Daten auf diesem Gerät löschen</button>
     </div>
@@ -2047,7 +2053,11 @@ var USERS=%%USERS%%;
              var text=(p.title?(p.title+"\n"):"")+(p.book?("Land/Notizbuch: "+p.book+"\n"):"")+(p.section?("Region/Bundesland: "+p.section+"\n"):"")+pc.text;
              if(!text.trim()){skip++;return null;}
              return apiNoteScan(text).then(function(res){
-               var c=res.contact||{};var fa=String(c.firma||"").trim()||String(p.title||"").trim();
+               var c=res.contact||{};
+               // Schutz: liefert die KI (z. B. wegen Drosselung) GAR keine Daten, KEINEN leeren Kontakt anlegen -> Fehler -> Wiederholung.
+               var kiHas=(c&&Object.keys(c).some(function(k){return String(c[k]||"").trim();}))||(res.activities&&res.activities.length);
+               if(!kiHas)throw new Error("KI lieferte keine Daten (Drosselung?)");
+               var fa=String(c.firma||"").trim()||String(p.title||"").trim();
                var dk="dk:"+dedupKey(fa,c.ort);
                if(ex[dk]){ // schon vorhanden -> kein Duplikat; fehlende Bilder/Betreuer nachtragen
                  var exC=byId(ex[dk]),chg=false;
@@ -2124,6 +2134,23 @@ var USERS=%%USERS%%;
    "Mustermann GmbH;Herr;Max;Mustermann;Industriestr. 1;80331;München;Bayern;DE;+49 89 123456;;info@mustermann.de;mustermann.de;Messe Bauma;Interesse Lepton 5100\n";
    document.getElementById("csvTpl").href="data:text/csv;charset=utf-8,"+encodeURIComponent(tpl);})();
  document.getElementById("wipeBtn").onclick=function(){if(confirm("Wirklich ALLE CRM-Daten auf diesem Gerät löschen? Das kann nicht rückgängig gemacht werden.")){if(confirm("Sicher? Letzte Warnung.")){DB={contacts:[]};bulkSave([],true);renderDashboard();renderList();show("dashboard");}}};
+ // Leere Import-Kontakte finden: OneNote-Quelle, KEINE Adresse/Kontaktdaten/Person, KEIN Verlauf, KEINE Bilder.
+ function isEmptyImport(c){
+   if(!/^OneNote-Import/.test(String(c.quelle||"")))return false;
+   var hasInfo=c.strasse||c.plz||c.ort||c.tel||c.mobil||c.mail||c.web||c.vorname||c.nachname||c.ustid||c.firma2;
+   var hasAct=(c.activities||[]).length, hasImg=(c.bilder||[]).length;
+   return !hasInfo&&!hasAct&&!hasImg;
+ }
+ document.getElementById("cleanEmptyBtn").onclick=function(){
+   var leer=DB.contacts.filter(isEmptyImport),msg=document.getElementById("cleanEmptyMsg");
+   if(!leer.length){msg.style.color="var(--pos)";msg.textContent="Keine leeren Import-Kontakte gefunden. ✓";return;}
+   if(!confirm(leer.length+" leere Import-Kontakte (nur Firmenname, sonst nichts) endgültig entfernen?"))return;
+   var ids={};leer.forEach(function(c){ids[c.id]=1;});
+   DB.contacts=DB.contacts.filter(function(c){return !ids[c.id];});
+   cacheSave();if(MODE!=="local"){leer.forEach(function(c){enqueue({op:"delete",id:c.id});});flush();}
+   msg.style.color="var(--pos)";msg.textContent=leer.length+" entfernt. ✓";
+   initFilters();renderDashboard();
+ };
 
  /* ---------- Daten-Reiter: Verbindungsstatus + Cloud-Konfiguration ---------- */
  function renderDataConn(){
@@ -2194,7 +2221,7 @@ var USERS=%%USERS%%;
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v75";
+ var APP_VER="v76";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
@@ -2239,7 +2266,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v75";
+const CACHE="vertrieb-v76";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png","./icon-32.png","./favicon.ico",
   "./vendor/leaflet.js","./vendor/leaflet.css","./vendor/msal-browser.min.js",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
