@@ -558,6 +558,25 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
    return aiPost("lead-ai",was,wo).catch(function(e){if(e&&e.status===404)return aiPost("lead-ai-",was,wo);throw e;})
      .then(function(d){return (d.leads||[]).filter(function(x){return x&&(x.firma||x.name);});});
  }
+ /* --- Visitenkarten-Scan (Claude-Vision über Edge Function "card-scan") --- */
+ function cardPost(name,dataUri){
+   var ctl=("AbortController" in window)?new AbortController():null;
+   var to=ctl?setTimeout(function(){try{ctl.abort();}catch(_){}} ,60000):0;
+   return fetch(SB.url.replace(/\/+$/,"")+"/functions/v1/"+name,{method:"POST",headers:{"Authorization":"Bearer "+SB.key,"apikey":SB.key,"Content-Type":"application/json","x-crm-secret":AISECRET},body:JSON.stringify({image:dataUri}),signal:ctl?ctl.signal:undefined})
+     .then(function(r){return r.text().then(function(t){var d;try{d=JSON.parse((t||"").trim()||"{}");}catch(_){d={};}if(!r.ok){var err=new Error("scan "+r.status+(d&&d.error?(": "+d.error):""));err.status=r.status;throw err;}return d;});})
+     .then(function(d){if(to)clearTimeout(to);return d;},function(e){if(to)clearTimeout(to);if(e&&(e.name==="AbortError"||/abort/i.test(String(e&&e.message)))){var er=new Error("Zeitüberschreitung beim Auswerten.");throw er;}throw e;});
+ }
+ function apiCardScan(dataUri){
+   return cardPost("card-scan",dataUri).catch(function(e){if(e&&e.status===404)return cardPost("card-scan-",dataUri);throw e;})
+     .then(function(d){return (d&&d.contact)||{};});
+ }
+ // Foto verkleinern (Längste Seite maxDim) und als JPEG-Data-URI zurückgeben -> kleine Payload.
+ function downscaleImage(file,maxDim,cb){
+   try{var img=new Image();var url=URL.createObjectURL(file);
+     img.onload=function(){try{var w=img.width,h=img.height,s=Math.min(1,maxDim/Math.max(w,h||1));var cw=Math.max(1,Math.round(w*s)),ch=Math.max(1,Math.round(h*s));var cv=document.createElement("canvas");cv.width=cw;cv.height=ch;cv.getContext("2d").drawImage(img,0,0,cw,ch);URL.revokeObjectURL(url);cb(cv.toDataURL("image/jpeg",0.82));}catch(e){URL.revokeObjectURL(url);cb(null);}};
+     img.onerror=function(){URL.revokeObjectURL(url);cb(null);};img.src=url;
+   }catch(e){cb(null);}
+ }
 
  /* --- Op-Warteschlange (für Offline/Server) --- */
  function queueRead(){try{return JSON.parse(localStorage.getItem(QKEY)||"[]");}catch(e){return [];}}
@@ -1389,6 +1408,10 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
    '<button class="btn ghost sm" id="fBack" style="margin-bottom:10px">← Zurück</button>'+
    '<h2 class="vh">'+(isNew?"Neuer Kontakt / Lead":"Kontakt bearbeiten")+'</h2>'+
    '<div class="sub">Pflicht ist nur ein Name (Firma oder Person).</div>'+
+   (aiReady()?'<div style="margin:6px 0 14px;padding:12px;background:var(--field);border:1px dashed var(--line-strong);border-radius:12px">'+
+     '<button class="btn primary" id="fScan" type="button"><svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 012-2h2l1.5-2h7L17 5h2a2 2 0 012 2v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><circle cx="12" cy="12.5" r="3.5"/></svg>Visitenkarte fotografieren</button>'+
+     '<input type="file" id="fScanFile" accept="image/*" capture="environment" class="hidden">'+
+     '<div id="fScanMsg" style="font-size:13px;color:var(--muted);margin-top:8px">Foto der Visitenkarte machen – die KI füllt die Felder automatisch aus. Danach kurz prüfen und speichern.</div></div>':'')+
    '<div class="form-grid">'+
      fInput("firma","Firma",c.firma,"text",true)+
      fInput("firma2","Zusatz / Abteilung",c.firma2,"text",true)+
@@ -1424,6 +1447,29 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
    function done(){if(id){openDetail(id);}else{renderList();show("list");}}
    document.getElementById("fBack").onclick=done;
    document.getElementById("fCancel").onclick=done;
+   // Visitenkarten-Scan: Foto -> KI -> Formularfelder füllen (nur nicht-leere Werte setzen).
+   var _scanBtn=document.getElementById("fScan");
+   if(_scanBtn){
+     _scanBtn.onclick=function(){document.getElementById("fScanFile").click();};
+     document.getElementById("fScanFile").onchange=function(e){
+       var f=e.target.files&&e.target.files[0];e.target.value="";if(!f)return;
+       var msg=document.getElementById("fScanMsg");msg.style.color="var(--muted)";msg.textContent="Bild wird ausgewertet … (ein paar Sekunden)";_scanBtn.disabled=true;
+       downscaleImage(f,1600,function(uri){
+         if(!uri){msg.textContent="Bild konnte nicht gelesen werden – bitte erneut versuchen.";_scanBtn.disabled=false;return;}
+         apiCardScan(uri).then(function(card){
+           var setF=function(k,val){var el=document.getElementById("f_"+k);if(el&&val&&String(val).trim())el.value=String(val).trim();};
+           ["firma","anrede","vorname","nachname","strasse","plz","ort","tel","mobil","mail","web","ustid"].forEach(function(k){setF(k,card[k]);});
+           if(card.position)setF("firma2",card.position);
+           if(card.land){var ls=document.getElementById("f_land");if(ls){var code=String(card.land).toUpperCase().slice(0,2);for(var i=0;i<ls.options.length;i++)if(ls.options[i].value===code){ls.value=code;break;}}}
+           if(card.plz&&(card.land||"").toUpperCase().slice(0,2)==="DE"){var pe=document.getElementById("f_plz");if(pe&&/^\d{1,4}$/.test(pe.value)){while(pe.value.length<5)pe.value="0"+pe.value;}}
+           var any=["firma","vorname","nachname","mail","tel","mobil"].some(function(k){return card[k]&&String(card[k]).trim();});
+           msg.style.color=any?"#15803d":"var(--muted)";
+           msg.textContent=any?"✓ Übernommen – bitte prüfen, ggf. ergänzen und speichern.":"Auf dem Foto konnten keine Daten erkannt werden. Schärfer/näher fotografieren und erneut versuchen.";
+           _scanBtn.disabled=false;
+         }).catch(function(err){msg.style.color="#b91c1c";msg.textContent="Scan fehlgeschlagen: "+String((err&&err.message)||err)+(/scan 404/.test(String(err&&err.message))?" (Edge Function card-scan ist noch nicht deployt)":"");_scanBtn.disabled=false;});
+       });
+     };
+   }
    document.getElementById("fSave").onclick=function(){
      function g(k){var e=document.getElementById("f_"+k);return e?e.value.trim():"";}
      var rec=c.id?c:{id:uid(),created:Date.now(),activities:[]};
