@@ -746,11 +746,17 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
    return fetch(url,{headers:{Authorization:"Bearer "+token}}).then(function(r){if(!r.ok)throw new Error("content "+r.status);return r.text();})
      .then(function(html){var d=document.createElement("div");d.innerHTML=html;var all=d.querySelectorAll("img"),imgs=[],sample="";all.forEach(function(im){var s=im.getAttribute("src")||im.getAttribute("data-fullres-src")||im.getAttribute("data-render-src")||"";if(!sample&&s)sample=s;if(/^https?:\/\//.test(s))imgs.push(s);});var txt=(d.innerText||d.textContent||"").replace(/\n{3,}/g,"\n\n").trim();return {text:txt,imgs:imgs,raw:all.length,sample:sample};});
  }
- // OneNote-Bild laden -> verkleinertes JPEG-DataURI. preAuthenticated-Links: erst OHNE Token, dann mit als Fallback.
- // Kein Typ-Filter: OneNote liefert Bilder oft ohne sauberen Content-Type. Entscheidet das Dekodieren.
+ // OneNote-Bild laden -> verkleinertes JPEG-DataURI.
+ // 1) Direkt als <img crossOrigin> (publicAuth-Links sind fuer <img> gedacht, fetch gibt dort 400).
+ // 2) Fallback: per fetch (ohne/mit Token) -> Blob -> Canvas.
  function graphImage(token,url){
-   function grab(useAuth){return fetch(url,useAuth?{headers:{Authorization:"Bearer "+token}}:{}).then(function(r){if(!r.ok)throw new Error("img "+r.status);return r.blob();});}
-   return grab(false).catch(function(){return grab(true);}).then(function(b){if(!b||!b.size)throw new Error("leer");return new Promise(function(res,rej){var u=URL.createObjectURL(b);downscaleSrc(u,1600,function(d){URL.revokeObjectURL(u);if(d)res(d);else rej(new Error("decode "+(b.type||"?")+" "+b.size+"B"));});});});
+   return new Promise(function(res,rej){
+     downscaleSrc(url,1600,function(d){
+       if(d){res(d);return;}
+       function grab(useAuth){return fetch(url,useAuth?{headers:{Authorization:"Bearer "+token}}:{}).then(function(r){if(!r.ok)throw new Error("img "+r.status);return r.blob();});}
+       grab(false).catch(function(){return grab(true);}).then(function(b){if(!b||!b.size)throw new Error("leer");var u=URL.createObjectURL(b);downscaleSrc(u,1600,function(d2){URL.revokeObjectURL(u);if(d2)res(d2);else rej(new Error("decode "+(b.type||"?")+" "+b.size+"B"));});}).catch(function(e){rej(e);});
+     },true);
+   });
  }
  // Foto verkleinern (Längste Seite maxDim) und als JPEG-Data-URI zurückgeben -> kleine Payload.
  function downscaleImage(file,maxDim,cb){
@@ -1819,8 +1825,8 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
  var NOTE_ATYPES={anruf:1,mailout:1,mailin:1,besuch:1,angebot:1,notiz:1};
  function noteDateTs(s){s=String(s||"").trim();var m=s.match(/^(\d{4})-(\d{2})-(\d{2})/);if(m){var d=new Date(+m[1],+m[2]-1,+m[3],9,0,0);if(!isNaN(d))return d.getTime();}var d2=new Date(s);return isNaN(d2)?Date.now():d2.getTime();}
  // Bild aus Data-/Blob-URL verkleinern (für eingefügte/angehängte Bilder).
- function downscaleSrc(src,maxDim,cb){
-   try{var img=new Image();img.onload=function(){try{var w=img.width,h=img.height,s=Math.min(1,maxDim/Math.max(w,h||1));var cw=Math.max(1,Math.round(w*s)),ch=Math.max(1,Math.round(h*s));var cv=document.createElement("canvas");cv.width=cw;cv.height=ch;cv.getContext("2d").drawImage(img,0,0,cw,ch);cb(cv.toDataURL("image/jpeg",0.8));}catch(e){cb(null);}};img.onerror=function(){cb(null);};img.src=src;}catch(e){cb(null);}
+ function downscaleSrc(src,maxDim,cb,cors){
+   try{var img=new Image();if(cors)img.crossOrigin="anonymous";img.onload=function(){try{var w=img.width,h=img.height,s=Math.min(1,maxDim/Math.max(w,h||1));var cw=Math.max(1,Math.round(w*s)),ch=Math.max(1,Math.round(h*s));var cv=document.createElement("canvas");cv.width=cw;cv.height=ch;cv.getContext("2d").drawImage(img,0,0,cw,ch);cb(cv.toDataURL("image/jpeg",0.8));}catch(e){cb(null);}};img.onerror=function(){cb(null);};img.src=src;}catch(e){cb(null);}
  }
  // Bilder einsammeln: aus dem eingefügten Inhalt (img) + aus der Datei-Auswahl. Max 6.
  function gatherNoteImages(cb){
@@ -2040,7 +2046,7 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v56";
+ var APP_VER="v57";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
