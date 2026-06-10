@@ -1186,6 +1186,15 @@ var USERS=%%USERS%%;
      '</div>';
    L.marker([c.lat,c.lon],{icon:flagIcon(L)}).addTo(_cmarkers).bindPopup(pop);
  }
+ // Nominatim-Abfrage mit Wiederholung bei Drosselung (429) / Netz-Aussetzern.
+ function nomFetch(q,tries){
+   tries=tries||0;
+   return fetch("https://nominatim.openstreetmap.org/search?format=json&limit=1&accept-language=de&q="+encodeURIComponent(q),{headers:{"Accept":"application/json"}})
+     .then(function(r){
+       if((r.status===429||r.status===503)&&tries<3){return new Promise(function(res){setTimeout(res,1500*(tries+1));}).then(function(){return nomFetch(q,tries+1);});}
+       if(!r.ok)throw new Error("nom "+r.status);return r.json();
+     },function(e){if(tries<3){return new Promise(function(res){setTimeout(res,1500*(tries+1));}).then(function(){return nomFetch(q,tries+1);});}throw e;});
+ }
  function geocodeContact(c){
    var land=landLabel(c.land);
    // Stufenweise: genaue Adresse -> PLZ+Ort+Land -> Ort+Land. Erhoeht die Trefferquote deutlich.
@@ -1194,8 +1203,7 @@ var USERS=%%USERS%%;
    if(!qs.length)return Promise.reject();
    function tryQ(i){
      if(i>=qs.length)return Promise.reject();
-     return fetch("https://nominatim.openstreetmap.org/search?format=json&limit=1&accept-language=de&q="+encodeURIComponent(qs[i]))
-       .then(function(r){if(!r.ok)throw 0;return r.json();})
+     return nomFetch(qs[i])
        .then(function(a){if(a&&a.length)return {lat:parseFloat(a[0].lat),lon:parseFloat(a[0].lon)};return tryQ(i+1);})
        .catch(function(){return tryQ(i+1);});
    }
@@ -2383,7 +2391,7 @@ var USERS=%%USERS%%;
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v89";
+ var APP_VER="v90";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
@@ -2428,7 +2436,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v89";
+const CACHE="vertrieb-v90";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png","./icon-32.png","./favicon.ico",
   "./vendor/leaflet.js","./vendor/leaflet.css","./vendor/msal-browser.min.js",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
