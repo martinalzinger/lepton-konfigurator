@@ -739,24 +739,30 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
  // Notizbuchname -> ISO-Land (Fallback, wenn die KI kein Land erkennt).
  var NB_LAND={deutschland:"DE",polen:"PL","österreich":"AT",osterreich:"AT",schweiz:"CH",holland:"NL",niederlande:"NL",belgien:"BE",frankreich:"FR",italien:"IT",ungarn:"HU",griechenland:"GR",tschechien:"CZ",kroatien:"HR","rumänien":"RO",rumaenien:"RO",norwegen:"NO",finland:"FI",finnland:"FI",schweden:"SE",dänemark:"DK",daenemark:"DK",usa:"US",england:"GB",grossbritannien:"GB","großbritannien":"GB",spanien:"ES",portugal:"PT",slowenien:"SI",slowakei:"SK",bulgarien:"BG",serbien:"RS",türkei:"TR",tuerkei:"TR",afrika:"ZA",irland:"IE",litauen:"LT",lettland:"LV",estland:"EE"};
  function landFromBook(book){var k=String(book||"").toLowerCase();for(var key in NB_LAND){if(k.indexOf(key)>=0)return NB_LAND[key];}return "";}
- // Seiteninhalt (HTML) -> reiner Text + Bild-URLs. preAuthenticated=true -> Bildlinks (auch SharePoint) ohne Token ladbar.
+ // Sites-Token (Sites.Read.All) NICHT-blockierend holen -> noetig fuer Bilder aus dem OneDrive der Kollegen.
+ // Liefert null, wenn (noch) keine Admin-Freigabe erteilt wurde (Import laeuft dann ohne Bilder weiter).
+ function msSitesToken(){
+   return ensureMsal().then(msalApp).then(function(app){var acc=app.getAllAccounts()[0];if(!acc)return null;return app.acquireTokenSilent({scopes:["Sites.Read.All"],account:acc}).then(function(r){return r.accessToken;}).catch(function(){return null;});}).catch(function(){return null;});
+ }
+ // Seiteninhalt (HTML) -> reiner Text + Bilder als {pre, full}. preAuthenticated=true.
  function graphPageContent(token,page){
    var base=(page&&page.contentUrl)||("https://graph.microsoft.com/v1.0/me/onenote/pages/"+((page&&page.id)||page)+"/content");
    var url=base+(base.indexOf("?")<0?"?":"&")+"preAuthenticated=true";
    return fetch(url,{headers:{Authorization:"Bearer "+token}}).then(function(r){if(!r.ok)throw new Error("content "+r.status);return r.text();})
-     .then(function(html){var d=document.createElement("div");d.innerHTML=html;var all=d.querySelectorAll("img"),imgs=[],sample="";all.forEach(function(im){var s=im.getAttribute("src")||im.getAttribute("data-fullres-src")||im.getAttribute("data-render-src")||"";if(!sample&&s)sample=s;if(/^https?:\/\//.test(s))imgs.push(s);});var txt=(d.innerText||d.textContent||"").replace(/\n{3,}/g,"\n\n").trim();return {text:txt,imgs:imgs,raw:all.length,sample:sample};});
+     .then(function(html){var d=document.createElement("div");d.innerHTML=html;var all=d.querySelectorAll("img"),imgs=[],sample="";all.forEach(function(im){var pre=im.getAttribute("src")||"",full=im.getAttribute("data-fullres-src")||im.getAttribute("data-render-src")||"";if(!full&&pre)full=pre;if(!pre&&full)pre=full;if(/^https?:\/\//.test(pre)||/^https?:\/\//.test(full)){imgs.push({pre:pre,full:full});if(!sample)sample=(full||pre);}});var txt=(d.innerText||d.textContent||"").replace(/\n{3,}/g,"\n\n").trim();return {text:txt,imgs:imgs,raw:all.length,sample:sample};});
  }
- // OneNote-Bild laden -> verkleinertes JPEG-DataURI.
- // 1) Direkt als <img crossOrigin> (publicAuth-Links sind fuer <img> gedacht, fetch gibt dort 400).
- // 2) Fallback: per fetch (ohne/mit Token) -> Blob -> Canvas.
- function graphImage(token,url){
-   return new Promise(function(res,rej){
-     downscaleSrc(url,1600,function(d){
-       if(d){res(d);return;}
-       function grab(useAuth){return fetch(url,useAuth?{headers:{Authorization:"Bearer "+token}}:{}).then(function(r){if(!r.ok)throw new Error("img "+r.status);return r.blob();});}
-       grab(false).catch(function(){return grab(true);}).then(function(b){if(!b||!b.size)throw new Error("leer");var u=URL.createObjectURL(b);downscaleSrc(u,1600,function(d2){URL.revokeObjectURL(u);if(d2)res(d2);else rej(new Error("decode "+(b.type||"?")+" "+b.size+"B"));});}).catch(function(e){rej(e);});
-     },true);
-   });
+ // OneNote-Bild laden -> verkleinertes JPEG-DataURI. im={pre,full}.
+ // 1) $value mit Sites-Token (deterministisch, falls Admin-Freigabe da). 2) <img crossOrigin> auf preAuth. 3) fetch preAuth.
+ function graphImage(token,sitesToken,im){
+   var pre=(im&&im.pre)||im,full=(im&&im.full)||im;
+   function viaFetch(url,authTok){return fetch(url,authTok?{headers:{Authorization:"Bearer "+authTok}}:{}).then(function(r){if(!r.ok)throw new Error("img "+r.status);return r.blob();}).then(function(b){if(!b||!b.size)throw new Error("leer");return new Promise(function(res,rej){var u=URL.createObjectURL(b);downscaleSrc(u,1600,function(d){URL.revokeObjectURL(u);if(d)res(d);else rej(new Error("decode"));});});});}
+   function viaImg(url){return new Promise(function(res,rej){downscaleSrc(url,1600,function(d){d?res(d):rej(new Error("imgEl"));},true);});}
+   var p=Promise.reject(new Error("start"));
+   if(sitesToken&&full)p=p.catch(function(){return viaFetch(full,sitesToken);}); // bestes Ergebnis
+   p=p.catch(function(){return viaImg(pre);});
+   p=p.catch(function(){return viaFetch(pre,null);});
+   p=p.catch(function(){return viaFetch(pre,token);});
+   return p;
  }
  // Foto verkleinern (Längste Seite maxDim) und als JPEG-Data-URI zurückgeben -> kleine Payload.
  function downscaleImage(file,maxDim,cb){
@@ -1902,7 +1908,8 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
      if(!names.length){say("Bitte mindestens ein Notizbuch auswählen.","#b91c1c");return;}
      _msStop=false;goBtn.disabled=true;btn.disabled=true;stopBtn.classList.remove("hidden");setBar(0,1);
      say("Öffne "+names.length+" Notizbuch(ern) … ("+esc(names.join(", "))+")");
-     var added=[],fail=0,skip=0,token=_token,pages=[],dbg=[],imgFound=0,imgLoaded=0,imgRaw=0,imgSample="";
+     var added=[],fail=0,skip=0,token=_token,pages=[],dbg=[],imgFound=0,imgLoaded=0,imgRaw=0,imgSample="",sitesToken=null;
+     msSitesToken().then(function(st){sitesToken=st;}); // nicht-blockierend: Bilder aus OneDrive der Kollegen (falls Admin-Freigabe da)
      // Abschnitte der Auswahl ermitteln (recent: per URL aufloesen; sections: aus Cache filtern)
      var secsP;
      if(_mode==="recent"){secsP=sectionsFromBooks(token,chosen,function(bi,bt,b){say("Öffne Notizbuch "+(bi+1)+" / "+bt+": <b>"+esc(b.name)+"</b> …");},dbg);}
@@ -1925,7 +1932,7 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
                // Bilder der Seite laden (max 4)
                imgRaw+=(pc.raw||0);if(!imgSample&&pc.sample)imgSample=pc.sample;
                var imgUrls=(pc.imgs||[]).slice(0,4),bilder=[];imgFound+=imgUrls.length;
-               return imgUrls.reduce(function(pr,u){return pr.then(function(){return graphImage(token,u).then(function(d){if(d&&d.length<2500000){bilder.push(d);imgLoaded++;}}).catch(function(e){if(dbg.length<8)dbg.push("Bild: "+String((e&&e.message)||e));});});},Promise.resolve()).then(function(){
+               return imgUrls.reduce(function(pr,u){return pr.then(function(){return graphImage(token,sitesToken,u).then(function(d){if(d&&d.length<2500000){bilder.push(d);imgLoaded++;}}).catch(function(e){if(dbg.length<8)dbg.push("Bild: "+String((e&&e.message)||e));});});},Promise.resolve()).then(function(){
                  var lf=landFromBook(p.book),ki=String(c.land||"").toUpperCase().slice(0,2);
                  var rec={id:uid(),created:Date.now(),updated:Date.now(),status:"lead",land:(lf||ki||"DE"),activities:[],owner:(CUR&&CUR.n)||""};
                  rec.firma=fa;["anrede","vorname","nachname","strasse","plz","ort","bundesland","tel","mobil","mail","web","ustid"].forEach(function(k){var v=c[k]&&String(c[k]).trim();if(v)rec[k]=v;});
@@ -1951,7 +1958,7 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
            say((_msStop?"Gestoppt. ":"Fertig! ")+"<b>"+added.length+"</b> Kontakte angelegt"+(skip?(", "+skip+" bereits vorhanden/übersprungen"):"")+(fail?(", "+fail+" Fehler"):"")+imgInfo+".","#15803d");
            // Bild-Diagnose als kopierbarer Kasten, falls nicht alle Bilder geladen wurden.
            if(imgLoaded<imgFound||(imgRaw&&!imgFound)){
-             var diag="BILD-DIAGNOSE  img-Tags="+imgRaw+"  erkannt="+imgFound+"  geladen="+imgLoaded+"\nBeispiel-URL: "+(imgSample||"(keine)")+"\nFehler: "+(dbg.length?dbg.slice(0,4).join("  |  "):"(keine)");
+             var diag="BILD-DIAGNOSE  img-Tags="+imgRaw+"  erkannt="+imgFound+"  geladen="+imgLoaded+"  Sites-Zugriff="+(sitesToken?"ja":"NEIN (Admin-Freigabe fehlt)")+"\nBeispiel-URL: "+(imgSample||"(keine)")+"\nFehler: "+(dbg.length?dbg.slice(0,4).join("  |  "):"(keine)");
              msg.innerHTML+='<div style="margin-top:8px"><div style="font-size:12px;color:#b91c1c;margin-bottom:4px">⚠ Bilder kamen nicht alle an – bitte diesen Kasten abfotografieren/kopieren und mir schicken:</div><textarea readonly style="width:100%;height:84px;font-family:var(--mono);font-size:11px;border:1px solid var(--line);border-radius:8px;padding:6px;background:#fff" onclick="this.select()">'+esc(diag)+'</textarea></div>';
            }
          }
@@ -2046,7 +2053,7 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v57";
+ var APP_VER="v58";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
