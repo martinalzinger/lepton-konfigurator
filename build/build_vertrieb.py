@@ -997,7 +997,15 @@ var USERS=%%USERS%%;
      .catch(function(e){if(i+1<OVERPASS.length)return osmOverpass(q,i+1);throw e;});
  }
  function osmAddr(t){return {strasse:[t["addr:street"],t["addr:housenumber"]].filter(Boolean).join(" "),plz:t["addr:postcode"]||"",ort:t["addr:city"]||t["addr:town"]||t["addr:village"]||t["addr:municipality"]||""};}
- function osmExisting(){var s={};DB.contacts.forEach(function(c){if(c._osm)s[c._osm]=c.id;if(c.firma)s[((c.firma||"")+"|"+(c.ort||"")).toLowerCase()]=c.id;});return s;}
+ // Robuster Dubletten-Schluessel: Umlaute, Rechtsformen (GmbH/AG/KG/Co …), Satzzeichen
+ // und Leerzeichen werden vereinheitlicht -> "Kompost Bayern GmbH" == "kompost-bayern".
+ function dnorm(s){var x=String(s||"").toLowerCase().replace(/ä/g,"ae").replace(/ö/g,"oe").replace(/ü/g,"ue").replace(/ß/g,"ss");
+   x=x.replace(/[^a-z0-9]+/g," ");
+   x=x.replace(/\b(gmbh|mbh|ag|kg|kgaa|ohg|ug|gbr|se|ek|ev|co|ltd|inc|llc)\b/g," ");
+   return x.replace(/\s+/g," ").trim();}
+ function dedupKey(firma,ort){return dnorm(firma)+"|"+dnorm(ort);}
+ function osmExisting(){var s={};DB.contacts.forEach(function(c){if(c._osm)s[c._osm]=c.id;if(c.firma){s[((c.firma||"")+"|"+(c.ort||"")).toLowerCase()]=c.id;s["dk:"+dedupKey(c.firma,c.ort)]=c.id;}});return s;}
+ function osmHave(ex,key,name,ort){return ex[key]||ex[((name||"")+"|"+(ort||"")).toLowerCase()]||ex["dk:"+dedupKey(name,ort)];}
  function osmToContact(el){
    var t=el.tags||{},a=osmAddr(t);var lat=el.lat||(el.center&&el.center.lat),lon=el.lon||(el.center&&el.center.lon);
    return {id:uid(),created:Date.now(),updated:Date.now(),status:"lead",
@@ -1016,7 +1024,11 @@ var USERS=%%USERS%%;
  function aiToEl(o,i){return {type:"ai",id:aiSlug(o,i),lat:(o.lat!=null?+o.lat:null),lon:(o.lon!=null?+o.lon:null),
    tags:{name:o.firma||o.name||"","addr:street":o.strasse||"","addr:postcode":o.plz||"","addr:city":o.ort||"","contact:phone":o.tel||"","contact:email":o.email||"",website:o.web||"",_land:(o.land||searchLand||"DE"),_quelle:o.quelle||"",_gf:o.geschaeftsfuehrer||"",_bl:o.betriebsleiter||"",_menge:o.jahresmenge||"",_sieb:o.siebtechnik||"",_news:o.news||""}};}
  function guessLand(wo){var t=(wo||"").toLowerCase();if(/schweiz|switzerland|\bch\b/.test(t))return "CH";if(/österreich|oesterreich|austria|\bat\b/.test(t))return "AT";if(/italien|italy|südtirol|suedtirol/.test(t))return "IT";if(/frankreich|france/.test(t))return "FR";if(/polen|poland/.test(t))return "PL";if(/niederlande|holland/.test(t))return "NL";return "DE";}
- function osmMake(key){var el=osmLast[key];if(!el)return null;var c=osmToContact(el);DB.contacts.push(c);return c;}
+ function osmMake(key){var el=osmLast[key];if(!el)return null;
+   // Dubletten-Schutz: gibt es den Kontakt schon, den vorhandenen zurueckgeben (NICHT neu anlegen).
+   var t=el.tags||{},a=osmAddr(t),exist=osmHave(osmExisting(),key,t.name,a.ort);
+   if(exist){var c0=byId(exist);if(c0)return c0;}
+   var c=osmToContact(el);DB.contacts.push(c);return c;}
  function renderOsm(els){
    osmEls=els;osmLast={};els.forEach(function(el){osmLast[el.type+"/"+el.id]=el;});
    var box=document.getElementById("osmResults");
@@ -1025,7 +1037,7 @@ var USERS=%%USERS%%;
    osmStatus(els.length+' Treffer'+(_searchSrc?(' <b>('+_searchSrc+')</b>'):'')+' für „'+esc(lastQuery)+'“ – prüfen und übernehmen:');
    box.innerHTML=els.map(function(el){
      var t=el.tags||{},a=osmAddr(t),loc=[a.plz,a.ort].filter(Boolean).join(" ");
-     var key=el.type+"/"+el.id,have=ex[key]||ex[((t.name||"")+"|"+(a.ort||"")).toLowerCase()];if(!have)anyNew=true;
+     var key=el.type+"/"+el.id,have=osmHave(ex,key,t.name,a.ort);if(!have)anyNew=true;
      var web=t["contact:website"]||t.website;
      return '<div class="crow" style="cursor:pointer" data-rowkey="'+esc(key)+'" data-rowhave="'+esc(have||"")+'">'+
        '<div class="av" style="background:var(--gold)">'+esc(initials(t.name))+'</div>'+
@@ -1094,7 +1106,7 @@ var USERS=%%USERS%%;
      var bounds=[],ex=osmExisting();
      pts.forEach(function(el){
        var lat=el.lat||el.center.lat,lon=el.lon||el.center.lon,t=el.tags||{},a=osmAddr(t),key=el.type+"/"+el.id;
-       var have=ex[key]||ex[((t.name||"")+"|"+(a.ort||"")).toLowerCase()];
+       var have=osmHave(ex,key,t.name,a.ort);
        var addr=esc([a.strasse,[a.plz,a.ort].filter(Boolean).join(" ")].filter(Boolean).join(", "));
        var btn=have?'<span style="color:#15803d;font:600 12px sans-serif">✓ schon Lead</span>':'<button class="lf-add" data-osm-map="'+key+'" style="margin-top:6px;border:0;background:#c00000;color:#fff;border-radius:6px;padding:6px 10px;font:600 12px sans-serif;cursor:pointer">+ Als Lead</button>';
        L.marker([lat,lon],{icon:flagIcon(L)}).addTo(_markers).bindPopup('<b>'+esc(t.name||"")+'</b>'+(addr?'<br>'+addr:'')+'<br>'+btn);
@@ -1172,7 +1184,7 @@ var USERS=%%USERS%%;
  document.getElementById("osmResults").addEventListener("click",function(e){
    if(e.target.closest("a"))return; // Web-Links normal lassen
    if(e.target.id==="osmMore"){aiMore();return;}
-   if(e.target.id==="osmAddAll"){var ex=osmExisting(),added=[];Object.keys(osmLast).forEach(function(k){var el=osmLast[k],t=el.tags||{},a=osmAddr(t);if(ex[k]||ex[((t.name||"")+"|"+(a.ort||"")).toLowerCase()])return;var c=osmMake(k);if(c)added.push(c);});if(added.length)bulkSave(added,false);renderOsm(osmEls);renderLeads();osmStatus(added.length+" neue Leads übernommen – sie stehen unten in deiner Lead-Liste.");return;}
+   if(e.target.id==="osmAddAll"){var ex=osmExisting(),added=[],seen={};Object.keys(osmLast).forEach(function(k){var el=osmLast[k],t=el.tags||{},a=osmAddr(t);if(osmHave(ex,k,t.name,a.ort))return;var dk=dedupKey(t.name,a.ort);if(seen[dk])return;seen[dk]=1;var c=osmMake(k);if(c){added.push(c);ex["dk:"+dk]=c.id;}});if(added.length)bulkSave(added,false);renderOsm(osmEls);renderLeads();osmStatus(added.length+" neue Leads übernommen – sie stehen unten in deiner Lead-Liste.");return;}
    var o=e.target.closest("[data-openid]");if(o){openDetail(o.getAttribute("data-openid"));return;}
    // „+ Lead"-Button: schnell übernehmen (ohne Öffnen)
    var b=e.target.closest("[data-osm]");
@@ -1700,7 +1712,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v28";
+const CACHE="vertrieb-v29";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png",
   "./vendor/leaflet.js","./vendor/leaflet.css",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
