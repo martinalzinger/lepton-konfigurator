@@ -120,6 +120,10 @@ select.filter{width:auto;min-width:120px;flex:0 0 auto}
 .crow .nm{font-weight:700;font-size:15px}
 .crow .meta{font-size:12px;color:var(--muted);margin-top:2px;display:flex;flex-wrap:wrap;gap:4px 10px}
 .crow .meta .flag{font-family:var(--mono);font-weight:600;color:var(--ink)}
+.crow .hit{font-size:12px;color:var(--muted);margin-top:5px;line-height:1.45;display:flex;align-items:flex-start;gap:5px}
+.crow .hit svg{width:13px;height:13px;flex:none;margin-top:2px;fill:none;stroke:currentColor;stroke-width:1.8}
+.crow .hit b{color:var(--ink);background:rgba(255,210,0,.4);border-radius:3px;padding:0 1px;font-weight:700}
+.crow .hit-w{opacity:.85;white-space:nowrap;font-family:var(--mono);font-size:11px}
 .crow .right{flex:0 0 auto;display:flex;flex-direction:column;align-items:flex-end;gap:6px}
 
 .pill{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;padding:3px 8px;border-radius:20px;white-space:nowrap}
@@ -1177,6 +1181,18 @@ var USERS=%%USERS%%;
    for(var i=0;i<terms.length;i++){if(hay.indexOf(terms[i])<0)return false;}
    return true;
  }
+ var _searchTerms=[];
+ // Zeigt bei einem Suchtreffer, WO gefunden wurde (Textausschnitt + Quelle), wenn der Treffer nicht im sichtbaren Feld steht.
+ function hitSnippet(c){
+   if(!_searchTerms.length)return "";
+   function find(text,label){if(!text)return null;var s=String(text),low=s.toLowerCase();for(var i=0;i<_searchTerms.length;i++){var idx=low.indexOf(_searchTerms[i]);if(idx>=0)return {text:s,idx:idx,len:_searchTerms[i].length,label:label};}return null;}
+   function render(h){var s=h.text,start=Math.max(0,h.idx-28);var pre=(start>0?"…":"")+s.slice(start,h.idx);var hit=s.slice(h.idx,h.idx+h.len);var end=h.idx+h.len+44;var post=s.slice(h.idx+h.len,end)+((end<s.length)?"…":"");return '<div class="hit"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg><span>'+esc(pre)+'<b>'+esc(hit)+'</b>'+esc(post)+' <span class="hit-w">· '+esc(h.label)+'</span></span></div>';}
+   var acts=(c.activities||[]).slice().sort(function(a,b){return (b.date||0)-(a.date||0);});
+   for(var i=0;i<acts.length;i++){var h=find(acts[i].note,actLabel(acts[i].type)+" · "+fmtDate(acts[i].date));if(h)return render(h);}
+   var fields=[[c.notiz,"Notiz"],[c.web,"Web"],[c.mail,"E-Mail"],[c.quelle,"Quelle"],[c.owner,"Betreuer"],[contactBundesland(c),"Bundesland"],[c.ustid,"USt-IdNr."],[c.followup&&c.followup.note,"Wiedervorlage"]];
+   for(var j=0;j<fields.length;j++){var h2=find(fields[j][0],fields[j][1]);if(h2)return render(h2);}
+   return ""; // Treffer steht in einem sichtbaren Feld (Firma/Ort/Tel) -> kein Extra-Hinweis noetig
+ }
  function contactRow(c){
    var due=(c.followup&&!c.followup.done&&c.followup.due)?'<span class="due '+dueClass(c.followup.due)+'">'+dueLabel(c.followup.due)+'</span>':'';
    var sub=fullName(c);var loc=[c.strasse,[c.plz,c.ort].filter(Boolean).join(" ")].filter(Boolean).join(", ");
@@ -1188,12 +1204,13 @@ var USERS=%%USERS%%;
        (c.land?'<span class="flag">'+esc(c.land)+'</span>':'')+
        (loc?'<span>'+esc(loc)+'</span>':'')+
        (c.tel?'<span>'+esc(c.tel)+'</span>':'')+
-     '</div></div>'+
+     '</div>'+hitSnippet(c)+'</div>'+
      '<div class="right"><span class="pill '+esc(c.status||"lead")+'">'+esc(statusLabel(c.status))+'</span>'+due+'</div>'+
    '</div>';
  }
  function renderList(){
    var q=document.getElementById("q").value.trim();
+   _searchTerms=q?q.toLowerCase().split(/\s+/).filter(Boolean):[]; // fuer die Treffer-Anzeige in der Liste
    var fs=document.getElementById("fStatus").value,fl=document.getElementById("fLand").value,fbl=document.getElementById("fBL").value,fo=document.getElementById("fOwner").value,so=document.getElementById("fSort").value;
    var arr=DB.contacts.filter(function(c){return matchQ(c,q)&&(!fs||c.status===fs)&&(!fl||c.land===fl)&&(!fbl||contactBundesland(c)===fbl)&&(!fo||c.owner===fo);});
    arr.sort(function(a,b){
@@ -2472,7 +2489,7 @@ var USERS=%%USERS%%;
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v98";
+ var APP_VER="v99";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
@@ -2517,7 +2534,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v98";
+const CACHE="vertrieb-v99";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png","./icon-32.png","./favicon.ico",
   "./vendor/leaflet.js","./vendor/leaflet.css","./vendor/msal-browser.min.js",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
