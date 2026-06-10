@@ -1908,8 +1908,14 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
      if(!names.length){say("Bitte mindestens ein Notizbuch auswählen.","#b91c1c");return;}
      _msStop=false;goBtn.disabled=true;btn.disabled=true;stopBtn.classList.remove("hidden");setBar(0,1);
      say("Öffne "+names.length+" Notizbuch(ern) … ("+esc(names.join(", "))+")");
-     var added=[],fail=0,skip=0,token=_token,pages=[],dbg=[],imgFound=0,imgLoaded=0,imgRaw=0,imgSample="",sitesToken=null;
+     var added=[],fail=0,skip=0,token=_token,pages=[],dbg=[],imgFound=0,imgLoaded=0,imgRaw=0,imgSample="",imgAdded=0,sitesToken=null;
      msSitesToken().then(function(st){sitesToken=st;}); // nicht-blockierend: Bilder aus OneDrive der Kollegen (falls Admin-Freigabe da)
+     // Bilder einer Seite laden (max 4) -> [dataURIs]; aktualisiert die Zaehler.
+     function loadImgs(pc){
+       imgRaw+=(pc.raw||0);if(!imgSample&&pc.sample)imgSample=pc.sample;
+       var iu=(pc.imgs||[]).slice(0,4),bl=[];imgFound+=iu.length;
+       return iu.reduce(function(pr,u){return pr.then(function(){return graphImage(token,sitesToken,u).then(function(d){if(d&&d.length<2500000){bl.push(d);imgLoaded++;}}).catch(function(e){if(dbg.length<8)dbg.push("Bild: "+String((e&&e.message)||e));});});},Promise.resolve()).then(function(){return bl;});
+     }
      // Abschnitte der Auswahl ermitteln (recent: per URL aufloesen; sections: aus Cache filtern)
      var secsP;
      if(_mode==="recent"){secsP=sectionsFromBooks(token,chosen,function(bi,bt,b){say("Öffne Notizbuch "+(bi+1)+" / "+bt+": <b>"+esc(b.name)+"</b> …");},dbg);}
@@ -1928,11 +1934,15 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
              if(!text.trim()){skip++;return null;}
              return apiNoteScan(text).then(function(res){
                var c=res.contact||{};var fa=String(c.firma||"").trim()||String(p.title||"").trim();
-               var dk="dk:"+dedupKey(fa,c.ort);if(ex[dk]){skip++;return null;}
-               // Bilder der Seite laden (max 4)
-               imgRaw+=(pc.raw||0);if(!imgSample&&pc.sample)imgSample=pc.sample;
-               var imgUrls=(pc.imgs||[]).slice(0,4),bilder=[];imgFound+=imgUrls.length;
-               return imgUrls.reduce(function(pr,u){return pr.then(function(){return graphImage(token,sitesToken,u).then(function(d){if(d&&d.length<2500000){bilder.push(d);imgLoaded++;}}).catch(function(e){if(dbg.length<8)dbg.push("Bild: "+String((e&&e.message)||e));});});},Promise.resolve()).then(function(){
+               var dk="dk:"+dedupKey(fa,c.ort);
+               if(ex[dk]){ // schon vorhanden -> NUR fehlende Bilder nachtragen (kein Duplikat anlegen)
+                 var exC=byId(ex[dk]);
+                 if(exC&&!(exC.bilder&&exC.bilder.length)&&pc.imgs&&pc.imgs.length){
+                   return loadImgs(pc).then(function(bl){if(bl.length){exC.bilder=bl;exC.updated=Date.now();saveContact(exC);imgAdded++;}skip++;});
+                 }
+                 skip++;return null;
+               }
+               return loadImgs(pc).then(function(bilder){
                  var lf=landFromBook(p.book),ki=String(c.land||"").toUpperCase().slice(0,2);
                  var rec={id:uid(),created:Date.now(),updated:Date.now(),status:"lead",land:(lf||ki||"DE"),activities:[],owner:(CUR&&CUR.n)||""};
                  rec.firma=fa;["anrede","vorname","nachname","strasse","plz","ort","bundesland","tel","mobil","mail","web","ustid"].forEach(function(k){var v=c[k]&&String(c[k]).trim();if(v)rec[k]=v;});
@@ -1954,7 +1964,7 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
            if(added.length)bulkSave(added.slice(),false);
            initFilters();renderDashboard();
            goBtn.disabled=false;btn.disabled=false;stopBtn.classList.add("hidden");
-           var imgInfo=" · Bilder "+imgLoaded+"/"+imgFound;
+           var imgInfo=" · Bilder "+imgLoaded+"/"+imgFound+(imgAdded?(" ("+imgAdded+" nachgetragen)"):"");
            say((_msStop?"Gestoppt. ":"Fertig! ")+"<b>"+added.length+"</b> Kontakte angelegt"+(skip?(", "+skip+" bereits vorhanden/übersprungen"):"")+(fail?(", "+fail+" Fehler"):"")+imgInfo+".","#15803d");
            // Bild-Diagnose als kopierbarer Kasten, falls nicht alle Bilder geladen wurden.
            if(imgLoaded<imgFound||(imgRaw&&!imgFound)){
@@ -2053,7 +2063,7 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v59";
+ var APP_VER="v60";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
