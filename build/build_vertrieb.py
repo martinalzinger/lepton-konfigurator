@@ -1363,6 +1363,21 @@ var USERS=%%USERS%%;
    L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}",{maxZoom:19,opacity:0.9}).addTo(map);
    return map;
  }
+ // Stabile Satellitenkarte in der Kontakt-Detailansicht (Leaflet + Esri-Luftbild) statt flackerndem Google-iframe.
+ var _detmap=null;
+ function initDetailMap(c){
+   var el=document.getElementById("detMap");if(!el)return;
+   function draw(L,lat,lon){
+     try{if(_detmap){_detmap.remove();_detmap=null;}}catch(e){}
+     try{_detmap=L.map(el,{attributionControl:false}).setView([lat,lon],16);addSat(L,_detmap);L.marker([lat,lon]).addTo(_detmap);
+       setTimeout(function(){try{_detmap.invalidateSize();}catch(e){}},150);}catch(e){el.style.display="none";}
+   }
+   var ll=contactLatLon(c);
+   ensureLeaflet().then(function(L){
+     if(ll){draw(L,ll.lat,ll.lon);return;}
+     geocodeContact(c).then(function(p){c.lat=p.lat;c.lon=p.lon;draw(L,p.lat,p.lon);}).catch(function(){el.style.display="none";});
+   }).catch(function(){el.style.display="none";});
+ }
  function osmShowMap(els){
    var mapDiv=document.getElementById("osmMap");
    var pts=(els||[]).filter(function(el){return el.lat||(el.center&&el.center.lat);});
@@ -1596,7 +1611,7 @@ var USERS=%%USERS%%;
    ((c.bilder&&c.bilder.length)?'<div class="card"><div style="font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Bilder ('+c.bilder.length+')</div><div style="display:flex;gap:8px;flex-wrap:wrap">'+c.bilder.map(function(b,i){return '<div style="position:relative"><img src="'+esc(b)+'" data-bild="'+i+'" title="Klick öffnet das Bild groß" style="width:150px;height:104px;object-fit:cover;border-radius:8px;border:1px solid var(--line);cursor:pointer"><button class="btn ghost" data-delbild="'+i+'" title="Dieses Bild entfernen" style="position:absolute;top:4px;right:4px;padding:2px 7px;background:rgba(0,0,0,.6);color:#fff;border:0;border-radius:6px;font-size:14px;line-height:1;cursor:pointer">×</button></div>';}).join("")+'</div></div>':'')+
    // Standort-Karte des Kontakts
    (function(){var mq=ll?(ll.lat+","+ll.lon):(addr||"");if(!mq)return "";var eq=encodeURIComponent(mq);
-     return '<div style="margin:8px 0"><iframe id="detMap" title="Standort-Karte (Satellit)" src="https://maps.google.com/maps?q='+eq+'&z=15&t=k&output=embed" style="width:100%;height:220px;border:0;border-radius:12px" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>'+
+     return '<div style="margin:8px 0"><div id="detMap" title="Standort-Karte (Satellit)" style="width:100%;height:240px;border:1px solid var(--line);border-radius:12px;background:var(--field)"></div>'+
        '<div style="margin-top:6px"><a class="btn sm" href="https://www.google.com/maps?q='+eq+'&t=k" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.7"><path d="M12 21s-7-5.2-7-11a7 7 0 0114 0c0 5.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>In Google Maps öffnen</a></div></div>';})()+
    // Wiedervorlage
    '<div class="fu-box'+(fu?' active-fu':'')+'" id="fuBox">'+
@@ -1616,6 +1631,7 @@ var USERS=%%USERS%%;
    (acts.length?'<div class="tl">'+acts.map(actItem).join("")+'</div>':'<div style="font-size:13px;color:var(--muted);background:var(--field);border:1px dashed var(--line-strong);border-radius:12px;padding:14px;text-align:center">Hier entsteht der komplette Verlauf: <b>wann</b> war Kontakt, <b>wer</b>, Anrufe, E-Mails, <b>Angebote</b> (mit Nr./Betrag) und Notizen.<br><button class="btn sm primary" id="emptyAddAct" style="margin-top:10px">+ Erste Aktivität erfassen</button></div>')+
    '<div style="margin:22px 0 8px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn danger sm" id="delBtn">Kontakt löschen</button></div>';
    var v=document.getElementById("view-detail");v.innerHTML=html;show("detail");
+   initDetailMap(c); // stabile Leaflet-Satellitenkarte statt flackerndem Google-Rahmen
    // Fehlende Angebots-PDFs automatisch im Hintergrund erzeugen (ohne Klick).
    acts.forEach(function(a){if(a.type==="angebot"&&a.config&&!a.pdf)queuePdfGen(c.id,a.id,false);});
    document.getElementById("backBtn").onclick=function(){renderList();show("list");};
@@ -2279,7 +2295,7 @@ var USERS=%%USERS%%;
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v78";
+ var APP_VER="v79";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
@@ -2324,7 +2340,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v78";
+const CACHE="vertrieb-v79";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png","./icon-32.png","./favicon.ico",
   "./vendor/leaflet.js","./vendor/leaflet.css","./vendor/msal-browser.min.js",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
