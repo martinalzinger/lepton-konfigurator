@@ -767,17 +767,18 @@ var USERS=%%USERS%%;
  // Notizbuchname -> ISO-Land (Fallback, wenn die KI kein Land erkennt).
  var NB_LAND={deutschland:"DE",polen:"PL","österreich":"AT",osterreich:"AT",schweiz:"CH",holland:"NL",niederlande:"NL",belgien:"BE",frankreich:"FR",italien:"IT",ungarn:"HU",griechenland:"GR",tschechien:"CZ",kroatien:"HR","rumänien":"RO",rumaenien:"RO",norwegen:"NO",finland:"FI",finnland:"FI",schweden:"SE",dänemark:"DK",daenemark:"DK",usa:"US",england:"GB",grossbritannien:"GB","großbritannien":"GB",spanien:"ES",portugal:"PT",slowenien:"SI",slowakei:"SK",bulgarien:"BG",serbien:"RS",türkei:"TR",tuerkei:"TR",afrika:"ZA",irland:"IE",litauen:"LT",lettland:"LV",estland:"EE"};
  function landFromBook(book){var k=String(book||"").toLowerCase();for(var key in NB_LAND){if(k.indexOf(key)>=0)return NB_LAND[key];}return "";}
- // Seiteninhalt (HTML) -> reiner Text + Bild-URLs. Bilder ueber denselben Host wie der Inhalt (CORS-sicher mit Token).
+ // Seiteninhalt (HTML) -> reiner Text + Bild-URLs. preAuthenticated=true -> Bildlinks (auch SharePoint) ohne Token ladbar.
  function graphPageContent(token,page){
-   var url=(page&&page.contentUrl)||("https://graph.microsoft.com/v1.0/me/onenote/pages/"+((page&&page.id)||page)+"/content");
+   var base=(page&&page.contentUrl)||("https://graph.microsoft.com/v1.0/me/onenote/pages/"+((page&&page.id)||page)+"/content");
+   var url=base+(base.indexOf("?")<0?"?":"&")+"preAuthenticated=true";
    return fetch(url,{headers:{Authorization:"Bearer "+token}}).then(function(r){if(!r.ok)throw new Error("content "+r.status);return r.text();})
      .then(function(html){var d=document.createElement("div");d.innerHTML=html;var all=d.querySelectorAll("img"),imgs=[],sample="";all.forEach(function(im){var s=im.getAttribute("data-fullres-src")||im.getAttribute("src")||im.getAttribute("data-render-src")||"";if(!sample&&s)sample=s;if(/^https?:\/\//.test(s))imgs.push(s);});var txt=(d.innerText||d.textContent||"").replace(/\n{3,}/g,"\n\n").trim();return {text:txt,imgs:imgs,raw:all.length,sample:sample};});
  }
- // OneNote-Bild laden -> verkleinertes JPEG-DataURI. Erst mit Token (graph-Host, CORS ok), sonst ohne.
+ // OneNote-Bild laden -> verkleinertes JPEG-DataURI. preAuthenticated-Links: erst OHNE Token, dann mit als Fallback.
  // Kein Typ-Filter: OneNote liefert Bilder oft ohne sauberen Content-Type. Entscheidet das Dekodieren.
  function graphImage(token,url){
    function grab(useAuth){return fetch(url,useAuth?{headers:{Authorization:"Bearer "+token}}:{}).then(function(r){if(!r.ok)throw new Error("img "+r.status);return r.blob();});}
-   return grab(true).catch(function(){return grab(false);}).then(function(b){if(!b||!b.size)throw new Error("leer");return new Promise(function(res,rej){var u=URL.createObjectURL(b);downscaleSrc(u,1600,function(d){URL.revokeObjectURL(u);if(d)res(d);else rej(new Error("decode "+(b.type||"?")+" "+b.size+"B"));});});});
+   return grab(false).catch(function(){return grab(true);}).then(function(b){if(!b||!b.size)throw new Error("leer");return new Promise(function(res,rej){var u=URL.createObjectURL(b);downscaleSrc(u,1600,function(d){URL.revokeObjectURL(u);if(d)res(d);else rej(new Error("decode "+(b.type||"?")+" "+b.size+"B"));});});});
  }
  // Foto verkleinern (Längste Seite maxDim) und als JPEG-Data-URI zurückgeben -> kleine Payload.
  function downscaleImage(file,maxDim,cb){
@@ -2109,7 +2110,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v52";
+const CACHE="vertrieb-v53";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png",
   "./vendor/leaflet.js","./vendor/leaflet.css","./vendor/msal-browser.min.js",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
