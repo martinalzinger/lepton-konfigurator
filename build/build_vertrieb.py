@@ -1011,6 +1011,7 @@ var USERS=%%USERS%%;
    else if(curView==="detail"&&curId&&byId(curId)){
      if(modal&&modal.classList.contains("open"))return;
      if(document.activeElement&&document.activeElement.closest&&document.activeElement.closest("#view-detail"))return;
+     if((byId(curId).updated||0)===_detUpd)return; // unveraendert -> NICHT neu aufbauen (sonst blinkt die Karte beim 30s-Sync)
      openDetail(curId);
    }
    if(curView==="data")renderDataConn();
@@ -1473,7 +1474,7 @@ var USERS=%%USERS%%;
    return map;
  }
  // Stabile Satellitenkarte in der Kontakt-Detailansicht (Leaflet + Esri-Luftbild) statt flackerndem Google-iframe.
- var _detmap=null;
+ var _detmap=null,_detUpd=null;
  function initDetailMap(c){
    var el=document.getElementById("detMap");if(!el)return;
    function draw(L,lat,lon){
@@ -1484,7 +1485,7 @@ var USERS=%%USERS%%;
    var ll=contactLatLon(c);
    ensureLeaflet().then(function(L){
      if(ll){draw(L,ll.lat,ll.lon);return;}
-     geocodeContact(c).then(function(p){c.lat=p.lat;c.lon=p.lon;c.updated=Date.now();saveContact(c);draw(L,p.lat,p.lon);}).catch(function(){el.style.display="none";});
+     geocodeContact(c).then(function(p){c.lat=p.lat;c.lon=p.lon;c.updated=Date.now();_detUpd=(c.updated||0);saveContact(c);draw(L,p.lat,p.lon);}).catch(function(){el.style.display="none";});
    }).catch(function(){el.style.display="none";});
  }
  function osmShowMap(els){
@@ -1664,7 +1665,7 @@ var USERS=%%USERS%%;
    location.href="../index.html";
  }
  function openDetail(id){
-   var c=byId(id);if(!c)return;curId=id;
+   var c=byId(id);if(!c)return;curId=id;_detUpd=(c.updated||0);
    var loc=[c.str,[c.plz,c.ort].filter(Boolean).join(" ")].filter(Boolean);
    var addr=[c.strasse,[c.plz,c.ort].filter(Boolean).join(" "),landLabel(c.land)].filter(Boolean).join(", ");
    var ll=contactLatLon(c);
@@ -2489,7 +2490,7 @@ var USERS=%%USERS%%;
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v99";
+ var APP_VER="v100";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
@@ -2534,7 +2535,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v99";
+const CACHE="vertrieb-v100";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png","./icon-32.png","./favicon.ico",
   "./vendor/leaflet.js","./vendor/leaflet.css","./vendor/msal-browser.min.js",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
