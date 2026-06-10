@@ -418,5 +418,17 @@
   "en": "Please fill in all required fields",
   "pl": "Proszę wypełnić wszystkie wymagane pola",
   "fr": "Veuillez remplir tous les champs obligatoires"
+ },
+ "logout": {
+  "de": "Abmelden",
+  "en": "Log out",
+  "pl": "Wyloguj się",
+  "fr": "Se déconnecter"
+ },
+ "logout_confirm": {
+  "de": "Abmelden?",
+  "en": "Log out?",
+  "pl": "Wylogować się?",
+  "fr": "Se déconnecter ?"
  }
 }

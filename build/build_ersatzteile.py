@@ -297,6 +297,11 @@ body{font-family:var(--sans);background:var(--paper);color:var(--ink);line-heigh
 .langsel{display:inline-flex;gap:2px;background:rgba(255,255,255,.16);border-radius:8px;padding:3px}
 .langsel button{background:none;border:0;color:#fff;font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.04em;padding:5px 7px;border-radius:6px;cursor:pointer;opacity:.72;transition:.12s}
 .langsel button:hover{opacity:1}.langsel button.active{background:#fff;color:var(--red);opacity:1}
+.userchip{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.16);border:0;border-radius:8px;padding:6px 10px;color:#fff;font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.03em;cursor:pointer;transition:.12s}
+.userchip:hover{background:rgba(255,255,255,.3)}
+.userchip svg{width:15px;height:15px;fill:none;stroke:#fff;stroke-width:1.8}
+.userchip .un{max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media(max-width:560px){.userchip .un{display:none}.userchip{padding:6px 8px}}
 .cartbtn{position:relative;background:rgba(255,255,255,.14);border:0;color:#fff;cursor:pointer;border-radius:8px;padding:7px 9px;display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:11px;font-weight:600}
 .cartbtn:hover{background:rgba(255,255,255,.26)}
 .cartbtn svg{width:20px;height:20px;stroke:#fff;fill:none;stroke-width:1.8}
@@ -510,7 +515,7 @@ body{font-family:var(--sans);background:var(--paper);color:var(--ink);line-heigh
  document.getElementById("gateForm").addEventListener("submit",function(ev){ev.preventDefault();
   var u=(document.getElementById("gu").value||"").trim().toLowerCase(),p=(document.getElementById("gp").value||"");
   var h=sha256(u+":"+p);
-  if(authed(h)){try{localStorage.setItem(AKEY,h);}catch(_){}document.getElementById("gerr").textContent="";pass();}
+  if(authed(h)){try{localStorage.setItem(AKEY,h);localStorage.setItem("amb_ersatzteile_user",u);}catch(_){}document.getElementById("gerr").textContent="";pass();if(window.__refreshUser)window.__refreshUser();}
   else{document.getElementById("gerr").textContent=tt.e;var gp=document.getElementById("gp");gp.value="";gp.focus();}
  });
 })();
@@ -519,6 +524,7 @@ body{font-family:var(--sans);background:var(--paper);color:var(--ink);line-heigh
   <div class="topbar-in"><div class="tb-row">
     <div class="tb-logo"><img id="tbLogo" alt="Alzinger"></div>
     <div class="tb-right">
+      <button class="userchip" id="userChip" type="button" style="display:none"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg><span class="un" id="userName"></span></button>
       <div class="langsel" id="langsel">
         <button type="button" data-lang="de">DE</button><button type="button" data-lang="en">EN</button><button type="button" data-lang="pl">PL</button><button type="button" data-lang="fr">FR</button>
       </div>
@@ -1040,14 +1046,21 @@ const ICONS={
   document.querySelectorAll("[data-i18n-ph]").forEach(function(el){el.setAttribute("placeholder",t(el.getAttribute("data-i18n-ph")));});
   document.querySelectorAll("#langsel button").forEach(function(b){b.classList.toggle("active",b.getAttribute("data-lang")===lang);});
   document.title=t("page_title");
+  if(typeof showUser==="function")showUser();
  }
  function setLang(l){if(!I18N[l])return;lang=l;try{localStorage.setItem(LKEY,l);}catch(e){}applyLang();buildChips();renderCatalog();renderCart();}
+ var HASHNAMES={"002bf90b30f4b80b14ce9963042021f39b299dbdca1dfd1944d4874395da72cd":"Montage","6ef3947140f3132550fabaf56d476efb1f53c99048e46f766be08d8583f128f1":"Adam Domaradzki"};
+ function prettyUser(u){return String(u||"").split(/[._\- ]+/).filter(Boolean).map(function(w){return w.charAt(0).toUpperCase()+w.slice(1);}).join(" ");}
+ function currentUserName(){var h=null,u=null;try{h=localStorage.getItem("amb_ersatzteile_auth");u=localStorage.getItem("amb_ersatzteile_user");}catch(e){}if(h&&HASHNAMES[h])return HASHNAMES[h];if(u)return prettyUser(u);return null;}
+ function showUser(){var chip=document.getElementById("userChip");if(!chip)return;var n=currentUserName();if(n){document.getElementById("userName").textContent=n;chip.title=t("logout");chip.style.display="";}else chip.style.display="none";}
+ function logout(){if(!window.confirm(t("logout_confirm")))return;try{localStorage.removeItem("amb_ersatzteile_auth");localStorage.removeItem("amb_ersatzteile_user");}catch(e){}location.reload();}
  function init(){
   document.getElementById("tbLogo").src=LOGO_L;
   applyLang();buildChips();renderCatalog();updateBadge();renderCart();loadFields();syncLiefer();
   document.getElementById("search").addEventListener("input",function(e){query=e.target.value;renderCatalog();});
   document.querySelectorAll("#langsel button").forEach(function(b){b.addEventListener("click",function(){setLang(b.getAttribute("data-lang"));});});
   document.getElementById("cartBtn").addEventListener("click",openCart);
+  document.getElementById("userChip").addEventListener("click",logout);try{window.__refreshUser=showUser;}catch(e){}showUser();
   document.getElementById("cartClose").addEventListener("click",closeCart);
   document.getElementById("backdrop").addEventListener("click",closeCart);
   document.getElementById("mvClose").addEventListener("click",close3D);
