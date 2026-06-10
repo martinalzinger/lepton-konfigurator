@@ -71,6 +71,24 @@
           ],
           "name_pl": "Opcja dopuszczenie drogowe 19t Europa Środkowa",
           "name_fr": "Option homologation routière 19t Europe centrale"
+        },
+        {
+          "id": "FG-STRASSENZULASSUNG-19T-FW",
+          "art": "—",
+          "name": "Option Straßenzulassung 19t Fahrwerk",
+          "name_en": "Road approval 19t running gear option",
+          "desc": "Komplette Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar",
+          "desc_en": "Complete assembly – pick and order all individual parts in 3D",
+          "price": 0,
+          "model": "fahrgestell-strassenzulassung-19t-fahrwerk.glb",
+          "img": "fahrgestell_strassenzulassung_fw",
+          "rot": [
+            -90,
+            0,
+            0
+          ],
+          "name_pl": "Opcja dopuszczenie drogowe 19t podwozie jezdne",
+          "name_fr": "Option homologation routière 19t train roulant"
         }
       ],
       "h_pl": "Podwozie",
