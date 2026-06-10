@@ -794,6 +794,16 @@ var USERS=%%USERS%%;
    document.getElementById("fab").style.display=(view==="detail"||view==="form")?"none":"flex";
  }
  document.getElementById("nav").addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;var v=b.getAttribute("data-view");if(v){if(v==="dashboard")renderDashboard();if(v==="list")renderList();if(v==="leads")renderLeads();show(v);}});
+ // Dashboard-Kacheln klickbar -> direkt in die passende Kontaktliste springen.
+ document.getElementById("stats").addEventListener("click",function(e){
+   var s=e.target.closest("[data-go]");if(!s)return;var go=s.getAttribute("data-go");
+   function set(id,val){var el=document.getElementById(id);if(el)el.value=val;}
+   set("q","");set("fBL","");set("fLand","");set("fOwner","");
+   if(go==="due"){set("fStatus","");set("fSort","due");}
+   else if(go==="all"){set("fStatus","");set("fSort","updated");}
+   else{set("fStatus",go);set("fSort","updated");}
+   renderList();show("list");
+ });
 
  /* ---------- Übersicht ---------- */
  function dueFollowups(){var out=[];DB.contacts.forEach(function(c){if(c.followup&&!c.followup.done&&c.followup.due){out.push(c);}});out.sort(function(a,b){return a.followup.due-b.followup.due;});return out;}
@@ -807,11 +817,11 @@ var USERS=%%USERS%%;
    var fu=dueFollowups(),od=overdueOrToday();
    var stats=document.getElementById("stats");
    stats.innerHTML=
-     '<div class="stat'+(od.length?' accent':'')+'"><div class="n">'+od.length+'</div><div class="l">Rückrufe fällig</div></div>'+
-     '<div class="stat"><div class="n">'+DB.contacts.length+'</div><div class="l">Kontakte</div></div>'+
-     '<div class="stat"><div class="n">'+(st.lead+st.interessent)+'</div><div class="l">Offene Leads</div></div>'+
-     '<div class="stat"><div class="n">'+st.angebot+'</div><div class="l">Angebote offen</div></div>'+
-     '<div class="stat"><div class="n">'+st.kunde+'</div><div class="l">Kunden</div></div>';
+     '<div class="stat'+(od.length?' accent':'')+'" data-go="due" style="cursor:pointer" title="Fällige Rückrufe anzeigen"><div class="n">'+od.length+'</div><div class="l">Rückrufe fällig</div></div>'+
+     '<div class="stat" data-go="all" style="cursor:pointer" title="Alle Kontakte"><div class="n">'+DB.contacts.length+'</div><div class="l">Kontakte</div></div>'+
+     '<div class="stat" data-go="lead" style="cursor:pointer" title="Offene Leads"><div class="n">'+(st.lead+st.interessent)+'</div><div class="l">Offene Leads</div></div>'+
+     '<div class="stat" data-go="angebot" style="cursor:pointer" title="Offene Angebote"><div class="n">'+st.angebot+'</div><div class="l">Angebote offen</div></div>'+
+     '<div class="stat" data-go="kunde" style="cursor:pointer" title="Kunden"><div class="n">'+st.kunde+'</div><div class="l">Kunden</div></div>';
    // Wiedervorlagen
    document.getElementById("fuCnt").textContent=fu.length;
    var fl=document.getElementById("fuList");
@@ -1789,7 +1799,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v34";
+const CACHE="vertrieb-v35";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png",
   "./vendor/leaflet.js","./vendor/leaflet.css",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
