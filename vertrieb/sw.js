@@ -1,6 +1,6 @@
 // Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v58";
+const CACHE="vertrieb-v59";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png",
   "./vendor/leaflet.js","./vendor/leaflet.css","./vendor/msal-browser.min.js",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
@@ -32,8 +32,9 @@ self.addEventListener("fetch",e=>{
   if(req.url.indexOf("login.microsoftonline.com")>=0||req.url.indexOf("graph.microsoft.com")>=0||req.url.indexOf("msauth.net")>=0)return; // Microsoft 365 / OneNote-Import: immer live, nie cachen/abfangen
   const isHTML=req.mode==="navigate"||(req.headers.get("accept")||"").includes("text/html");
   if(isHTML){
+    // cache:"reload" -> HTML IMMER frisch vom Netz holen (umgeht den HTTP-Cache des Browsers, kein "alte Version"-Problem mehr)
     e.respondWith(
-      fetch(req).then(resp=>{
+      fetch(req,{cache:"reload"}).then(resp=>{
         const cp=resp.clone();
         caches.open(CACHE).then(c=>{c.put("./index.html",cp).catch(()=>{});}).catch(()=>{});
         return resp;
