@@ -940,6 +940,17 @@ var USERS=%%USERS%%;
 
  /* --- Op-Warteschlange (für Offline/Server) --- */
  function queueRead(){try{return JSON.parse(localStorage.getItem(QKEY)||"[]");}catch(e){return [];}}
+ // Cloud-Stand mit lokalen Daten zusammenführen: lokale Änderungen, die NEUER oder noch nicht synchronisiert sind,
+ // gewinnen -> kein Zurückspringen von gerade gemachten Änderungen und kein Flackern beim 30s-Sync.
+ function mergeCloud(list){
+   var pending={};queueRead().forEach(function(op){if(!op)return;if(op.op==="upsert"&&op.contact)pending[op.contact.id]=1;if(op.op==="delete"&&op.id)pending[op.id]=2;if(op.op==="bulk")(op.contacts||[]).forEach(function(c){if(c)pending[c.id]=1;});});
+   var local={};(DB.contacts||[]).forEach(function(c){if(c)local[c.id]=c;});
+   var out=[],seen={};
+   (list||[]).forEach(function(cc){if(!cc)return;seen[cc.id]=1;if(pending[cc.id]===2)return; /* lokal geloescht */ var lc=local[cc.id];out.push((lc&&(pending[cc.id]===1||(lc.updated||0)>(cc.updated||0)))?lc:cc);});
+   // lokal angelegte/geänderte Kontakte, die (noch) nicht in der Cloud sind -> nur behalten, wenn synchronisierungs-ausstehend
+   (DB.contacts||[]).forEach(function(c){if(c&&!seen[c.id]&&pending[c.id]===1)out.push(c);});
+   return out;
+ }
  function queueWrite(q){try{localStorage.setItem(QKEY,JSON.stringify(q));}catch(e){}}
  function enqueue(op){var q=queueRead();q.push(op);queueWrite(q);}
  function flush(){
@@ -968,7 +979,7 @@ var USERS=%%USERS%%;
 
  /* --- Online-Sync --- */
  function pull(){
-   if(MODE==="cloud")return sbGet().then(function(list){DB.contacts=list||[];cacheSave();rerenderCurrent();});
+   if(MODE==="cloud")return sbGet().then(function(list){DB.contacts=mergeCloud(list);cacheSave();rerenderCurrent();});
    return apiGet().then(function(d){DB.contacts=d.contacts||[];DB.rev=d.rev||0;cacheSave();rerenderCurrent();});
  }
  function syncFromServer(){if(MODE==="local")return;flush().then(pull).catch(function(){});}
@@ -978,7 +989,7 @@ var USERS=%%USERS%%;
      sbGet().then(function(list){
        MODE="cloud";setConn(true);
        if(!(list&&list.length)&&DB.contacts&&DB.contacts.length){enqueue({op:"bulk",contacts:DB.contacts,replace:false});}
-       flush().then(sbGet).then(function(l){DB.contacts=l||[];cacheSave();rerenderCurrent();}).catch(function(){});
+       flush().then(sbGet).then(function(l){DB.contacts=mergeCloud(l);cacheSave();rerenderCurrent();}).catch(function(){});
      }).catch(function(){initPhp();});
    } else initPhp();
  }
@@ -2498,7 +2509,7 @@ var USERS=%%USERS%%;
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v101";
+ var APP_VER="v102";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
@@ -2543,7 +2554,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v101";
+const CACHE="vertrieb-v102";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png","./icon-32.png","./favicon.ico",
   "./vendor/leaflet.js","./vendor/leaflet.css","./vendor/msal-browser.min.js",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
