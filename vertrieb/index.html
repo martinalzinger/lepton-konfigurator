@@ -667,7 +667,7 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
  var MS_CLIENT_ID="c4cd70b7-2bbe-41ed-ba3e-5621037c49ae";
  var MS_TENANT_ID="f4c543ca-6d4a-4beb-8f4f-90924543f46a";
  var MS_REDIRECT="https://alzingermaschinenbau.github.io/lepton-konfigurator/vertrieb/";
- var MS_SCOPES=["Notes.Read.All","Sites.Read.All","User.Read"]; // .All -> geteilte Notizbuecher; Sites.Read.All -> Bilder aus SharePoint/OneDrive
+ var MS_SCOPES=["Notes.Read.All","User.Read"]; // .All -> auch GETEILTE Notizbuecher; Bilder via preAuthenticated-Links (kein Sites-Scope/Admin noetig)
  var _msal=null,_msStop=false;
  function loadScript(src){return new Promise(function(res,rej){var s=document.createElement("script");s.src=src;s.onload=function(){res();};s.onerror=function(){rej(new Error("scr "+src));};document.head.appendChild(s);});}
  function ensureMsal(){
@@ -744,13 +744,13 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
    var base=(page&&page.contentUrl)||("https://graph.microsoft.com/v1.0/me/onenote/pages/"+((page&&page.id)||page)+"/content");
    var url=base+(base.indexOf("?")<0?"?":"&")+"preAuthenticated=true";
    return fetch(url,{headers:{Authorization:"Bearer "+token}}).then(function(r){if(!r.ok)throw new Error("content "+r.status);return r.text();})
-     .then(function(html){var d=document.createElement("div");d.innerHTML=html;var all=d.querySelectorAll("img"),imgs=[],sample="";all.forEach(function(im){var s=im.getAttribute("data-fullres-src")||im.getAttribute("src")||im.getAttribute("data-render-src")||"";if(!sample&&s)sample=s;if(/^https?:\/\//.test(s))imgs.push(s);});var txt=(d.innerText||d.textContent||"").replace(/\n{3,}/g,"\n\n").trim();return {text:txt,imgs:imgs,raw:all.length,sample:sample};});
+     .then(function(html){var d=document.createElement("div");d.innerHTML=html;var all=d.querySelectorAll("img"),imgs=[],sample="";all.forEach(function(im){var s=im.getAttribute("src")||im.getAttribute("data-fullres-src")||im.getAttribute("data-render-src")||"";if(!sample&&s)sample=s;if(/^https?:\/\//.test(s))imgs.push(s);});var txt=(d.innerText||d.textContent||"").replace(/\n{3,}/g,"\n\n").trim();return {text:txt,imgs:imgs,raw:all.length,sample:sample};});
  }
  // OneNote-Bild laden -> verkleinertes JPEG-DataURI. preAuthenticated-Links: erst OHNE Token, dann mit als Fallback.
  // Kein Typ-Filter: OneNote liefert Bilder oft ohne sauberen Content-Type. Entscheidet das Dekodieren.
  function graphImage(token,url){
    function grab(useAuth){return fetch(url,useAuth?{headers:{Authorization:"Bearer "+token}}:{}).then(function(r){if(!r.ok)throw new Error("img "+r.status);return r.blob();});}
-   return grab(true).catch(function(){return grab(false);}).then(function(b){if(!b||!b.size)throw new Error("leer");return new Promise(function(res,rej){var u=URL.createObjectURL(b);downscaleSrc(u,1600,function(d){URL.revokeObjectURL(u);if(d)res(d);else rej(new Error("decode "+(b.type||"?")+" "+b.size+"B"));});});});
+   return grab(false).catch(function(){return grab(true);}).then(function(b){if(!b||!b.size)throw new Error("leer");return new Promise(function(res,rej){var u=URL.createObjectURL(b);downscaleSrc(u,1600,function(d){URL.revokeObjectURL(u);if(d)res(d);else rej(new Error("decode "+(b.type||"?")+" "+b.size+"B"));});});});
  }
  // Foto verkleinern (Längste Seite maxDim) und als JPEG-Data-URI zurückgeben -> kleine Payload.
  function downscaleImage(file,maxDim,cb){
