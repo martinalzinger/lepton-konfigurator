@@ -1471,6 +1471,8 @@ var USERS=%%USERS%%;
      '<button class="btn sm primary" id="offerBtn"><svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/><path d="M14 3v5h5"/></svg>Angebot erstellen</button>'+
      '<button class="btn sm" id="addActBtn"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Aktivität</button>'+
      '<button class="btn sm" id="editBtn">Bearbeiten</button>'+
+     '<button class="btn sm" id="photoBtn" title="Foto aufnehmen oder aus der Galerie hinzufügen"><svg viewBox="0 0 24 24"><path d="M3 7h4l2-2h6l2 2h4v12H3z"/><circle cx="12" cy="13" r="3.5"/></svg>Foto</button>'+
+     '<input type="file" id="photoIn" accept="image/*" capture="environment" multiple style="display:none">'+
      (aiReady()&&c.firma?'<button class="btn sm" id="enrichBtn" title="Fehlende Daten (Straße, PLZ, Telefon, Ansprechpartner …) per KI nachschlagen"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>Per KI ergänzen</button>':'')+
    '</div>'+
    // Status-Schnellwechsel
@@ -1495,7 +1497,7 @@ var USERS=%%USERS%%;
    '</dl>'+
    (c.news?'<div class="card" style="background:#eef4ff;border-color:#cfe0ff"><div style="font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#1d4ed8;margin-bottom:4px">News</div><div style="white-space:pre-wrap;font-size:14px">'+esc(c.news)+'</div></div>':'')+
    (notizClean?'<div class="card" style="background:var(--field)"><div style="white-space:pre-wrap;font-size:14px">'+esc(notizClean)+'</div></div>':'')+
-   ((c.bilder&&c.bilder.length)?'<div class="card"><div style="font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Bilder ('+c.bilder.length+')</div><div style="display:flex;gap:8px;flex-wrap:wrap">'+c.bilder.map(function(b,i){return '<img src="'+esc(b)+'" data-bild="'+i+'" title="Klick öffnet das Bild groß" style="width:150px;height:104px;object-fit:cover;border-radius:8px;border:1px solid var(--line);cursor:pointer">';}).join("")+'</div></div>':'')+
+   ((c.bilder&&c.bilder.length)?'<div class="card"><div style="font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Bilder ('+c.bilder.length+')</div><div style="display:flex;gap:8px;flex-wrap:wrap">'+c.bilder.map(function(b,i){return '<div style="position:relative"><img src="'+esc(b)+'" data-bild="'+i+'" title="Klick öffnet das Bild groß" style="width:150px;height:104px;object-fit:cover;border-radius:8px;border:1px solid var(--line);cursor:pointer"><button class="btn ghost" data-delbild="'+i+'" title="Dieses Bild entfernen" style="position:absolute;top:4px;right:4px;padding:2px 7px;background:rgba(0,0,0,.6);color:#fff;border:0;border-radius:6px;font-size:14px;line-height:1;cursor:pointer">×</button></div>';}).join("")+'</div></div>':'')+
    // Standort-Karte des Kontakts
    (function(){var mq=ll?(ll.lat+","+ll.lon):(addr||"");if(!mq)return "";var eq=encodeURIComponent(mq);
      return '<div style="margin:8px 0"><iframe id="detMap" title="Standort-Karte (Satellit)" src="https://maps.google.com/maps?q='+eq+'&z=15&t=k&output=embed" style="width:100%;height:220px;border:0;border-radius:12px" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>'+
@@ -1523,6 +1525,12 @@ var USERS=%%USERS%%;
    document.getElementById("backBtn").onclick=function(){renderList();show("list");};
    document.getElementById("editBtn").onclick=function(){openForm(curId);};
    document.getElementById("addActBtn").onclick=function(){openActModal(curId);};
+   var pBtn=document.getElementById("photoBtn"),pIn=document.getElementById("photoIn");
+   if(pBtn&&pIn){pBtn.onclick=function(){pIn.click();};
+     pIn.onchange=function(){var files=Array.prototype.slice.call(pIn.files||[]);if(!files.length)return;pBtn.disabled=true;var old=pBtn.innerHTML;pBtn.textContent="…";
+       var done=0;files.forEach(function(f){downscaleImage(f,1400,function(d){if(d){if(!c.bilder)c.bilder=[];c.bilder.push(d);}if(++done===files.length){c.updated=Date.now();saveContact(c);pBtn.disabled=false;pBtn.innerHTML=old;openDetail(curId);}});});
+     };
+   }
    document.getElementById("offerBtn").onclick=function(){gotoConfigurator(c,false);};
    var enb=document.getElementById("enrichBtn");if(enb)enb.onclick=function(){enrichContactAI(c,this);};
    var eab=document.getElementById("emptyAddAct");if(eab)eab.onclick=function(){openActModal(curId);};
@@ -1628,6 +1636,7 @@ var USERS=%%USERS%%;
  function fmtEur(v){var n=parseFloat(String(v).replace(/[^0-9.,-]/g,"").replace(/\./g,"").replace(",","."));if(isNaN(n))return String(v);return n.toLocaleString("de-DE")+" €";}
  // Aktivität löschen
  document.getElementById("view-detail").addEventListener("click",function(e){
+   var db=e.target.closest("[data-delbild]");if(db){e.preventDefault();var dc=byId(curId);var di=parseInt(db.getAttribute("data-delbild"),10);if(dc&&dc.bilder&&dc.bilder[di]!=null&&confirm("Dieses Bild entfernen?")){dc.bilder.splice(di,1);if(!dc.bilder.length)delete dc.bilder;dc.updated=Date.now();saveContact(dc);openDetail(curId);}return;}
    var ib=e.target.closest("[data-bild]");if(ib){e.preventDefault();var bc=byId(curId);var bi=parseInt(ib.getAttribute("data-bild"),10);if(bc&&bc.bilder&&bc.bilder[bi])openPdfUri(bc.bilder[bi]);return;}
    var pb=e.target.closest("[data-pdfact]");if(pb){e.preventDefault();var pid=pb.getAttribute("data-pdfact");var pc=byId(curId);var pa=pc&&(pc.activities||[]).filter(function(x){return x.id===pid;})[0];if(pa&&pa.pdf)openPdfUri(pa.pdf);return;}
    var mb=e.target.closest("[data-makepdf]");if(mb){e.preventDefault();var mid=mb.getAttribute("data-makepdf");if(navigator.onLine===false){alert("Zum Erstellen des PDFs bitte einmal online gehen.");return;}queuePdfGen(curId,mid,true);return;}
@@ -2094,7 +2103,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v50";
+const CACHE="vertrieb-v51";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png",
   "./vendor/leaflet.js","./vendor/leaflet.css","./vendor/msal-browser.min.js",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
