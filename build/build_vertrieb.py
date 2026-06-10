@@ -718,7 +718,7 @@ var USERS=%%USERS%%;
  function graphPaged(token,url,map,acc){acc=acc||[];return graphGet(token,url).then(function(j){(j.value||[]).forEach(function(v){acc.push(map(v));});var nx=j["@odata.nextLink"];if(nx&&!_msStop)return graphPaged(token,nx,map,acc);return acc;});}
  // Alle Notizbücher (eigene + geteilte) -> [{id,name,owner}].
  function graphNotebooks(token){
-   return graphPaged(token,"https://graph.microsoft.com/v1.0/me/onenote/notebooks?$top=100&$select=id,displayName&$expand=parentNotebook",function(n){return {id:n.id,name:n.displayName||"(ohne Namen)"};});
+   return graphPaged(token,"https://graph.microsoft.com/v1.0/me/onenote/notebooks?$select=id,displayName&$orderby=displayName",function(n){return {id:n.id,name:n.displayName||"(ohne Namen)"};});
  }
  // Alle Abschnitte (flach, inkl. Abschnittsgruppen) mit Notizbuch-Zuordnung -> [{id,name,bookId,book}].
  function graphAllSections(token){
@@ -2058,7 +2058,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v41";
+const CACHE="vertrieb-v42";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png",
   "./vendor/leaflet.js","./vendor/leaflet.css","./vendor/msal-browser.min.js",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
