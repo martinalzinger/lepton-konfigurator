@@ -808,14 +808,17 @@ var USERS=%%USERS%%;
  function graphImage(token,sitesToken,im){
    var pre=(im&&im.pre)||im,full=(im&&im.full)||im;
    var raw=String(full||pre||"").split("?")[0]; // .../onenote/resources/{id}/content bzw. /$value
+   // "siteCollections/..." ist keine gueltige Graph-Route fuer normale GETs -> auf "sites/..." umschreiben.
+   var fixed=raw.replace("/v1.0/siteCollections/","/v1.0/sites/");
    function viaFetch(url,authTok){return fetch(url,authTok?{headers:{Authorization:"Bearer "+authTok}}:{}).then(function(r){if(!r.ok)throw new Error("img "+r.status);return r.blob();}).then(function(b){if(!b||!b.size)throw new Error("leer");return new Promise(function(res,rej){var u=URL.createObjectURL(b);downscaleSrc(u,1600,function(d){URL.revokeObjectURL(u);if(d)res(d);else rej(new Error("decode"));});});});}
    function viaImg(url){return new Promise(function(res,rej){downscaleSrc(url,1600,function(d){d?res(d):rej(new Error("imgEl"));},true);});}
    // Jeden Schritt protokollieren -> Diagnose zeigt genau, welcher Weg woran scheitert.
    var steps=[];
    function tryStep(name,fn){return function(){return fn().catch(function(e){steps.push(name+":"+String((e&&e.message)||e).replace(/^img /,""));throw e;});};}
    var p=Promise.reject(new Error("start"));
-   if(sitesToken&&raw)p=p.catch(tryStep("rawSites",function(){return viaFetch(raw,sitesToken);}));
-   if(raw)p=p.catch(tryStep("rawNotes",function(){return viaFetch(raw,token);}));
+   if(sitesToken&&fixed)p=p.catch(tryStep("fixSites",function(){return viaFetch(fixed,sitesToken);}));
+   if(fixed)p=p.catch(tryStep("fixNotes",function(){return viaFetch(fixed,token);}));
+   if(sitesToken&&raw&&raw!==fixed)p=p.catch(tryStep("rawSites",function(){return viaFetch(raw,sitesToken);}));
    p=p.catch(tryStep("imgEl",function(){return viaImg(pre);}));
    p=p.catch(tryStep("preOhne",function(){return viaFetch(pre,null);}));
    return p.catch(function(){throw new Error(steps.join(" / "));});
@@ -2178,7 +2181,7 @@ var USERS=%%USERS%%;
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v68";
+ var APP_VER="v69";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
@@ -2223,7 +2226,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v68";
+const CACHE="vertrieb-v69";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png",
   "./vendor/leaflet.js","./vendor/leaflet.css","./vendor/msal-browser.min.js",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
