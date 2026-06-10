@@ -656,6 +656,26 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
    var a=document.createElement("a");a.href=url;a.download=(who.replace(/[^0-9A-Za-zÄÖÜäöüß]+/g,"_")||"Termin")+".ics";document.body.appendChild(a);a.click();a.remove();
    setTimeout(function(){URL.revokeObjectURL(url);},15000);
  }
+ // Einzelne Firma per KI nachschlagen und fehlende Felder ergänzen (Straße, PLZ, Tel, GF …).
+ // Überschreibt NICHTS – füllt nur leere Felder. Nutzt dieselbe KI-Suche wie die Lead-Suche.
+ function enrichContactAI(c,btn){
+   if(!aiReady()||!c||!c.firma)return;
+   var old=btn?btn.innerHTML:"";if(btn){btn.disabled=true;btn.textContent="KI sucht Details … (~1–2 Min)";}
+   function restore(){if(btn){btn.disabled=false;btn.innerHTML=old;}}
+   var wo=[c.ort,landLabel(c.land)].filter(Boolean).join(", ")||c.land||"";
+   apiAi(c.firma,wo||c.firma).then(function(leads){
+     var nrm=function(s){return String(s||"").toLowerCase().replace(/[^a-z0-9]/g,"");};
+     var target=nrm(c.firma),best=null;
+     (leads||[]).forEach(function(l){if(best)return;var n=nrm(l.firma||l.name);if(n&&(n.indexOf(target)>=0||target.indexOf(n)>=0))best=l;});
+     if(!best&&leads&&leads.length)best=leads[0];
+     if(!best){restore();alert("Die KI hat zu „"+c.firma+"“ keine zusätzlichen Daten gefunden.");return;}
+     var map={strasse:best.strasse,plz:best.plz,ort:best.ort,tel:best.tel,mail:best.email,web:best.web,gf:best.geschaeftsfuehrer,bl:best.betriebsleiter,menge:best.jahresmenge,sieb:best.siebtechnik,news:best.news};
+     var changed=[];Object.keys(map).forEach(function(k){var v=map[k]&&String(map[k]).trim();if(v&&!String(c[k]||"").trim()){c[k]=v;changed.push(k);}});
+     if(!changed.length){restore();alert("Keine neuen Angaben gefunden – die vorhandenen Felder bleiben unverändert.");return;}
+     c.lat=null;c.lon=null; // Adresse geändert -> Standort beim nächsten Kartenaufruf neu bestimmen
+     c.updated=Date.now();saveContact(c);openDetail(c.id);
+   }).catch(function(e){restore();alert("KI-Abfrage fehlgeschlagen: "+String((e&&e.message)||e));});
+ }
  function pad(n){return n<10?"0"+n:""+n;}
  function todayStr(){var d=new Date();return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());}
  function nowLocalInput(){var d=new Date();return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())+"T"+pad(d.getHours())+":"+pad(d.getMinutes());}
@@ -1085,6 +1105,7 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
      '<button class="btn sm primary" id="offerBtn"><svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/><path d="M14 3v5h5"/></svg>Angebot erstellen</button>'+
      '<button class="btn sm" id="addActBtn"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Aktivität</button>'+
      '<button class="btn sm" id="editBtn">Bearbeiten</button>'+
+     (aiReady()&&c.firma?'<button class="btn sm" id="enrichBtn" title="Fehlende Daten (Straße, PLZ, Telefon, Ansprechpartner …) per KI nachschlagen"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>Per KI ergänzen</button>':'')+
    '</div>'+
    // Status-Schnellwechsel
    '<div class="fg" style="max-width:240px;margin:8px 0"><label>Status ändern</label><select class="field" id="dStatus">'+
@@ -1135,6 +1156,7 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
    document.getElementById("editBtn").onclick=function(){openForm(curId);};
    document.getElementById("addActBtn").onclick=function(){openActModal(curId);};
    document.getElementById("offerBtn").onclick=function(){gotoConfigurator(c,false);};
+   var enb=document.getElementById("enrichBtn");if(enb)enb.onclick=function(){enrichContactAI(c,this);};
    var eab=document.getElementById("emptyAddAct");if(eab)eab.onclick=function(){openActModal(curId);};
    document.getElementById("dStatus").onchange=function(){c.status=this.value;c.updated=Date.now();saveContact(c);openDetail(curId);};
    document.getElementById("fuSet").onclick=function(){var d=document.getElementById("fuDate").value;if(!d){alert("Bitte ein Datum wählen.");return;}c.followup={due:new Date(d+"T09:00").getTime(),note:document.getElementById("fuNote").value.trim(),done:false};c.updated=Date.now();saveContact(c);openDetail(curId);};
