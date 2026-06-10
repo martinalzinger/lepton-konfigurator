@@ -943,12 +943,14 @@ var USERS=%%USERS%%;
  // Cloud-Stand mit lokalen Daten zusammenführen: lokale Änderungen, die NEUER oder noch nicht synchronisiert sind,
  // gewinnen -> kein Zurückspringen von gerade gemachten Änderungen und kein Flackern beim 30s-Sync.
  function mergeCloud(list){
+   var GRACE=15000,now=Date.now();
+   function fresh(id){return (now-(_recentEdits[id]||0))<GRACE;} // gerade lokal bearbeitet?
    var pending={};queueRead().forEach(function(op){if(!op)return;if(op.op==="upsert"&&op.contact)pending[op.contact.id]=1;if(op.op==="delete"&&op.id)pending[op.id]=2;if(op.op==="bulk")(op.contacts||[]).forEach(function(c){if(c)pending[c.id]=1;});});
    var local={};(DB.contacts||[]).forEach(function(c){if(c)local[c.id]=c;});
    var out=[],seen={};
-   (list||[]).forEach(function(cc){if(!cc)return;seen[cc.id]=1;if(pending[cc.id]===2)return; /* lokal geloescht */ var lc=local[cc.id];out.push((lc&&(pending[cc.id]===1||(lc.updated||0)>(cc.updated||0)))?lc:cc);});
-   // lokal angelegte/geänderte Kontakte, die (noch) nicht in der Cloud sind -> nur behalten, wenn synchronisierungs-ausstehend
-   (DB.contacts||[]).forEach(function(c){if(c&&!seen[c.id]&&pending[c.id]===1)out.push(c);});
+   (list||[]).forEach(function(cc){if(!cc)return;seen[cc.id]=1;if(pending[cc.id]===2)return; /* lokal geloescht -> nicht zurueckholen */ var lc=local[cc.id];out.push((lc&&(pending[cc.id]===1||fresh(cc.id)||(lc.updated||0)>(cc.updated||0)))?lc:cc);});
+   // lokal angelegte/geänderte Kontakte, die (noch) nicht in der Cloud sind -> behalten, wenn ausstehend oder gerade bearbeitet
+   (DB.contacts||[]).forEach(function(c){if(c&&!seen[c.id]&&(pending[c.id]===1||fresh(c.id)))out.push(c);});
    return out;
  }
  function queueWrite(q){try{localStorage.setItem(QKEY,JSON.stringify(q));}catch(e){}}
@@ -973,7 +975,8 @@ var USERS=%%USERS%%;
 
  /* --- Mutationen: lokal optimistisch + (online) in die geteilte Quelle --- */
  function persist(){cacheSave();} /* nur lokaler Spiegel */
- function saveContact(c){cacheSave();if(MODE!=="local"){enqueue({op:"upsert",contact:c});flush();}}
+ var _recentEdits={}; // id -> Zeitpunkt der letzten lokalen Aenderung (Schutzfenster gegen Sync-Ruecksprung)
+ function saveContact(c){if(c)_recentEdits[c.id]=Date.now();cacheSave();if(MODE!=="local"){enqueue({op:"upsert",contact:c});flush();}}
  function removeContact(id){DB.contacts=DB.contacts.filter(function(x){return x.id!==id;});cacheSave();if(MODE!=="local"){enqueue({op:"delete",id:id});flush();}}
  function bulkSave(list,replace){cacheSave();if(MODE!=="local"){enqueue({op:"bulk",contacts:list,replace:!!replace});flush();}}
 
@@ -2509,7 +2512,7 @@ var USERS=%%USERS%%;
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v102";
+ var APP_VER="v103";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
@@ -2554,7 +2557,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v102";
+const CACHE="vertrieb-v103";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png","./icon-32.png","./favicon.ico",
   "./vendor/leaflet.js","./vendor/leaflet.css","./vendor/msal-browser.min.js",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
