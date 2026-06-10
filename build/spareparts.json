@@ -35,6 +35,24 @@
           ],
           "name_pl": "Opcja podwozie gąsienicowe",
           "name_fr": "Option train de chenilles"
+        },
+        {
+          "id": "FG-GENSET",
+          "art": "—",
+          "name": "Option Genset",
+          "name_en": "Genset option",
+          "desc": "Komplette Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar",
+          "desc_en": "Complete assembly – pick and order all individual parts in 3D",
+          "price": 0,
+          "model": "fahrgestell-genset.glb",
+          "img": "fahrgestell_genset",
+          "rot": [
+            -90,
+            0,
+            0
+          ],
+          "name_pl": "Opcja agregat prądotwórczy",
+          "name_fr": "Option groupe électrogène"
         }
       ],
       "h_pl": "Podwozie",
