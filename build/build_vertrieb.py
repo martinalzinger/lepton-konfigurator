@@ -442,7 +442,7 @@ create policy "crm all" on contacts
     </div>
     <div class="card">
       <h3>OneNote automatisch importieren (Microsoft 365)</h3>
-      <p style="font-size:13px;color:var(--muted);margin-bottom:10px">Meldet dich bei Microsoft an und zeigt <b>alle deine Notizbücher</b> (auch geteilte). Du wählst, welche importiert werden. Pro Seite legt die KI einen Kontakt <b>mit Verlauf und Bildern</b> an (Notizbuch = Land, Abschnitt = Region/Bundesland). Bereits vorhandene werden übersprungen. Läuft nur online – das Fenster offen lassen, bis es fertig ist.</p>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:10px">Meldet dich bei Microsoft an und zeigt <b>alle deine Notizbücher</b> (auch geteilte). Du wählst, welche importiert werden und <b>welcher Vertriebler welches Land betreut</b>. Pro Seite legt die KI einen Kontakt <b>mit Verlauf und Bildern</b> an (Notizbuch = Land, Abschnitt = Region/Bundesland). Bereits vorhandene werden übersprungen. Läuft nur online – das Fenster offen lassen, bis es fertig ist.</p>
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
         <button class="btn primary" id="msBtn" type="button"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8"/><rect x="13" y="3" width="8" height="8"/><rect x="3" y="13" width="8" height="8"/><rect x="13" y="13" width="8" height="8"/></svg>Mit Microsoft anmelden</button>
         <button class="btn danger sm hidden" id="msStop" type="button">Stopp</button>
@@ -1972,7 +1972,15 @@ var USERS=%%USERS%%;
    function say(t,col){prog.style.display="block";msg.style.color=col||"var(--muted)";msg.innerHTML=t;}
    stopBtn.onclick=function(){_msStop=true;say("Wird gestoppt …");};
    function renderBooks(){
-     bookList.innerHTML=_books.map(function(n,i){var cnt=(n.count!=null)?(' <span style="color:var(--muted)">('+n.count+' Abschnitte)</span>'):"";return '<label style="display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer"><input type="checkbox" class="msBk" data-i="'+i+'" checked> '+esc(n.name)+cnt+'</label>';}).join("");
+     // Pro Notizbuch (= Land): Haken + Dropdown, welcher Vertriebler die Kontakte betreut (Standard: eingeloggter Nutzer).
+     var team=USERS.filter(function(u){return u.n&&!u.hd;});
+     bookList.innerHTML=_books.map(function(n,i){
+       var cnt=(n.count!=null)?(' <span style="color:var(--muted)">('+n.count+' Abschnitte)</span>'):"";
+       var opts=team.map(function(u){var sel=((CUR&&CUR.n)===u.n)?' selected':'';return '<option'+sel+'>'+esc(u.n)+'</option>';}).join("");
+       return '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'+
+         '<label style="flex:1;min-width:160px;display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer"><input type="checkbox" class="msBk" data-i="'+i+'" checked> '+esc(n.name)+cnt+'</label>'+
+         '<select class="field msOwn" data-i="'+i+'" title="Welcher Vertriebler betreut dieses Land?" style="width:auto;padding:4px 8px;font-size:13px">'+opts+'</select></div>';
+     }).join("");
      booksBox.style.display="block";prog.style.display="none";btn.textContent="Erneut anmelden";
    }
    // 1) Login -> kuerzlich geoeffnete Notizbuecher (auch geteilte); Fallback: eigene Abschnitte
@@ -1993,7 +2001,8 @@ var USERS=%%USERS%%;
    document.getElementById("msNone").onclick=function(){bookList.querySelectorAll(".msBk").forEach(function(c){c.checked=false;});};
    // 2) Import der gewaehlten Notizbuecher
    goBtn.onclick=function(){
-     var chosen=[],names=[];bookList.querySelectorAll(".msBk").forEach(function(c){if(c.checked){var b=_books[+c.getAttribute("data-i")];chosen.push(b);names.push(b.name);}});
+     var chosen=[],names=[],ownerByBook={};
+     bookList.querySelectorAll(".msBk").forEach(function(c){if(c.checked){var i=+c.getAttribute("data-i"),b=_books[i];chosen.push(b);names.push(b.name);var os=bookList.querySelector('.msOwn[data-i="'+i+'"]');ownerByBook[b.name]=(os&&os.value)||((CUR&&CUR.n)||"");}});
      if(!names.length){say("Bitte mindestens ein Notizbuch auswählen.","#b91c1c");return;}
      _msStop=false;goBtn.disabled=true;btn.disabled=true;stopBtn.classList.remove("hidden");setBar(0,1);
      say("Öffne "+names.length+" Notizbuch(ern) … ("+esc(names.join(", "))+")");
@@ -2024,16 +2033,18 @@ var USERS=%%USERS%%;
              return apiNoteScan(text).then(function(res){
                var c=res.contact||{};var fa=String(c.firma||"").trim()||String(p.title||"").trim();
                var dk="dk:"+dedupKey(fa,c.ort);
-               if(ex[dk]){ // schon vorhanden -> NUR fehlende Bilder nachtragen (kein Duplikat anlegen)
-                 var exC=byId(ex[dk]);
+               if(ex[dk]){ // schon vorhanden -> kein Duplikat; fehlende Bilder/Betreuer nachtragen
+                 var exC=byId(ex[dk]),chg=false;
+                 if(exC&&!exC.owner&&ownerByBook[p.book]){exC.owner=ownerByBook[p.book];chg=true;}
                  if(exC&&!(exC.bilder&&exC.bilder.length)&&pc.imgs&&pc.imgs.length){
-                   return loadImgs(pc).then(function(bl){if(bl.length){exC.bilder=bl;exC.updated=Date.now();saveContact(exC);imgAdded++;}skip++;});
+                   return loadImgs(pc).then(function(bl){if(bl.length){exC.bilder=bl;imgAdded++;chg=true;}if(chg){exC.updated=Date.now();saveContact(exC);}skip++;});
                  }
+                 if(chg){exC.updated=Date.now();saveContact(exC);}
                  skip++;return null;
                }
                return loadImgs(pc).then(function(bilder){
                  var lf=landFromBook(p.book),ki=String(c.land||"").toUpperCase().slice(0,2);
-                 var rec={id:uid(),created:Date.now(),updated:Date.now(),status:"lead",land:(lf||ki||"DE"),activities:[],owner:(CUR&&CUR.n)||""};
+                 var rec={id:uid(),created:Date.now(),updated:Date.now(),status:"lead",land:(lf||ki||"DE"),activities:[],owner:ownerByBook[p.book]||((CUR&&CUR.n)||"")};
                  rec.firma=fa;["anrede","vorname","nachname","strasse","plz","ort","bundesland","tel","mobil","mail","web","ustid"].forEach(function(k){var v=c[k]&&String(c[k]).trim();if(v)rec[k]=v;});
                  if(!rec.bundesland&&p.section)rec.bundesland=p.section;
                  if(c.position)rec.firma2=c.position;
@@ -2161,7 +2172,7 @@ var USERS=%%USERS%%;
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v65";
+ var APP_VER="v66";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
@@ -2206,7 +2217,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v65";
+const CACHE="vertrieb-v66";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png",
   "./vendor/leaflet.js","./vendor/leaflet.css","./vendor/msal-browser.min.js",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
