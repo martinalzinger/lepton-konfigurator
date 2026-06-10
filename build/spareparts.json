@@ -69,6 +69,24 @@
           ],
           "name_pl": "Zasobnik z walcem dozującym i płytą poprzeczną",
           "name_fr": "Trémie avec rouleau doseur et plaque transversale"
+        },
+        {
+          "id": "BUNKER-DOSIERWALZE-125-VERL",
+          "art": "—",
+          "name": "Bunker mit Dosierwalze und 125 mm Verlängerungen",
+          "name_en": "Hopper with metering roller and 125 mm extensions",
+          "desc": "Komplette Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar",
+          "desc_en": "Complete assembly – pick and order all individual parts in 3D",
+          "price": 0,
+          "model": "bunker-dosierwalze-125-verl.glb",
+          "img": "bunker_dosierwalze_125",
+          "rot": [
+            -90,
+            0,
+            0
+          ],
+          "name_pl": "Zasobnik z walcem dozującym i przedłużeniami 125 mm",
+          "name_fr": "Trémie avec rouleau doseur et rallonges 125 mm"
         }
       ],
       "h_pl": "Zasobnik",
