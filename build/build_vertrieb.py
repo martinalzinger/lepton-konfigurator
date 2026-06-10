@@ -1187,10 +1187,19 @@ var USERS=%%USERS%%;
    L.marker([c.lat,c.lon],{icon:flagIcon(L)}).addTo(_cmarkers).bindPopup(pop);
  }
  function geocodeContact(c){
-   var parts=[c.strasse,[c.plz,c.ort].filter(Boolean).join(" "),landLabel(c.land)].filter(Boolean);
-   if(!parts.length)return Promise.reject();
-   return fetch("https://nominatim.openstreetmap.org/search?format=json&limit=1&accept-language=de&q="+encodeURIComponent(parts.join(", ")))
-     .then(function(r){if(!r.ok)throw 0;return r.json();}).then(function(a){if(!a||!a.length)throw 0;return {lat:parseFloat(a[0].lat),lon:parseFloat(a[0].lon)};});
+   var land=landLabel(c.land);
+   // Stufenweise: genaue Adresse -> PLZ+Ort+Land -> Ort+Land. Erhoeht die Trefferquote deutlich.
+   var qs=[];
+   [[c.strasse,[c.plz,c.ort].filter(Boolean).join(" "),land],[[c.plz,c.ort].filter(Boolean).join(" "),land],[c.ort,land]].forEach(function(p){var q=p.filter(Boolean).join(", ").trim();if(q&&qs.indexOf(q)<0)qs.push(q);});
+   if(!qs.length)return Promise.reject();
+   function tryQ(i){
+     if(i>=qs.length)return Promise.reject();
+     return fetch("https://nominatim.openstreetmap.org/search?format=json&limit=1&accept-language=de&q="+encodeURIComponent(qs[i]))
+       .then(function(r){if(!r.ok)throw 0;return r.json();})
+       .then(function(a){if(a&&a.length)return {lat:parseFloat(a[0].lat),lon:parseFloat(a[0].lon)};return tryQ(i+1);})
+       .catch(function(){return tryQ(i+1);});
+   }
+   return tryQ(0);
  }
  function geocodePending(L,list,i){
    if(i>=list.length||!cMapOpen){_geoBusy=false;return;}
@@ -1410,7 +1419,7 @@ var USERS=%%USERS%%;
    var ll=contactLatLon(c);
    ensureLeaflet().then(function(L){
      if(ll){draw(L,ll.lat,ll.lon);return;}
-     geocodeContact(c).then(function(p){c.lat=p.lat;c.lon=p.lon;draw(L,p.lat,p.lon);}).catch(function(){el.style.display="none";});
+     geocodeContact(c).then(function(p){c.lat=p.lat;c.lon=p.lon;c.updated=Date.now();saveContact(c);draw(L,p.lat,p.lon);}).catch(function(){el.style.display="none";});
    }).catch(function(){el.style.display="none";});
  }
  function osmShowMap(els){
@@ -2374,7 +2383,7 @@ var USERS=%%USERS%%;
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v88";
+ var APP_VER="v89";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
@@ -2419,7 +2428,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v88";
+const CACHE="vertrieb-v89";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png","./icon-32.png","./favicon.ico",
   "./vendor/leaflet.js","./vendor/leaflet.css","./vendor/msal-browser.min.js",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
