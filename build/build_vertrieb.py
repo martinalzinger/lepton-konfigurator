@@ -950,7 +950,7 @@ var USERS=%%USERS%%;
  function setConn(ok){
    var el=document.getElementById("connState");
    var k=MODE==="cloud"?"cloud":(MODE==="server"?"server":"local");
-   var lab=MODE==="cloud"?"Cloud – geteilt":(MODE==="server"?"Server – geteilt":"Lokal – dieses Gerät");
+   var lab=MODE==="cloud"?"Cloud":(MODE==="server"?"Server – geteilt":"Lokal – dieses Gerät");
    if(el){el.className="conn "+(ok?"on":"off");el.innerHTML=CONN_ICON[k]+"<span>"+lab+"</span>";el.title=ok?"Online verbunden – Daten werden für alle geteilt.":"Kein Online-Speicher verbunden. Daten nur auf diesem Gerät (Reiter „Daten“).";}
    var d=document.getElementById("connData");if(d)renderDataConn();
  }
@@ -2315,7 +2315,7 @@ var USERS=%%USERS%%;
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v83";
+ var APP_VER="v84";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
@@ -2360,7 +2360,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v83";
+const CACHE="vertrieb-v84";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png","./icon-32.png","./favicon.ico",
   "./vendor/leaflet.js","./vendor/leaflet.css","./vendor/msal-browser.min.js",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];

@@ -922,7 +922,7 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
  function setConn(ok){
    var el=document.getElementById("connState");
    var k=MODE==="cloud"?"cloud":(MODE==="server"?"server":"local");
-   var lab=MODE==="cloud"?"Cloud – geteilt":(MODE==="server"?"Server – geteilt":"Lokal – dieses Gerät");
+   var lab=MODE==="cloud"?"Cloud":(MODE==="server"?"Server – geteilt":"Lokal – dieses Gerät");
    if(el){el.className="conn "+(ok?"on":"off");el.innerHTML=CONN_ICON[k]+"<span>"+lab+"</span>";el.title=ok?"Online verbunden – Daten werden für alle geteilt.":"Kein Online-Speicher verbunden. Daten nur auf diesem Gerät (Reiter „Daten“).";}
    var d=document.getElementById("connData");if(d)renderDataConn();
  }
@@ -2287,7 +2287,7 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v83";
+ var APP_VER="v84";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
