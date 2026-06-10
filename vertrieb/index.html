@@ -413,10 +413,18 @@ create policy "crm all" on contacts
     </div>
     <div class="card">
       <h3>OneNote automatisch importieren (Microsoft 365)</h3>
-      <p style="font-size:13px;color:var(--muted);margin-bottom:10px">Meldet dich bei Microsoft an und liest <b>alle Seiten aus allen Abschnitten</b> deiner OneNote-Notizbücher. Pro Seite legt die KI einen Kontakt <b>mit Verlauf und Bildern</b> an (Abschnittsname = Bundesland). Bereits vorhandene werden übersprungen. Läuft nur online – das Fenster offen lassen, bis es fertig ist.</p>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:10px">Meldet dich bei Microsoft an und zeigt <b>alle deine Notizbücher</b> (auch geteilte). Du wählst, welche importiert werden. Pro Seite legt die KI einen Kontakt <b>mit Verlauf und Bildern</b> an (Notizbuch = Land, Abschnitt = Region/Bundesland). Bereits vorhandene werden übersprungen. Läuft nur online – das Fenster offen lassen, bis es fertig ist.</p>
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-        <button class="btn primary" id="msBtn" type="button"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8"/><rect x="13" y="3" width="8" height="8"/><rect x="3" y="13" width="8" height="8"/><rect x="13" y="13" width="8" height="8"/></svg>Mit Microsoft anmelden &amp; importieren</button>
+        <button class="btn primary" id="msBtn" type="button"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8"/><rect x="13" y="3" width="8" height="8"/><rect x="3" y="13" width="8" height="8"/><rect x="13" y="13" width="8" height="8"/></svg>Mit Microsoft anmelden</button>
         <button class="btn danger sm hidden" id="msStop" type="button">Stopp</button>
+      </div>
+      <div id="msBooks" style="display:none;margin-top:12px">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:6px">
+          <b style="font-size:13px">Welche Notizbücher importieren?</b>
+          <span><button class="btn ghost sm" id="msAll" type="button">Alle</button> <button class="btn ghost sm" id="msNone" type="button">Keine</button></span>
+        </div>
+        <div id="msBookList" style="max-height:240px;overflow:auto;border:1px solid var(--line);border-radius:8px;padding:8px;display:flex;flex-direction:column;gap:4px"></div>
+        <button class="btn primary" id="msGo" type="button" style="margin-top:10px">Import starten</button>
       </div>
       <div id="msProg" style="display:none;margin-top:10px">
         <div style="height:10px;background:var(--field);border-radius:6px;overflow:hidden;border:1px solid var(--line)"><div id="msBar" style="height:100%;width:0;background:#c00000;transition:width .3s"></div></div>
@@ -678,12 +686,37 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
    });
  }
  function graphGet(token,url){return fetch(url,{headers:{Authorization:"Bearer "+token}}).then(function(r){if(!r.ok)throw new Error("Graph "+r.status);return r.json();});}
- // Alle OneNote-Seiten (mit Abschnitts-/Notizbuchname) holen, durch alle Seiten blaettern.
- function graphAllPages(token){
-   var out=[];
-   function page(url){return graphGet(token,url).then(function(j){(j.value||[]).forEach(function(p){out.push({id:p.id,title:p.title||"",section:(p.parentSection&&p.parentSection.displayName)||"",book:(p.parentNotebook&&p.parentNotebook.displayName)||""});});var nx=j["@odata.nextLink"];if(nx&&!_msStop)return page(nx);return out;});}
-   return page("https://graph.microsoft.com/v1.0/me/onenote/pages?$top=100&$select=id,title&$expand=parentSection($select=displayName),parentNotebook($select=displayName)&$orderby=createdDateTime%20desc");
+ // Generischer Paginierer: alle Seiten einer Liste (@odata.nextLink) einsammeln und je Eintrag mappen.
+ function graphPaged(token,url,map,acc){acc=acc||[];return graphGet(token,url).then(function(j){(j.value||[]).forEach(function(v){acc.push(map(v));});var nx=j["@odata.nextLink"];if(nx&&!_msStop)return graphPaged(token,nx,map,acc);return acc;});}
+ // Alle Notizbücher (eigene + geteilte) -> [{id,name,owner}].
+ function graphNotebooks(token){
+   return graphPaged(token,"https://graph.microsoft.com/v1.0/me/onenote/notebooks?$top=100&$select=id,displayName&$expand=parentNotebook",function(n){return {id:n.id,name:n.displayName||"(ohne Namen)"};});
  }
+ // Alle Abschnitte (flach, inkl. Abschnittsgruppen) mit Notizbuch-Zuordnung -> [{id,name,bookId,book}].
+ function graphAllSections(token){
+   return graphPaged(token,"https://graph.microsoft.com/v1.0/me/onenote/sections?$top=100&$select=id,displayName&$expand=parentNotebook($select=id,displayName)",function(s){return {id:s.id,name:s.displayName||"",bookId:(s.parentNotebook&&s.parentNotebook.id)||"",book:(s.parentNotebook&&s.parentNotebook.displayName)||""};});
+ }
+ // Seiten eines Abschnitts -> [{id,title,section,book}].
+ function graphPagesOf(token,sec){
+   return graphPaged(token,"https://graph.microsoft.com/v1.0/me/onenote/sections/"+sec.id+"/pages?$top=100&$select=id,title",function(p){return {id:p.id,title:p.title||"",section:sec.name,book:sec.book};});
+ }
+ // Alle Seiten der gewaehlten Notizbuecher (bookIds=null -> alle). Abschnitt fuer Abschnitt -> zuverlaessig.
+ function graphAllPages(token,bookIds,onSec){
+   var want=(bookIds&&bookIds.length)?{}:null;if(want)bookIds.forEach(function(id){want[id]=1;});
+   return graphAllSections(token).then(function(secs){
+     if(want)secs=secs.filter(function(s){return want[s.bookId];});
+     var out=[];
+     function nextSec(i){
+       if(_msStop||i>=secs.length)return out;
+       if(onSec)onSec(i,secs.length,secs[i]);
+       return graphPagesOf(token,secs[i]).then(function(ps){ps.forEach(function(p){out.push(p);});return nextSec(i+1);}).catch(function(){return nextSec(i+1);});
+     }
+     return nextSec(0);
+   });
+ }
+ // Notizbuchname -> ISO-Land (Fallback, wenn die KI kein Land erkennt).
+ var NB_LAND={deutschland:"DE",polen:"PL","österreich":"AT",osterreich:"AT",schweiz:"CH",holland:"NL",niederlande:"NL",belgien:"BE",frankreich:"FR",italien:"IT",ungarn:"HU",griechenland:"GR",tschechien:"CZ",kroatien:"HR","rumänien":"RO",rumaenien:"RO",norwegen:"NO",finland:"FI",finnland:"FI",schweden:"SE",dänemark:"DK",daenemark:"DK",usa:"US",england:"GB",grossbritannien:"GB","großbritannien":"GB",spanien:"ES",portugal:"PT",slowenien:"SI",slowakei:"SK",bulgarien:"BG",serbien:"RS",türkei:"TR",tuerkei:"TR",afrika:"ZA",irland:"IE",litauen:"LT",lettland:"LV",estland:"EE"};
+ function landFromBook(book){var k=String(book||"").toLowerCase();for(var key in NB_LAND){if(k.indexOf(key)>=0)return NB_LAND[key];}return "";}
  // Seiteninhalt (HTML) -> reiner Text + Bild-URLs (Graph-Ressourcen).
  function graphPageContent(token,pid){
    return fetch("https://graph.microsoft.com/v1.0/me/onenote/pages/"+pid+"/content",{headers:{Authorization:"Bearer "+token}}).then(function(r){if(!r.ok)throw new Error("content "+r.status);return r.text();})
@@ -1793,25 +1826,47 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
      });
    };
  })();
- /* ===== OneNote-Massenimport: Steuerung + Schleife ===== */
+ /* ===== OneNote-Massenimport: Login -> Notizbuch-Auswahl -> Schleife ===== */
  (function(){
    var btn=document.getElementById("msBtn");if(!btn)return;
    var stopBtn=document.getElementById("msStop"),prog=document.getElementById("msProg"),bar=document.getElementById("msBar"),msg=document.getElementById("msMsg");
+   var booksBox=document.getElementById("msBooks"),bookList=document.getElementById("msBookList"),goBtn=document.getElementById("msGo");
+   var _token=null,_books=[];
    function setBar(done,total){bar.style.width=(total?Math.round(done/total*100):0)+"%";}
-   function say(t,col){msg.style.color=col||"var(--muted)";msg.innerHTML=t;}
+   function say(t,col){prog.style.display="block";msg.style.color=col||"var(--muted)";msg.innerHTML=t;}
    stopBtn.onclick=function(){_msStop=true;say("Wird gestoppt …");};
+   // 1) Login + Notizbuecher laden, Auswahl anzeigen
    btn.onclick=function(){
      if(!aiReady()){say("Bitte zuerst die KI einrichten (Reiter Daten → KI-Schlüssel).","#b91c1c");return;}
-     _msStop=false;btn.disabled=true;prog.style.display="block";stopBtn.classList.remove("hidden");setBar(0,1);say("Anmeldung bei Microsoft … (Pop-up bestätigen)");
-     var added=[],done=0,fail=0,skip=0,token=null,pages=[];
-     msToken().then(function(t){token=t;say("Angemeldet. Lese OneNote-Seiten …");return graphAllPages(token);})
-       .then(function(ps){pages=ps;if(!pages.length){throw new Error("Keine OneNote-Seiten gefunden.");}say(pages.length+" Seiten gefunden – Verarbeitung startet …");
+     _msStop=false;btn.disabled=true;booksBox.style.display="none";setBar(0,1);say("Anmeldung bei Microsoft … (Pop-up bestätigen)");
+     msToken().then(function(t){_token=t;say("Angemeldet. Lese Notizbücher …");return graphNotebooks(t);})
+       .then(function(nbs){
+         btn.disabled=false;
+         if(!nbs.length){say("Keine Notizbücher gefunden.","#b91c1c");return;}
+         _books=nbs;
+         bookList.innerHTML=nbs.map(function(n,i){return '<label style="display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer"><input type="checkbox" class="msBk" data-i="'+i+'" checked> '+esc(n.name)+'</label>';}).join("");
+         booksBox.style.display="block";prog.style.display="none";
+         btn.textContent="Erneut anmelden";
+       })
+       .catch(function(e){btn.disabled=false;loginErr(e);});
+   };
+   document.getElementById("msAll").onclick=function(){bookList.querySelectorAll(".msBk").forEach(function(c){c.checked=true;});};
+   document.getElementById("msNone").onclick=function(){bookList.querySelectorAll(".msBk").forEach(function(c){c.checked=false;});};
+   // 2) Import der gewaehlten Notizbuecher
+   goBtn.onclick=function(){
+     var ids=[],names=[];bookList.querySelectorAll(".msBk").forEach(function(c){if(c.checked){var b=_books[+c.getAttribute("data-i")];ids.push(b.id);names.push(b.name);}});
+     if(!ids.length){say("Bitte mindestens ein Notizbuch auswählen.","#b91c1c");return;}
+     _msStop=false;goBtn.disabled=true;btn.disabled=true;stopBtn.classList.remove("hidden");setBar(0,1);
+     say("Lese Abschnitte aus "+ids.length+" Notizbuch(ern) … ("+esc(names.join(", "))+")");
+     var added=[],fail=0,skip=0,token=_token,pages=[];
+     graphAllPages(token,ids,function(si,st,sec){if(si%5===0)say("Abschnitte werden gelesen … "+(si+1)+" / "+st+" &nbsp; <b>"+esc(sec.book||"")+"</b>");})
+       .then(function(ps){pages=ps;if(!pages.length){throw new Error("Keine Seiten in den gewählten Notizbüchern gefunden.");}say(pages.length+" Seiten gefunden – Verarbeitung startet …");
          var ex=osmExisting();
          function nextPage(i){
            if(_msStop||i>=pages.length){return finish();}
-           var p=pages[i];setBar(i,pages.length);say("Seite "+(i+1)+" / "+pages.length+": <b>"+esc(p.title||"(ohne Titel)")+"</b> &nbsp; ✓ "+added.length+" angelegt, "+skip+" vorhanden, "+fail+" Fehler");
+           var p=pages[i];setBar(i,pages.length);say("Seite "+(i+1)+" / "+pages.length+": <b>"+esc(p.title||"(ohne Titel)")+"</b> <span style=\"color:var(--muted)\">("+esc(p.book||"")+(p.section?(" › "+esc(p.section)):"")+")</span> &nbsp; ✓ "+added.length+" angelegt, "+skip+" vorhanden, "+fail+" Fehler");
            graphPageContent(token,p.id).then(function(pc){
-             var text=(p.title?(p.title+"\n"):"")+(p.section?("Bundesland: "+p.section+"\n"):"")+pc.text;
+             var text=(p.title?(p.title+"\n"):"")+(p.book?("Land/Notizbuch: "+p.book+"\n"):"")+(p.section?("Region/Bundesland: "+p.section+"\n"):"")+pc.text;
              if(!text.trim()){skip++;return null;}
              return apiNoteScan(text).then(function(res){
                var c=res.contact||{};var fa=String(c.firma||"").trim()||String(p.title||"").trim();
@@ -1819,7 +1874,8 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
                // Bilder der Seite laden (max 4)
                var imgUrls=(pc.imgs||[]).slice(0,4),bilder=[];
                return imgUrls.reduce(function(pr,u){return pr.then(function(){return graphImage(token,u).then(function(d){if(d&&d.length<2500000)bilder.push(d);}).catch(function(){});});},Promise.resolve()).then(function(){
-                 var rec={id:uid(),created:Date.now(),updated:Date.now(),status:"lead",land:(String(c.land||"DE").toUpperCase().slice(0,2)||"DE"),activities:[],owner:(CUR&&CUR.n)||""};
+                 var lf=landFromBook(p.book),ki=String(c.land||"").toUpperCase().slice(0,2);
+                 var rec={id:uid(),created:Date.now(),updated:Date.now(),status:"lead",land:(lf||ki||"DE"),activities:[],owner:(CUR&&CUR.n)||""};
                  rec.firma=fa;["anrede","vorname","nachname","strasse","plz","ort","bundesland","tel","mobil","mail","web","ustid"].forEach(function(k){var v=c[k]&&String(c[k]).trim();if(v)rec[k]=v;});
                  if(!rec.bundesland&&p.section)rec.bundesland=p.section;
                  if(c.position)rec.firma2=c.position;
@@ -1832,24 +1888,24 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
                  if(added.length%10===0)bulkSave(added.slice(),false); // zwischendurch sichern
                });
              });
-           }).catch(function(){fail++;}).then(function(){done++;setTimeout(function(){nextPage(i+1);},250);});
+           }).catch(function(){fail++;}).then(function(){setTimeout(function(){nextPage(i+1);},250);});
          }
          function finish(){
            setBar(1,1);
            if(added.length)bulkSave(added.slice(),false);
            initFilters();renderDashboard();
-           btn.disabled=false;stopBtn.classList.add("hidden");
+           goBtn.disabled=false;btn.disabled=false;stopBtn.classList.add("hidden");
            say((_msStop?"Gestoppt. ":"Fertig! ")+"<b>"+added.length+"</b> Kontakte angelegt"+(skip?(", "+skip+" bereits vorhanden/übersprungen"):"")+(fail?(", "+fail+" Fehler"):"")+".","#15803d");
          }
          nextPage(0);
        })
-       .catch(function(e){btn.disabled=false;stopBtn.classList.add("hidden");
-         var m=String((e&&e.message)||e);
-         if(/popup|user_cancelled|interaction/i.test(m))say("Anmeldung abgebrochen. Bitte erneut versuchen und das Microsoft-Fenster bestätigen.","#b91c1c");
-         else if(/consent|AADSTS65001|permission/i.test(m))say("Berechtigung fehlt: Im Microsoft-Login der Leseberechtigung Notes.Read zustimmen (ggf. muss der Admin zustimmen).","#b91c1c");
-         else say("Import fehlgeschlagen: "+esc(m),"#b91c1c");
-       });
+       .catch(function(e){goBtn.disabled=false;btn.disabled=false;stopBtn.classList.add("hidden");say("Import fehlgeschlagen: "+esc(String((e&&e.message)||e)),"#b91c1c");});
    };
+   function loginErr(e){var m=String((e&&e.message)||e);
+     if(/popup|user_cancelled|interaction/i.test(m))say("Anmeldung abgebrochen. Bitte erneut versuchen und das Microsoft-Fenster bestätigen.","#b91c1c");
+     else if(/consent|AADSTS65001|permission/i.test(m))say("Berechtigung fehlt: Im Microsoft-Login der Leseberechtigung Notes.Read zustimmen (ggf. muss der Admin zustimmen).","#b91c1c");
+     else say("Anmeldung fehlgeschlagen: "+esc(m),"#b91c1c");
+   }
  })();
  var CSV_COLS={firma:"firma",company:"firma",zusatz:"firma2",anrede:"anrede",vorname:"vorname",firstname:"vorname",nachname:"nachname",lastname:"nachname",name:"nachname",strasse:"strasse","straße":"strasse",street:"strasse",plz:"plz",zip:"plz",ort:"ort",city:"ort",land:"land",country:"land",bundesland:"bundesland",state:"bundesland",region:"bundesland",tel:"tel",telefon:"tel",phone:"tel",mobil:"mobil",mobile:"mobil",mail:"mail",email:"mail","e-mail":"mail",web:"web",website:"web",url:"web",ustid:"ustid",vat:"ustid",quelle:"quelle",source:"quelle",notiz:"notiz",note:"notiz",notes:"notiz",status:"status"};
  function splitCSVLine(line,sep){var out=[],cur="",q=false;for(var i=0;i<line.length;i++){var ch=line[i];if(q){if(ch==='"'){if(line[i+1]==='"'){cur+='"';i++;}else q=false;}else cur+=ch;}else{if(ch==='"')q=true;else if(ch===sep){out.push(cur);cur="";}else cur+=ch;}}out.push(cur);return out;}
