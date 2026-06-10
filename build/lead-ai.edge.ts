@@ -52,13 +52,11 @@ Deno.serve(async (req: Request) => {
 Sternsiebanlage Lepton 5100 – ideale Kunden sind Betriebe in Kompostierung, Recycling/
 Entsorgung, Erden-/Substratwerke, Steinbruch/Schotter, Garten-/Landschaftsbau, Biogas.
 
-Suche GRÜNDLICH im Web nach REALEN Firmen, die zu "${was}" in der Region "${wo}" passen,
+Suche im Web nach REALEN Firmen, die zu "${was}" in der Region "${wo}" passen,
 und ermittle die wichtigsten Eckdaten pro Firma (Website/Impressum, ggf. Presse).
-Recherchiere wie ein echter Vertriebsprofi: nutze MEHRERE, unterschiedliche Web-Suchen –
-verschiedene Synonyme/Begriffe (z.B. Kompost, Kompostierung, Erdenwerk, Substrat,
-Recycling, Entsorgung, Bauschutt, Grünschnitt), Branchenverzeichnisse/Gelbe Seiten und
-einzelne Teilregionen/Landkreise/Städte der angefragten Region. Ziel ist eine möglichst
-VOLLSTÄNDIGE Liste echter Betriebe – lieber eine Firma mehr finden als eine übersehen.
+WICHTIG – arbeite ZÜGIG: nutze nur WENIGE, gezielte Web-Suchen (max. ~4) und antworte
+schnell. Die App ruft dich automatisch mehrfach auf und sammelt weitere Firmen –
+EINE Runde muss daher nur die besten Treffer liefern, NICHT alles auf einmal.
 Antworte AUSSCHLIESSLICH mit einem JSON-Array (kein Fließtext, kein Markdown, keine \`\`\`).
 Jedes Element exakt so:
 {"firma":"","strasse":"","plz":"","ort":"","land":"DE","web":"","tel":"","email":"","geschaeftsfuehrer":"","betriebsleiter":"","jahresmenge":"","siebtechnik":"","news":"","quelle":""}
@@ -73,13 +71,14 @@ Jedes Element exakt so:
 - news: ein relevanter aktueller Punkt mit Jahr (z.B. Erweiterung, Investition, neue Anlage), sonst "".
 - quelle: kurz, woher die Infos stammen (z.B. Website, Handelsregister, Presseartikel).
 - WICHTIG: Unbekannte Felder als leerer String "". Nichts erfinden – lieber leer lassen.
-- Bis zu 12 Firmen pro Antwort. Nur echte, im Web auffindbare Betriebe (keine Dubletten).`;
+- 6–8 Firmen pro Antwort genügen. Nur echte, im Web auffindbare Betriebe (keine Dubletten).`;
 
     const base = {
       model: MODEL,
-      max_tokens: 14000,
-      // max_uses begrenzt die Anzahl der Web-Suchen. Mehr = gründlicher (aber langsamer).
-      tools: [{ type: "web_search_20260209", name: "web_search", max_uses: 12 }],
+      max_tokens: 9000,
+      // Wenige Web-Suchen -> Antwort bleibt unter ~60 s und kommt auch durch strenge
+      // Firmen-Proxies durch. Tiefe entsteht durch die mehrfachen Aufrufe der App.
+      tools: [{ type: "web_search_20260209", name: "web_search", max_uses: 5 }],
     };
 
     // Web-Suche kann mehrere Runden brauchen -> pause_turn-Schleife

@@ -1078,10 +1078,13 @@ var USERS=%%USERS%%;
  // KI-Aufruf mit einer automatischen Wiederholung bei Netzwerkfehlern (z. B. Kaltstart
  // der Edge Function). Zeitüberschreitungen werden NICHT erneut versucht (zu langsam).
  function aiSearchRetry(was,wo,retries){
+   var t0=Date.now();
    return apiAi(was,wo).catch(function(e){
-     var msg=String((e&&e.message)||e);
+     var msg=String((e&&e.message)||e),dt=Date.now()-t0;
      var netErr=/NetworkError|Failed to fetch|Load failed|networkerror|fetch resource/i.test(msg)&&!/Zeitüberschreitung/.test(msg);
-     if(retries>0&&netErr){return new Promise(function(res){setTimeout(res,2500);}).then(function(){return aiSearchRetry(was,wo,retries-1);});}
+     // Nur SCHNELLE Netzwerkfehler erneut versuchen (Kaltstart). Ein spätes Abbrechen
+     // (> 20 s) ist meist ein Proxy-/Firewall-Timeout -> sofort zum Fallback, nicht warten.
+     if(retries>0&&netErr&&dt<20000){return new Promise(function(res){setTimeout(res,2000);}).then(function(){return aiSearchRetry(was,wo,retries-1);});}
      throw e;
    });
  }
@@ -1587,7 +1590,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v17";
+const CACHE="vertrieb-v18";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png",
   "./vendor/leaflet.js","./vendor/leaflet.css",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
