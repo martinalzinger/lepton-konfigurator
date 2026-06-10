@@ -774,9 +774,10 @@ var USERS=%%USERS%%;
      .then(function(html){var d=document.createElement("div");d.innerHTML=html;var all=d.querySelectorAll("img"),imgs=[],sample="";all.forEach(function(im){var s=im.getAttribute("data-fullres-src")||im.getAttribute("src")||im.getAttribute("data-render-src")||"";if(!sample&&s)sample=s;if(/^https?:\/\//.test(s))imgs.push(s);});var txt=(d.innerText||d.textContent||"").replace(/\n{3,}/g,"\n\n").trim();return {text:txt,imgs:imgs,raw:all.length,sample:sample};});
  }
  // OneNote-Bild laden -> verkleinertes JPEG-DataURI. Erst mit Token (graph-Host, CORS ok), sonst ohne.
+ // Kein Typ-Filter: OneNote liefert Bilder oft ohne sauberen Content-Type. Entscheidet das Dekodieren.
  function graphImage(token,url){
    function grab(useAuth){return fetch(url,useAuth?{headers:{Authorization:"Bearer "+token}}:{}).then(function(r){if(!r.ok)throw new Error("img "+r.status);return r.blob();});}
-   return grab(true).catch(function(){return grab(false);}).then(function(b){if(!b||!/^image\//.test(b.type||""))throw new Error("kein Bild ("+(b&&b.type||"?")+")");return new Promise(function(res,rej){var u=URL.createObjectURL(b);downscaleSrc(u,1400,function(d){URL.revokeObjectURL(u);if(d)res(d);else rej(new Error("downscale"));});});});
+   return grab(true).catch(function(){return grab(false);}).then(function(b){if(!b||!b.size)throw new Error("leer");return new Promise(function(res,rej){var u=URL.createObjectURL(b);downscaleSrc(u,1600,function(d){URL.revokeObjectURL(u);if(d)res(d);else rej(new Error("decode "+(b.type||"?")+" "+b.size+"B"));});});});
  }
  // Foto verkleinern (Längste Seite maxDim) und als JPEG-Data-URI zurückgeben -> kleine Payload.
  function downscaleImage(file,maxDim,cb){
@@ -1967,8 +1968,13 @@ var USERS=%%USERS%%;
            if(added.length)bulkSave(added.slice(),false);
            initFilters();renderDashboard();
            goBtn.disabled=false;btn.disabled=false;stopBtn.classList.add("hidden");
-           var imgInfo=" · Bilder "+imgLoaded+"/"+imgFound+" (img-Tags "+imgRaw+(imgSample?("; Bsp: "+esc(imgSample.slice(0,70))):"")+")";
-           say((_msStop?"Gestoppt. ":"Fertig! ")+"<b>"+added.length+"</b> Kontakte angelegt"+(skip?(", "+skip+" bereits vorhanden/übersprungen"):"")+(fail?(", "+fail+" Fehler"):"")+imgInfo+((imgFound&&!imgLoaded&&dbg.length)?(" ["+dbg.slice(0,2).join(" | ")+"]"):"")+".","#15803d");
+           var imgInfo=" · Bilder "+imgLoaded+"/"+imgFound;
+           say((_msStop?"Gestoppt. ":"Fertig! ")+"<b>"+added.length+"</b> Kontakte angelegt"+(skip?(", "+skip+" bereits vorhanden/übersprungen"):"")+(fail?(", "+fail+" Fehler"):"")+imgInfo+".","#15803d");
+           // Bild-Diagnose als kopierbarer Kasten, falls nicht alle Bilder geladen wurden.
+           if(imgLoaded<imgFound||(imgRaw&&!imgFound)){
+             var diag="BILD-DIAGNOSE  img-Tags="+imgRaw+"  erkannt="+imgFound+"  geladen="+imgLoaded+"\nBeispiel-URL: "+(imgSample||"(keine)")+"\nFehler: "+(dbg.length?dbg.slice(0,4).join("  |  "):"(keine)");
+             msg.innerHTML+='<div style="margin-top:8px"><div style="font-size:12px;color:#b91c1c;margin-bottom:4px">⚠ Bilder kamen nicht alle an – bitte diesen Kasten abfotografieren/kopieren und mir schicken:</div><textarea readonly style="width:100%;height:84px;font-family:var(--mono);font-size:11px;border:1px solid var(--line);border-radius:8px;padding:6px;background:#fff" onclick="this.select()">'+esc(diag)+'</textarea></div>';
+           }
          }
          nextPage(0);
        })
@@ -2103,7 +2109,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v51";
+const CACHE="vertrieb-v52";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png",
   "./vendor/leaflet.js","./vendor/leaflet.css","./vendor/msal-browser.min.js",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
