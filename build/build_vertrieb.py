@@ -1062,13 +1062,28 @@ var USERS=%%USERS%%;
    if(!aiReady()){osmRun();return;}
    lastQuery=was+" in "+wo;searchLand=guessLand(wo);_lastWas=was;_lastWo=wo;_autoMore=0;
    osmLoading('KI durchsucht das Web nach „'+esc(lastQuery)+'“ … <b>gründliche Recherche – das dauert bis zu ~2 Minuten</b>. Danach ergänzt die KI automatisch weitere Firmen.');
-   apiAi(was,wo).then(function(leads){
+   aiSearchRetry(was,wo,1).then(function(leads){
      if(!leads.length){osmClearResults();osmStatus('Die KI hat für „'+esc(lastQuery)+'“ keine Firmen gefunden. Tipp: anderen Begriff (z. B. „Kompostierung", „Recycling", „Erdenwerk") oder ein größeres Gebiet (z. B. „Bayern" statt nur einer Stadt) versuchen.');return;}
      _searchSrc="KI";renderOsm(leads.map(aiToEl));
      // Wie eine echte Recherche: automatisch noch bis zu 2 weitere Runden anhängen
      // (nur wenn die erste Runde "voll" war, also vermutlich mehr existiert).
      if(leads.length>=6){_autoMore=2;setTimeout(function(){aiMore(true);},500);}
-   }).catch(function(e){osmClearResults();osmStatus('KI-Suche fehlgeschlagen: '+esc(String((e&&e.message)||e))+'. Bitte erneut versuchen.');});
+   }).catch(function(e){
+     // KI nicht erreichbar -> automatisch auf die kostenlose Karten-Suche zurückfallen.
+     _aiErr=String((e&&e.message)||e);
+     osmLoading('KI gerade nicht erreichbar ('+esc(_aiErr)+'). Wechsle zur kostenlosen Karten-Suche …');
+     osmRun();
+   });
+ }
+ // KI-Aufruf mit einer automatischen Wiederholung bei Netzwerkfehlern (z. B. Kaltstart
+ // der Edge Function). Zeitüberschreitungen werden NICHT erneut versucht (zu langsam).
+ function aiSearchRetry(was,wo,retries){
+   return apiAi(was,wo).catch(function(e){
+     var msg=String((e&&e.message)||e);
+     var netErr=/NetworkError|Failed to fetch|Load failed|networkerror|fetch resource/i.test(msg)&&!/Zeitüberschreitung/.test(msg);
+     if(retries>0&&netErr){return new Promise(function(res){setTimeout(res,2500);}).then(function(){return aiSearchRetry(was,wo,retries-1);});}
+     throw e;
+   });
  }
  document.getElementById("osmSearch").onclick=leadSearch;
  document.getElementById("osmWas").addEventListener("keydown",function(e){if(e.key==="Enter")leadSearch();});
@@ -1572,7 +1587,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v16";
+const CACHE="vertrieb-v17";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png",
   "./vendor/leaflet.js","./vendor/leaflet.css",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
