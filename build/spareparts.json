@@ -69,6 +69,24 @@
           "img": "dosierwalzenmantel_qp",
           "name_pl": "Płaszcz walca dozującego z płytami poprzecznymi",
           "name_fr": "Enveloppe du rouleau doseur avec plaques transversales"
+        },
+        {
+          "id": "BUNKER-MIT-DOSIERWALZE-QP",
+          "art": "—",
+          "name": "Bunker mit Dosierwalze und Querplatte",
+          "name_en": "Hopper with metering roller and cross plate",
+          "desc": "Komplette Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar",
+          "desc_en": "Complete assembly – pick and order all individual parts in 3D",
+          "price": 0,
+          "model": "bunker-dosierwalze-qp.glb",
+          "img": "bunker_dosierwalze_qp",
+          "rot": [
+            -90,
+            0,
+            0
+          ],
+          "name_pl": "Zasobnik z walcem dozującym i płytą poprzeczną",
+          "name_fr": "Trémie avec rouleau doseur et plaque transversale"
         }
       ],
       "h_pl": "Zasobnik",
