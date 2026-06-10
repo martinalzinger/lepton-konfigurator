@@ -350,6 +350,60 @@
           ],
           "name_pl": "Taśma poprzeczna",
           "name_fr": "Bande transversale"
+        },
+        {
+          "id": "SD2-TEILUNG-23",
+          "art": "—",
+          "name": "Teilung 23",
+          "name_en": "Pitch 23",
+          "desc": "Komplette Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar",
+          "desc_en": "Complete assembly – pick and order all individual parts in 3D",
+          "price": 0,
+          "model": "sd2-teilung-23.glb",
+          "img": "sd2_teilung_23",
+          "rot": [
+            -90,
+            0,
+            0
+          ],
+          "name_pl": "Podziałka 23",
+          "name_fr": "Pas 23"
+        },
+        {
+          "id": "SD2-TEILUNG-28",
+          "art": "—",
+          "name": "Teilung 28",
+          "name_en": "Pitch 28",
+          "desc": "Komplette Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar",
+          "desc_en": "Complete assembly – pick and order all individual parts in 3D",
+          "price": 0,
+          "model": "sd2-teilung-28.glb",
+          "img": "sd2_teilung_28",
+          "rot": [
+            -90,
+            0,
+            0
+          ],
+          "name_pl": "Podziałka 28",
+          "name_fr": "Pas 28"
+        },
+        {
+          "id": "SD2-TEILUNG-43",
+          "art": "—",
+          "name": "Teilung 43",
+          "name_en": "Pitch 43",
+          "desc": "Komplette Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar",
+          "desc_en": "Complete assembly – pick and order all individual parts in 3D",
+          "price": 0,
+          "model": "sd2-teilung-43.glb",
+          "img": "sd2_teilung_43",
+          "rot": [
+            -90,
+            0,
+            0
+          ],
+          "name_pl": "Podziałka 43",
+          "name_fr": "Pas 43"
         }
       ],
       "h_pl": "Pokład sitowy 2",
