@@ -760,6 +760,7 @@ const ICONS={
   controls.panSpeed=1.0;
   controls.screenSpacePanning=true;   // 2-Finger-Verschieben in der Bildebene
   controls.zoomToCursor=false;        // mittig zoomen (kein Wegspringen beim Zoom)
+  controls.mouseButtons={LEFT:THREE.MOUSE.ROTATE,MIDDLE:THREE.MOUSE.PAN,RIGHT:THREE.MOUSE.PAN}; // Desktop: rechte/mittlere Maustaste = verschieben
   // Rundum-Beleuchtung: gleichmäßig hell von allen Seiten (keine dunkle Seite mehr)
   scene.add(new THREE.HemisphereLight(0xffffff,0x9a9aa0,1.6));
   scene.add(new THREE.AmbientLight(0xffffff,0.45));
@@ -769,8 +770,10 @@ const ICONS={
   // --- Freie 360°-Rotation des Modells (Pivot, kein Pol-Stopp); Zoom/Pan via OrbitControls ---
   var dn=null,last=null,drag=false;
   var vR=new THREE.Vector3(),vU=new THREE.Vector3(),vT=new THREE.Vector3(),qa=new THREE.Quaternion(),qb=new THREE.Quaternion();
+  canvas.addEventListener("contextmenu",function(e){e.preventDefault();}); // Rechtsklick-Menü aus -> Verschieben per rechter Maustaste
   canvas.addEventListener("pointerdown",function(e){
    if(e.isPrimary===false){drag=false;last=null;return;}   // zweiter Finger -> OrbitControls pant/zoomt
+   if(e.pointerType==="mouse"&&e.button!==0){drag=false;last=null;return;} // rechte/mittlere Maustaste -> OrbitControls verschiebt
    dn={x:e.clientX,y:e.clientY,t:Date.now()};last={x:e.clientX,y:e.clientY};drag=true;
   });
   canvas.addEventListener("pointermove",function(e){
