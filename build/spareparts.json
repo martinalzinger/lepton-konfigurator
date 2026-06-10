@@ -53,6 +53,24 @@
           ],
           "name_pl": "Opcja agregat prądotwórczy",
           "name_fr": "Option groupe électrogène"
+        },
+        {
+          "id": "FG-STRASSENZULASSUNG-19T",
+          "art": "—",
+          "name": "Option Straßenzulassung 19t Mitteleuropa",
+          "name_en": "Road approval 19t Central Europe option",
+          "desc": "Komplette Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar",
+          "desc_en": "Complete assembly – pick and order all individual parts in 3D",
+          "price": 0,
+          "model": "fahrgestell-strassenzulassung-19t.glb",
+          "img": "fahrgestell_strassenzulassung",
+          "rot": [
+            -90,
+            0,
+            0
+          ],
+          "name_pl": "Opcja dopuszczenie drogowe 19t Europa Środkowa",
+          "name_fr": "Option homologation routière 19t Europe centrale"
         }
       ],
       "h_pl": "Podwozie",
