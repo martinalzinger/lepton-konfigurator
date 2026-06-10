@@ -690,7 +690,7 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
  function graphPaged(token,url,map,acc){acc=acc||[];return graphGet(token,url).then(function(j){(j.value||[]).forEach(function(v){acc.push(map(v));});var nx=j["@odata.nextLink"];if(nx&&!_msStop)return graphPaged(token,nx,map,acc);return acc;});}
  // Alle Notizbücher (eigene + geteilte) -> [{id,name,owner}].
  function graphNotebooks(token){
-   return graphPaged(token,"https://graph.microsoft.com/v1.0/me/onenote/notebooks?$top=100&$select=id,displayName&$expand=parentNotebook",function(n){return {id:n.id,name:n.displayName||"(ohne Namen)"};});
+   return graphPaged(token,"https://graph.microsoft.com/v1.0/me/onenote/notebooks?$select=id,displayName&$orderby=displayName",function(n){return {id:n.id,name:n.displayName||"(ohne Namen)"};});
  }
  // Alle Abschnitte (flach, inkl. Abschnittsgruppen) mit Notizbuch-Zuordnung -> [{id,name,bookId,book}].
  function graphAllSections(token){
