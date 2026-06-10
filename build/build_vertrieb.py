@@ -1528,7 +1528,10 @@ var USERS=%%USERS%%;
    // Stammdaten
    '<dl class="kv">'+
      (c.firma2?'<dt>Zusatz</dt><dd>'+esc(c.firma2)+'</dd>':'')+
-     (addr?'<dt>Adresse</dt><dd>'+esc(addr)+'</dd>':'')+
+     (c.strasse?'<dt>Straße</dt><dd>'+esc(c.strasse)+'</dd>':'')+
+     (c.plz?'<dt>Postleitzahl</dt><dd>'+esc(c.plz)+'</dd>':'')+
+     (c.ort?'<dt>Ort</dt><dd>'+esc(c.ort)+'</dd>':'')+
+     (c.land?'<dt>Land</dt><dd>'+esc(landLabel(c.land))+'</dd>':'')+
      (contactBundesland(c)?'<dt>Bundesland</dt><dd>'+esc(contactBundesland(c))+'</dd>':'')+
      (c.tel?'<dt>Telefon</dt><dd><a href="tel:'+esc(c.tel)+'">'+esc(c.tel)+'</a></dd>':'')+
      (c.mobil?'<dt>Mobil</dt><dd><a href="tel:'+esc(c.mobil)+'">'+esc(c.mobil)+'</a></dd>':'')+
@@ -2182,7 +2185,7 @@ var USERS=%%USERS%%;
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v71";
+ var APP_VER="v72";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
@@ -2227,7 +2230,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v71";
+const CACHE="vertrieb-v72";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png",
   "./vendor/leaflet.js","./vendor/leaflet.css","./vendor/msal-browser.min.js",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
