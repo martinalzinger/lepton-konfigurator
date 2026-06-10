@@ -360,6 +360,7 @@ textarea.field{min-height:74px;resize:vertical;line-height:1.5}
       <div id="connDataBody"></div>
       <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
         <button class="btn sm" id="reconnBtn" type="button">Verbindung prüfen</button>
+        <button class="btn sm primary" id="setupLinkBtn" type="button" title="Internen Link erzeugen, mit dem sich Kollegen mit einem Klick verbinden (kein Eintippen von Schlüsseln)">🔗 Einrichtungs-Link für Vertriebler</button>
         <details style="flex:1;min-width:200px">
           <summary style="cursor:pointer;font-size:12px;color:var(--muted)">Zugriffsschutz (optional, Token)</summary>
           <div style="display:flex;gap:8px;margin-top:8px;align-items:center">
@@ -539,11 +540,14 @@ var USERS=%%USERS%%;
  var AKEY="amb_lepton_auth",UKEY="amb_lepton_user";
  function findUser(hash){for(var i=0;i<USERS.length;i++)if(USERS[i].h===hash)return USERS[i];return null;}
  var CUR=null; // eingeloggter Vertriebler {n,tel,mail}
+ var ADMINS=["Martin Alzinger"]; // nur Admins sehen den Daten-Reiter (Zugangsdaten/Verbinden/Trennen/Loeschen)
+ function isAdmin(){return !!(CUR&&CUR.n&&ADMINS.indexOf(CUR.n)>=0);}
+ function applyRole(){var db=document.querySelector('#nav button[data-view="data"]');if(db)db.style.display=isAdmin()?"":"none";if(!isAdmin()&&curView==="data")show("dashboard");}
  var gate=document.getElementById("gate");
  function setUser(u){CUR=u||{n:""};try{localStorage.setItem(UKEY,JSON.stringify({n:u.n||"",tel:u.tel||"",mail:u.mail||""}));}catch(_){}
    var un=document.getElementById("uName");if(un)un.textContent=u.n||"Vertrieb";
    var av=document.getElementById("uAv");if(av){av.textContent=initials(u.n||"?");av.title=u.n||"";}}
- function pass(u){setUser(u);gate.classList.add("hidden");boot();}
+ function pass(u){setUser(u);applyRole();gate.classList.add("hidden");boot();}
  // Auto-Login wird am ENDE der IIFE ausgelöst (erst dann sind alle Daten/Funktionen definiert).
  document.getElementById("gateForm").addEventListener("submit",function(ev){ev.preventDefault();
   var u=(document.getElementById("gu").value||"").trim().toLowerCase(),p=(document.getElementById("gp").value||"");
@@ -580,6 +584,8 @@ var USERS=%%USERS%%;
  var TOKEN=""; try{TOKEN=localStorage.getItem(TKEY)||"";}catch(e){}
  var SB=null; try{SB=JSON.parse(localStorage.getItem(SBKEY)||"null");}catch(e){}
  var AISECRET=""; try{AISECRET=localStorage.getItem(AIKEY)||"";}catch(e){}
+ // Einrichtungs-Link (#s=...) fuer Team-Rollout: Cloud-Zugang automatisch uebernehmen, dann aus der URL entfernen.
+ (function(){try{var m=(location.hash||"").match(/[#&]s=([^&]+)/);if(!m)return;var o=JSON.parse(decodeURIComponent(escape(atob(m[1].replace(/-/g,"+").replace(/_/g,"/")))));if(o&&o.u&&o.k){SB={url:o.u,key:o.k};try{localStorage.setItem(SBKEY,JSON.stringify(SB));}catch(e){}}if(o&&o.c){AISECRET=o.c;try{localStorage.setItem(AIKEY,AISECRET);}catch(e){}}history.replaceState(null,"",location.pathname+location.search);}catch(e){}})();
  function cacheRead(){try{var o=JSON.parse(localStorage.getItem(KEY)||"{}");if(!o.contacts)o.contacts=[];return o;}catch(e){return {contacts:[]};}}
  function cacheSave(){try{localStorage.setItem(KEY,JSON.stringify(DB));}catch(e){}}
  var DB=cacheRead();
@@ -936,6 +942,7 @@ var USERS=%%USERS%%;
  /* ---------- Navigation ---------- */
  var curView="dashboard";
  function show(view){
+   if(view==="data"&&!isAdmin())view="dashboard"; // Daten-Reiter nur fuer Admins
    curView=view;
    var vs=document.querySelectorAll(".view");for(var i=0;i<vs.length;i++)vs[i].classList.remove("active");
    var el=document.getElementById("view-"+view);if(el)el.classList.add("active");
@@ -2054,6 +2061,15 @@ var USERS=%%USERS%%;
    if(aiSt){aiSt.textContent=aiReady()?"✓ KI-Suche aktiv":(SB&&SB.url&&SB.key?"Schlüssel fehlt – KI-Suche aus":"erst Cloud-Datenbank verbinden");aiSt.style.color=aiReady()?"var(--pos)":"var(--muted)";}
  }
  document.getElementById("reconnBtn").onclick=function(){var b=this;b.textContent="Prüfe…";initBackend();setTimeout(function(){b.textContent="Verbindung prüfen";renderDataConn();},900);};
+ // Einrichtungs-Link erzeugen: bettet Cloud-Zugang (+ KI-Schluessel) ein -> Kollege klickt, ist verbunden, muss nur einloggen.
+ document.getElementById("setupLinkBtn").onclick=function(){
+   if(!(SB&&SB.url&&SB.key)){alert("Erst mit der Cloud-Datenbank verbinden, dann den Link erzeugen.");return;}
+   var payload=btoa(unescape(encodeURIComponent(JSON.stringify({u:SB.url,k:SB.key,c:AISECRET||""})))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
+   var link=location.origin+location.pathname.replace(/[^/]*$/,"")+"#s="+payload;
+   var done=function(ok){var b=document.getElementById("setupLinkBtn");b.textContent=ok?"✓ Link kopiert – nur intern teilen!":"Kopieren fehlgeschlagen";setTimeout(function(){b.innerHTML="🔗 Einrichtungs-Link für Vertriebler";},2500);};
+   if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(link).then(function(){done(true);},function(){prompt("Diesen Link NUR INTERN teilen:",link);});}
+   else{prompt("Diesen Link NUR INTERN teilen:",link);}
+ };
  document.getElementById("tokenSave").onclick=function(){TOKEN=document.getElementById("tokenInp").value.trim();try{localStorage.setItem(TKEY,TOKEN);}catch(e){}initBackend();setTimeout(renderDataConn,700);};
  document.getElementById("sbConnect").onclick=function(){
    var url=document.getElementById("sbUrl").value.trim(),key=document.getElementById("sbKey").value.trim();
@@ -2091,7 +2107,7 @@ var USERS=%%USERS%%;
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v60";
+ var APP_VER="v61";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
@@ -2135,7 +2151,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v60";
+const CACHE="vertrieb-v61";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png",
   "./vendor/leaflet.js","./vendor/leaflet.css","./vendor/msal-browser.min.js",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
