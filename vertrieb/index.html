@@ -558,7 +558,7 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
    return aiPost("lead-ai",was,wo).catch(function(e){if(e&&e.status===404)return aiPost("lead-ai-",was,wo);throw e;})
      .then(function(d){return (d.leads||[]).filter(function(x){return x&&(x.firma||x.name);});});
  }
- /* --- Visitenkarten-Scan (Claude-Vision über Edge Function "card-scan") --- */
+ /* --- Visitenkarten-Scan (Claude-Vision über dieselbe Edge Function "lead-ai") --- */
  function cardPost(name,dataUri){
    var ctl=("AbortController" in window)?new AbortController():null;
    var to=ctl?setTimeout(function(){try{ctl.abort();}catch(_){}} ,60000):0;
@@ -567,7 +567,9 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
      .then(function(d){if(to)clearTimeout(to);return d;},function(e){if(to)clearTimeout(to);if(e&&(e.name==="AbortError"||/abort/i.test(String(e&&e.message)))){var er=new Error("Zeitüberschreitung beim Auswerten.");throw er;}throw e;});
  }
  function apiCardScan(dataUri){
-   return cardPost("card-scan",dataUri).catch(function(e){if(e&&e.status===404)return cardPost("card-scan-",dataUri);throw e;})
+   // Dieselbe Funktion wie die Lead-Suche (lead-ai / lead-ai-): sie erkennt das Bild und
+   // wertet die Visitenkarte aus. So gibt es nur EINE Edge Function zu pflegen.
+   return cardPost("lead-ai",dataUri).catch(function(e){if(e&&e.status===404)return cardPost("lead-ai-",dataUri);throw e;})
      .then(function(d){return (d&&d.contact)||{};});
  }
  // Foto verkleinern (Längste Seite maxDim) und als JPEG-Data-URI zurückgeben -> kleine Payload.
@@ -1466,7 +1468,7 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
            msg.style.color=any?"#15803d":"var(--muted)";
            msg.textContent=any?"✓ Übernommen – bitte prüfen, ggf. ergänzen und speichern.":"Auf dem Foto konnten keine Daten erkannt werden. Schärfer/näher fotografieren und erneut versuchen.";
            _scanBtn.disabled=false;
-         }).catch(function(err){msg.style.color="#b91c1c";msg.textContent="Scan fehlgeschlagen: "+String((err&&err.message)||err)+(/scan 404/.test(String(err&&err.message))?" (Edge Function card-scan ist noch nicht deployt)":"");_scanBtn.disabled=false;});
+         }).catch(function(err){msg.style.color="#b91c1c";msg.textContent="Scan fehlgeschlagen: "+String((err&&err.message)||err)+(/scan 404/.test(String(err&&err.message))?" (KI-Funktion noch nicht eingerichtet – Reiter Daten)":"");_scanBtn.disabled=false;});
        });
      };
    }
