@@ -718,24 +718,26 @@ var USERS=%%USERS%%;
  function graphPaged(token,url,map,acc){acc=acc||[];return graphGet(token,url).then(function(j){(j.value||[]).forEach(function(v){acc.push(map(v));});var nx=j["@odata.nextLink"];if(nx&&!_msStop)return graphPaged(token,nx,map,acc);return acc;});}
  // Alle Abschnitte (flach, inkl. Abschnittsgruppen, auch GETEILTE) mit Notizbuch-Zuordnung.
  function graphAllSections(token){
-   return graphPaged(token,"https://graph.microsoft.com/v1.0/me/onenote/sections?$top=100&$select=id,displayName&$expand=parentNotebook($select=id,displayName)",function(s){return {id:s.id,name:s.displayName||"",bookId:(s.parentNotebook&&s.parentNotebook.id)||("?"+(s.parentNotebook&&s.parentNotebook.displayName||s.id)),book:(s.parentNotebook&&s.parentNotebook.displayName)||"(ohne Notizbuch)"};});
+   return graphPaged(token,"https://graph.microsoft.com/v1.0/me/onenote/sections?$top=100&$select=id,displayName,pagesUrl&$expand=parentNotebook($select=id,displayName)",function(s){return {id:s.id,name:s.displayName||"",pagesUrl:s.pagesUrl||"",bookId:(s.parentNotebook&&s.parentNotebook.id)||("?"+(s.parentNotebook&&s.parentNotebook.displayName||s.id)),book:(s.parentNotebook&&s.parentNotebook.displayName)||"(ohne Notizbuch)"};});
  }
  // Aus den Abschnitten die Notizbuch-Liste ableiten (zeigt auch geteilte) -> [{id,name,count}].
  function notebooksFromSections(secs){
    var seen={},out=[];secs.forEach(function(s){var k=s.bookId;if(!seen[k]){seen[k]={id:k,name:s.book,count:0};out.push(seen[k]);}seen[k].count++;});
    out.sort(function(a,b){return a.name.localeCompare(b.name);});return out;
  }
- // Seiten eines Abschnitts -> [{id,title,section,book}].
+ // Seiten eines Abschnitts -> [{id,title,section,book,contentUrl}]. Nutzt pagesUrl (wichtig fuer GETEILTE).
  function graphPagesOf(token,sec){
-   return graphPaged(token,"https://graph.microsoft.com/v1.0/me/onenote/sections/"+sec.id+"/pages?$top=100&$select=id,title",function(p){return {id:p.id,title:p.title||"",section:sec.name,book:sec.book};});
+   var base=sec.pagesUrl||("https://graph.microsoft.com/v1.0/me/onenote/sections/"+sec.id+"/pages");
+   var url=base+(base.indexOf("?")<0?"?":"&")+"$top=100&$select=id,title,contentUrl";
+   return graphPaged(token,url,function(p){return {id:p.id,title:p.title||"",section:sec.name,book:sec.book,contentUrl:p.contentUrl||""};});
  }
  // Seiten der ausgewaehlten Abschnitte einsammeln (Abschnitt fuer Abschnitt -> zuverlaessig).
- function pagesFromSections(token,secs,onSec){
+ function pagesFromSections(token,secs,onSec,log){
    var out=[];
    function nextSec(i){
      if(_msStop||i>=secs.length)return out;
      if(onSec)onSec(i,secs.length,secs[i]);
-     return graphPagesOf(token,secs[i]).then(function(ps){ps.forEach(function(p){out.push(p);});return nextSec(i+1);}).catch(function(){return nextSec(i+1);});
+     return graphPagesOf(token,secs[i]).then(function(ps){ps.forEach(function(p){out.push(p);});return nextSec(i+1);}).catch(function(e){if(log)log.push("Seiten("+(secs[i]&&secs[i].name||"?")+"): "+String((e&&e.message)||e));return nextSec(i+1);});
    }
    return nextSec(0);
  }
@@ -751,7 +753,7 @@ var USERS=%%USERS%%;
  // Alle Abschnitte eines (auch geteilten) Notizbuchs, rekursiv inkl. Abschnittsgruppen, via dessen URLs.
  function nbSections(token,nb){
    var bookName=nb.displayName||"",bookId=nb.id||bookName,out=[];
-   function sx(url){return graphPaged(token,url+(url.indexOf("?")<0?"?":"&")+"$select=id,displayName",function(s){return {id:s.id,name:s.displayName||"",bookId:bookId,book:bookName};}).then(function(ss){ss.forEach(function(s){out.push(s);});});}
+   function sx(url){return graphPaged(token,url+(url.indexOf("?")<0?"?":"&")+"$select=id,displayName,pagesUrl",function(s){return {id:s.id,name:s.displayName||"",pagesUrl:s.pagesUrl||"",bookId:bookId,book:bookName};}).then(function(ss){ss.forEach(function(s){out.push(s);});});}
    function gx(url){return graphPaged(token,url+(url.indexOf("?")<0?"?":"&")+"$select=id,sectionsUrl,sectionGroupsUrl",function(g){return g;}).then(function(gs){return gs.reduce(function(p,g){return p.then(function(){return Promise.all([g.sectionsUrl?sx(g.sectionsUrl):0,g.sectionGroupsUrl?gx(g.sectionGroupsUrl):0]);});},Promise.resolve());});}
    return Promise.all([nb.sectionsUrl?sx(nb.sectionsUrl):0,nb.sectionGroupsUrl?gx(nb.sectionGroupsUrl):0]).then(function(){return out;});
  }
@@ -765,9 +767,10 @@ var USERS=%%USERS%%;
  // Notizbuchname -> ISO-Land (Fallback, wenn die KI kein Land erkennt).
  var NB_LAND={deutschland:"DE",polen:"PL","österreich":"AT",osterreich:"AT",schweiz:"CH",holland:"NL",niederlande:"NL",belgien:"BE",frankreich:"FR",italien:"IT",ungarn:"HU",griechenland:"GR",tschechien:"CZ",kroatien:"HR","rumänien":"RO",rumaenien:"RO",norwegen:"NO",finland:"FI",finnland:"FI",schweden:"SE",dänemark:"DK",daenemark:"DK",usa:"US",england:"GB",grossbritannien:"GB","großbritannien":"GB",spanien:"ES",portugal:"PT",slowenien:"SI",slowakei:"SK",bulgarien:"BG",serbien:"RS",türkei:"TR",tuerkei:"TR",afrika:"ZA",irland:"IE",litauen:"LT",lettland:"LV",estland:"EE"};
  function landFromBook(book){var k=String(book||"").toLowerCase();for(var key in NB_LAND){if(k.indexOf(key)>=0)return NB_LAND[key];}return "";}
- // Seiteninhalt (HTML) -> reiner Text + Bild-URLs (Graph-Ressourcen).
- function graphPageContent(token,pid){
-   return fetch("https://graph.microsoft.com/v1.0/me/onenote/pages/"+pid+"/content",{headers:{Authorization:"Bearer "+token}}).then(function(r){if(!r.ok)throw new Error("content "+r.status);return r.text();})
+ // Seiteninhalt (HTML) -> reiner Text + Bild-URLs (Graph-Ressourcen). Nutzt contentUrl (wichtig fuer GETEILTE).
+ function graphPageContent(token,page){
+   var url=(page&&page.contentUrl)||("https://graph.microsoft.com/v1.0/me/onenote/pages/"+((page&&page.id)||page)+"/content");
+   return fetch(url,{headers:{Authorization:"Bearer "+token}}).then(function(r){if(!r.ok)throw new Error("content "+r.status);return r.text();})
      .then(function(html){var d=document.createElement("div");d.innerHTML=html;var imgs=[];d.querySelectorAll("img").forEach(function(im){var s=im.getAttribute("src")||im.getAttribute("data-fullres-src")||"";if(/graph\.microsoft\.com/.test(s))imgs.push(s);});var txt=(d.innerText||d.textContent||"").replace(/\n{3,}/g,"\n\n").trim();return {text:txt,imgs:imgs};});
  }
  // Graph-Bild laden (mit Token) -> verkleinertes JPEG-DataURI.
@@ -1917,13 +1920,13 @@ var USERS=%%USERS%%;
      secsP.then(function(secs){
        if(!secs.length){throw new Error("Diagnose – keine Abschnitte: "+(dbg.length?dbg.join(" | "):"(kein Protokoll)"));}
        say(secs.length+" Abschnitte – lese Seiten …");
-       return pagesFromSections(token,secs,function(si,st,sec){if(si%5===0)say("Abschnitte werden gelesen … "+(si+1)+" / "+st+" &nbsp; <b>"+esc(sec.book||"")+"</b>");});})
+       return pagesFromSections(token,secs,function(si,st,sec){if(si%5===0)say("Abschnitte werden gelesen … "+(si+1)+" / "+st+" &nbsp; <b>"+esc(sec.book||"")+"</b>");},dbg);})
        .then(function(ps){pages=ps;if(!pages.length){throw new Error("Diagnose – 0 Seiten bei Abschnitten: "+(dbg.length?dbg.join(" | "):"(kein Protokoll)"));}say(pages.length+" Seiten gefunden – Verarbeitung startet …");
          var ex=osmExisting();
          function nextPage(i){
            if(_msStop||i>=pages.length){return finish();}
            var p=pages[i];setBar(i,pages.length);say("Seite "+(i+1)+" / "+pages.length+": <b>"+esc(p.title||"(ohne Titel)")+"</b> <span style=\"color:var(--muted)\">("+esc(p.book||"")+(p.section?(" › "+esc(p.section)):"")+")</span> &nbsp; ✓ "+added.length+" angelegt, "+skip+" vorhanden, "+fail+" Fehler");
-           graphPageContent(token,p.id).then(function(pc){
+           graphPageContent(token,p).then(function(pc){
              var text=(p.title?(p.title+"\n"):"")+(p.book?("Land/Notizbuch: "+p.book+"\n"):"")+(p.section?("Region/Bundesland: "+p.section+"\n"):"")+pc.text;
              if(!text.trim()){skip++;return null;}
              return apiNoteScan(text).then(function(res){
@@ -2088,7 +2091,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v46";
+const CACHE="vertrieb-v47";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png",
   "./vendor/leaflet.js","./vendor/leaflet.css","./vendor/msal-browser.min.js",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
