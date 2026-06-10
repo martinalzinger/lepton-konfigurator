@@ -1479,6 +1479,8 @@ var USERS=%%USERS%%;
    for(var r=1;r<lines.length;r++){var cells=splitCSVLine(lines[r],sep);var rec={id:uid(),created:Date.now(),updated:Date.now(),status:"lead",land:"DE",activities:[]};var has=false;
      for(var c=0;c<head.length;c++){if(head[c]&&cells[c]!=null){var val=cells[c].trim();if(val){rec[head[c]]=val;has=true;}}}
      if(!has)continue;if(rec.land)rec.land=rec.land.toUpperCase().slice(0,2)||"DE";if(!findStatus(rec.status))rec.status="lead";
+     // PLZ-Reparatur: DE-Postleitzahlen mit verlorener führender Null (Excel-Zahl) auf 5 Stellen auffüllen.
+     if(rec.plz&&rec.land==="DE"&&/^\d{1,4}$/.test(rec.plz)){while(rec.plz.length<5)rec.plz="0"+rec.plz;}
      DB.contacts.push(rec);added.push(rec);n++;}
    bulkSave(added,false);return n;
  }
@@ -1590,7 +1592,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v18";
+const CACHE="vertrieb-v19";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png",
   "./vendor/leaflet.js","./vendor/leaflet.css",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
