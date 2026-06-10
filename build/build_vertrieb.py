@@ -781,7 +781,19 @@ var USERS=%%USERS%%;
      return app.loginPopup({scopes:MS_SCOPES}).then(function(r){return r.accessToken;});
    });
  }
- function graphGet(token,url){return fetch(url,{headers:{Authorization:"Bearer "+token}}).then(function(r){if(!r.ok)throw new Error("Graph "+r.status);return r.json();});}
+ // Graph-Fetch mit automatischer Wiederholung bei Drosselung (429) und kurzen Server-Fehlern (503/504).
+ // Respektiert den Retry-After-Header; bis zu 5 Versuche mit Backoff.
+ function gfetch(url,opts,tries){
+   tries=tries||0;
+   return fetch(url,opts).then(function(r){
+     if((r.status===429||r.status===503||r.status===504)&&tries<5){
+       var ra=parseInt(r.headers.get("Retry-After")||"0",10);var wait=(ra>0?ra*1000:Math.min(30000,2000*(tries+1)));
+       return new Promise(function(res){setTimeout(res,wait);}).then(function(){return gfetch(url,opts,tries+1);});
+     }
+     return r;
+   });
+ }
+ function graphGet(token,url){return gfetch(url,{headers:{Authorization:"Bearer "+token}}).then(function(r){if(!r.ok)throw new Error("Graph "+r.status);return r.json();});}
  // Generischer Paginierer: alle Seiten einer Liste (@odata.nextLink) einsammeln und je Eintrag mappen.
  function graphPaged(token,url,map,acc){acc=acc||[];return graphGet(token,url).then(function(j){(j.value||[]).forEach(function(v){acc.push(map(v));});var nx=j["@odata.nextLink"];if(nx&&!_msStop)return graphPaged(token,nx,map,acc);return acc;});}
  // Alle Abschnitte (flach, inkl. Abschnittsgruppen, auch GETEILTE) mit Notizbuch-Zuordnung.
@@ -845,7 +857,7 @@ var USERS=%%USERS%%;
  function graphPageContent(token,page){
    var base=(page&&page.contentUrl)||("https://graph.microsoft.com/v1.0/me/onenote/pages/"+((page&&page.id)||page)+"/content");
    var url=base+(base.indexOf("?")<0?"?":"&")+"preAuthenticated=true";
-   return fetch(url,{headers:{Authorization:"Bearer "+token}}).then(function(r){if(!r.ok)throw new Error("content "+r.status);return r.text();})
+   return gfetch(url,{headers:{Authorization:"Bearer "+token}}).then(function(r){if(!r.ok)throw new Error("content "+r.status);return r.text();})
      .then(function(html){var d=document.createElement("div");d.innerHTML=html;var all=d.querySelectorAll("img"),imgs=[],sample="";all.forEach(function(im){var pre=im.getAttribute("src")||"",full=im.getAttribute("data-fullres-src")||im.getAttribute("data-render-src")||"";if(!full&&pre)full=pre;if(!pre&&full)pre=full;if(/^https?:\/\//.test(pre)||/^https?:\/\//.test(full)){imgs.push({pre:pre,full:full});if(!sample)sample=(full||pre);}});var txt=(d.innerText||d.textContent||"").replace(/\n{3,}/g,"\n\n").trim();return {text:txt,imgs:imgs,raw:all.length,sample:sample};});
  }
  // OneNote-Bild laden -> verkleinertes JPEG-DataURI. im={pre,full}.
@@ -856,7 +868,7 @@ var USERS=%%USERS%%;
    var raw=String(full||pre||"").split("?")[0]; // .../onenote/resources/{id}/content bzw. /$value
    // "siteCollections/..." ist keine gueltige Graph-Route fuer normale GETs -> auf "sites/..." umschreiben.
    var fixed=raw.replace("/v1.0/siteCollections/","/v1.0/sites/");
-   function viaFetch(url,authTok){return fetch(url,authTok?{headers:{Authorization:"Bearer "+authTok}}:{}).then(function(r){if(!r.ok)throw new Error("img "+r.status);return r.blob();}).then(function(b){if(!b||!b.size)throw new Error("leer");return new Promise(function(res,rej){var u=URL.createObjectURL(b);downscaleSrc(u,1200,function(d){URL.revokeObjectURL(u);if(d)res(d);else rej(new Error("decode"));});});});}
+   function viaFetch(url,authTok){return gfetch(url,authTok?{headers:{Authorization:"Bearer "+authTok}}:{}).then(function(r){if(!r.ok)throw new Error("img "+r.status);return r.blob();}).then(function(b){if(!b||!b.size)throw new Error("leer");return new Promise(function(res,rej){var u=URL.createObjectURL(b);downscaleSrc(u,1200,function(d){URL.revokeObjectURL(u);if(d)res(d);else rej(new Error("decode"));});});});}
    function viaImg(url){return new Promise(function(res,rej){downscaleSrc(url,1200,function(d){d?res(d):rej(new Error("imgEl"));},true);});}
    // Jeden Schritt protokollieren -> Diagnose zeigt genau, welcher Weg woran scheitert.
    var steps=[];
@@ -2295,7 +2307,7 @@ var USERS=%%USERS%%;
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v80";
+ var APP_VER="v81";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
@@ -2340,7 +2352,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v80";
+const CACHE="vertrieb-v81";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png","./icon-32.png","./favicon.ico",
   "./vendor/leaflet.js","./vendor/leaflet.css","./vendor/msal-browser.min.js",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
