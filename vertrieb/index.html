@@ -727,11 +727,11 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
    function gx(url){return graphPaged(token,url+(url.indexOf("?")<0?"?":"&")+"$select=id,sectionsUrl,sectionGroupsUrl",function(g){return g;}).then(function(gs){return gs.reduce(function(p,g){return p.then(function(){return Promise.all([g.sectionsUrl?sx(g.sectionsUrl):0,g.sectionGroupsUrl?gx(g.sectionGroupsUrl):0]);});},Promise.resolve());});}
    return Promise.all([nb.sectionsUrl?sx(nb.sectionsUrl):0,nb.sectionGroupsUrl?gx(nb.sectionGroupsUrl):0]).then(function(){return out;});
  }
- // Abschnitte mehrerer Notizbuecher (per URL aufgeloest) einsammeln, mit Fortschritt + Fehlerprotokoll.
- function sectionsFromBooks(token,books,onBook,errs){
+ // Abschnitte mehrerer Notizbuecher (per URL aufgeloest) einsammeln, mit Fortschritt + Diagnose-Protokoll.
+ function sectionsFromBooks(token,books,onBook,log){
    var secs=[];
    return books.reduce(function(p,b,i){return p.then(function(){if(_msStop)return;if(onBook)onBook(i,books.length,b);
-     return graphNotebookFromUrl(token,b.url).then(function(nb){nb.displayName=nb.displayName||b.name;return nbSections(token,nb);}).then(function(ss){ss.forEach(function(s){secs.push(s);});}).catch(function(e){if(errs)errs.push(b.name+": "+String((e&&e.message)||e));});
+     return graphNotebookFromUrl(token,b.url).then(function(nb){nb.displayName=nb.displayName||b.name;return nbSections(token,nb);}).then(function(ss){if(log)log.push(b.name+": "+ss.length+" Abschn.");ss.forEach(function(s){secs.push(s);});}).catch(function(e){if(log)log.push(b.name+": FEHLER "+String((e&&e.message)||e));});
    });},Promise.resolve()).then(function(){return secs;});
  }
  // Notizbuchname -> ISO-Land (Fallback, wenn die KI kein Land erkennt).
@@ -1881,16 +1881,16 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
      if(!names.length){say("Bitte mindestens ein Notizbuch auswählen.","#b91c1c");return;}
      _msStop=false;goBtn.disabled=true;btn.disabled=true;stopBtn.classList.remove("hidden");setBar(0,1);
      say("Öffne "+names.length+" Notizbuch(ern) … ("+esc(names.join(", "))+")");
-     var added=[],fail=0,skip=0,token=_token,pages=[],errs=[];
+     var added=[],fail=0,skip=0,token=_token,pages=[],dbg=[];
      // Abschnitte der Auswahl ermitteln (recent: per URL aufloesen; sections: aus Cache filtern)
      var secsP;
-     if(_mode==="recent"){secsP=sectionsFromBooks(token,chosen,function(bi,bt,b){say("Öffne Notizbuch "+(bi+1)+" / "+bt+": <b>"+esc(b.name)+"</b> …");},errs);}
+     if(_mode==="recent"){secsP=sectionsFromBooks(token,chosen,function(bi,bt,b){say("Öffne Notizbuch "+(bi+1)+" / "+bt+": <b>"+esc(b.name)+"</b> …");},dbg);}
      else{var sel={};chosen.forEach(function(b){sel[b.id]=1;});secsP=Promise.resolve(_sections.filter(function(s){return sel[s.bookId];}));}
      secsP.then(function(secs){
-       if(!secs.length){throw new Error("Keine Abschnitte gefunden."+(errs.length?(" ["+errs.slice(0,3).join(" | ")+"]"):" (Notizbuch evtl. leer oder kein Zugriff)"));}
+       if(!secs.length){throw new Error("Diagnose – keine Abschnitte: "+(dbg.length?dbg.join(" | "):"(kein Protokoll)"));}
        say(secs.length+" Abschnitte – lese Seiten …");
        return pagesFromSections(token,secs,function(si,st,sec){if(si%5===0)say("Abschnitte werden gelesen … "+(si+1)+" / "+st+" &nbsp; <b>"+esc(sec.book||"")+"</b>");});})
-       .then(function(ps){pages=ps;if(!pages.length){throw new Error("Keine Seiten in den gewählten Notizbüchern gefunden.");}say(pages.length+" Seiten gefunden – Verarbeitung startet …");
+       .then(function(ps){pages=ps;if(!pages.length){throw new Error("Diagnose – 0 Seiten bei Abschnitten: "+(dbg.length?dbg.join(" | "):"(kein Protokoll)"));}say(pages.length+" Seiten gefunden – Verarbeitung startet …");
          var ex=osmExisting();
          function nextPage(i){
            if(_msStop||i>=pages.length){return finish();}
