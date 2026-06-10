@@ -33,7 +33,7 @@ input,select,textarea{font-family:var(--sans);font-size:15px}
 .topbar-in{max-width:1120px;margin:0 auto;padding:9px 16px calc(9px + env(safe-area-inset-top)) 16px;padding-top:max(9px,env(safe-area-inset-top))}
 .tb-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .tb-brand{display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-width:0}
-.tb-brand img{height:48px;display:block;padding-bottom:11px;border-bottom:1.6px solid rgba(255,255,255,.9)}
+.tb-brand img{height:58px;display:block;padding-bottom:11px;border-bottom:1.6px solid rgba(255,255,255,.9)}
 .tb-sub{font-family:var(--mono);font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:#fff;opacity:.97;font-weight:700;margin-top:9px}
 .conn{font-family:var(--mono);font-size:11px;letter-spacing:.02em;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;margin-top:2px}
 .conn svg{width:14px;height:14px;flex:none}
@@ -2373,7 +2373,7 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v95";
+ var APP_VER="v96";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
