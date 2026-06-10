@@ -612,7 +612,11 @@ var USERS=%%USERS%%;
  // Einrichtungs-Link (#s=...) fuer Team-Rollout: Cloud-Zugang automatisch uebernehmen, dann aus der URL entfernen.
  (function(){try{var m=(location.hash||"").match(/[#&]s=([^&]+)/);if(!m)return;var o=JSON.parse(decodeURIComponent(escape(atob(m[1].replace(/-/g,"+").replace(/_/g,"/")))));if(o&&o.u&&o.k){SB={url:o.u,key:o.k};try{localStorage.setItem(SBKEY,JSON.stringify(SB));}catch(e){}}if(o&&o.c){AISECRET=o.c;try{localStorage.setItem(AIKEY,AISECRET);}catch(e){}}history.replaceState(null,"",location.pathname+location.search);}catch(e){}})();
  function cacheRead(){try{var o=JSON.parse(localStorage.getItem(KEY)||"{}");if(!o.contacts)o.contacts=[];return o;}catch(e){return {contacts:[]};}}
- function cacheSave(){try{localStorage.setItem(KEY,JSON.stringify(DB));}catch(e){}}
+ function cacheSave(){
+   try{localStorage.setItem(KEY,JSON.stringify(DB));return;}catch(e){}
+   // Speicher voll (meist durch eingebettete Bilder) -> lokal OHNE Bilder sichern, damit Textdaten NIE verloren gehen.
+   try{var slim={rev:DB.rev,contacts:(DB.contacts||[]).map(function(c){if(c&&c.bilder&&c.bilder.length){var x={};for(var k in c){if(k!=="bilder")x[k]=c[k];}x._imgN=c.bilder.length;return x;}return c;})};localStorage.setItem(KEY,JSON.stringify(slim));}catch(e2){}
+ }
  var DB=cacheRead();
  function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
  function byId(id){for(var i=0;i<DB.contacts.length;i++)if(DB.contacts[i].id===id)return DB.contacts[i];return null;}
@@ -635,7 +639,17 @@ var USERS=%%USERS%%;
    }
    return page(0);
  }
- function sbUpsert(list){if(!list||!list.length)return Promise.resolve();var body=list.map(function(c){return {id:c.id,data:c};});return fetch(sbBase(),{method:"POST",headers:sbHeaders({"Prefer":"resolution=merge-duplicates,return=minimal"}),body:JSON.stringify(body)}).then(function(r){if(!r.ok)throw new Error("sb "+r.status);});}
+ function sbUpsert(list){
+   if(!list||!list.length)return Promise.resolve();
+   var rows=list.map(function(c){return {id:c.id,data:c};});
+   // In ~1-MB-Pakete aufteilen, damit kein Request zu gross wird (Bilder!). Einzelner grosser Kontakt geht allein raus.
+   var batches=[],cur=[],size=0;
+   rows.forEach(function(r){var s=JSON.stringify(r).length+2;if(cur.length&&size+s>1000000){batches.push(cur);cur=[];size=0;}cur.push(r);size+=s;});
+   if(cur.length)batches.push(cur);
+   var i=0;
+   function step(){if(i>=batches.length)return Promise.resolve();var b=batches[i++];return fetch(sbBase(),{method:"POST",headers:sbHeaders({"Prefer":"resolution=merge-duplicates,return=minimal"}),body:JSON.stringify(b)}).then(function(r){if(!r.ok)throw new Error("sb "+r.status);}).then(step);}
+   return step();
+ }
  function sbDelete(id){return fetch(sbBase()+"?id=eq."+encodeURIComponent(id),{method:"DELETE",headers:sbHeaders({"Prefer":"return=minimal"})}).then(function(r){if(!r.ok)throw new Error("sb "+r.status);});}
  function sbDeleteAll(){return fetch(sbBase()+"?id=neq.__none__",{method:"DELETE",headers:sbHeaders({"Prefer":"return=minimal"})}).then(function(r){if(!r.ok)throw new Error("sb "+r.status);});}
 
@@ -819,8 +833,8 @@ var USERS=%%USERS%%;
    var raw=String(full||pre||"").split("?")[0]; // .../onenote/resources/{id}/content bzw. /$value
    // "siteCollections/..." ist keine gueltige Graph-Route fuer normale GETs -> auf "sites/..." umschreiben.
    var fixed=raw.replace("/v1.0/siteCollections/","/v1.0/sites/");
-   function viaFetch(url,authTok){return fetch(url,authTok?{headers:{Authorization:"Bearer "+authTok}}:{}).then(function(r){if(!r.ok)throw new Error("img "+r.status);return r.blob();}).then(function(b){if(!b||!b.size)throw new Error("leer");return new Promise(function(res,rej){var u=URL.createObjectURL(b);downscaleSrc(u,1600,function(d){URL.revokeObjectURL(u);if(d)res(d);else rej(new Error("decode"));});});});}
-   function viaImg(url){return new Promise(function(res,rej){downscaleSrc(url,1600,function(d){d?res(d):rej(new Error("imgEl"));},true);});}
+   function viaFetch(url,authTok){return fetch(url,authTok?{headers:{Authorization:"Bearer "+authTok}}:{}).then(function(r){if(!r.ok)throw new Error("img "+r.status);return r.blob();}).then(function(b){if(!b||!b.size)throw new Error("leer");return new Promise(function(res,rej){var u=URL.createObjectURL(b);downscaleSrc(u,1200,function(d){URL.revokeObjectURL(u);if(d)res(d);else rej(new Error("decode"));});});});}
+   function viaImg(url){return new Promise(function(res,rej){downscaleSrc(url,1200,function(d){d?res(d):rej(new Error("imgEl"));},true);});}
    // Jeden Schritt protokollieren -> Diagnose zeigt genau, welcher Weg woran scheitert.
    var steps=[];
    function tryStep(name,fn){return function(){return fn().catch(function(e){steps.push(name+":"+String((e&&e.message)||e).replace(/^img /,""));throw e;});};}
@@ -2027,7 +2041,7 @@ var USERS=%%USERS%%;
      if(!names.length){say("Bitte mindestens ein Notizbuch auswählen.","#b91c1c");return;}
      _msStop=false;goBtn.disabled=true;btn.disabled=true;stopBtn.classList.remove("hidden");setBar(0,1);
      say("Öffne "+names.length+" Notizbuch(ern) … ("+esc(names.join(", "))+")");
-     var added=[],fail=0,skip=0,token=_token,pages=[],dbg=[],imgFound=0,imgLoaded=0,imgRaw=0,imgSample="",imgAdded=0,sitesToken=null;
+     var added=[],fail=0,skip=0,token=_token,pages=[],dbg=[],imgFound=0,imgLoaded=0,imgRaw=0,imgSample="",imgAdded=0,sitesToken=null,savedUpto=0;
      msSitesToken().then(function(st){sitesToken=st;}); // nicht-blockierend: Bilder aus OneDrive der Kollegen (falls Admin-Freigabe da)
      // Bilder einer Seite laden (max 4) -> [dataURIs]; aktualisiert die Zaehler.
      function loadImgs(pc){
@@ -2082,7 +2096,7 @@ var USERS=%%USERS%%;
                  if(bilder.length)rec.bilder=bilder;
                  rec.quelle="OneNote-Import"+(p.book?(" ("+p.book+")"):"");
                  DB.contacts.push(rec);added.push(rec);ex[dk]=rec.id;
-                 if(added.length%10===0)bulkSave(added.slice(),false); // zwischendurch sichern
+                 if(added.length-savedUpto>=8){bulkSave(added.slice(savedUpto),false);savedUpto=added.length;} // nur die NEUEN sichern (nicht kumulativ)
                });
              });
            }).then(function(){setTimeout(function(){nextPage(i+1,0);},150);},function(){
@@ -2093,7 +2107,7 @@ var USERS=%%USERS%%;
          }
          function finish(){
            setBar(1,1);
-           if(added.length)bulkSave(added.slice(),false);
+           if(added.length>savedUpto){bulkSave(added.slice(savedUpto),false);savedUpto=added.length;}
            initFilters();renderDashboard();
            goBtn.disabled=false;btn.disabled=false;stopBtn.classList.add("hidden");
            var imgInfo=" · Bilder "+imgLoaded+"/"+imgFound+(imgAdded?(" ("+imgAdded+" nachgetragen)"):"");
@@ -2221,7 +2235,7 @@ var USERS=%%USERS%%;
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v76";
+ var APP_VER="v77";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
@@ -2266,7 +2280,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v76";
+const CACHE="vertrieb-v77";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png","./icon-32.png","./favicon.ico",
   "./vendor/leaflet.js","./vendor/leaflet.css","./vendor/msal-browser.min.js",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
