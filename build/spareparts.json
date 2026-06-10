@@ -27,24 +27,6 @@
       "h_en": "Hopper",
       "teile": [
         {
-          "id": "BUNKER-MAIN",
-          "art": "—",
-          "name": "Bunker",
-          "name_en": "Hopper",
-          "desc": "Komplette Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar",
-          "desc_en": "Complete assembly – pick and order all individual parts in 3D",
-          "price": 0,
-          "model": "bunker.glb",
-          "img": "bunker",
-          "rot": [
-            -90,
-            0,
-            0
-          ],
-          "name_pl": "Zasobnik",
-          "name_fr": "Trémie"
-        },
-        {
           "id": "BUNKER-DOSIERWALZE",
           "art": "—",
           "name": "Dosierwalzenmantel 125 mm",
