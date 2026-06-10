@@ -329,10 +329,10 @@ textarea.field{min-height:74px;resize:vertical;line-height:1.5}
         <input class="field" id="osmWo" placeholder="Wo? z. B. Deutschland, Bayern, München" style="flex:1;min-width:140px">
         <button class="btn primary" id="osmSearch" type="button"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>Suchen</button>
       </div>
-      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;align-items:center">
-        <button class="btn" id="osmNear" type="button"><svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.8"><path d="M12 21s-7-5.2-7-11a7 7 0 0114 0c0 5.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>Umkreis um meinen Standort</button>
-        <select class="field" id="osmRadius" style="width:auto;flex:0 0 auto"><option value="25">25 km</option><option value="50">50 km</option><option value="100" selected>100 km</option><option value="200">200 km</option></select>
-        <span style="font-size:12px;color:var(--muted)">findet Anlagen in deiner Nähe</span>
+      <div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:8px;align-items:center">
+        <label style="display:inline-flex;align-items:center;gap:7px;cursor:pointer;font-size:13px"><input type="checkbox" id="osmNearTgl" style="width:18px;height:18px;accent-color:#c00000"><svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.8"><path d="M12 21s-7-5.2-7-11a7 7 0 0114 0c0 5.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>Umkreis um meinen Standort</label>
+        <select class="field" id="osmRadius" style="width:auto;flex:0 0 auto" disabled><option value="25">25 km</option><option value="50">50 km</option><option value="100" selected>100 km</option><option value="200">200 km</option></select>
+        <span id="osmNearHint" style="font-size:12px;color:var(--muted)">aus = im ganzen Land/Region suchen</span>
       </div>
       <div id="osmStatus" style="font-size:13px;color:var(--muted);margin-top:10px"></div>
       <div id="osmMap" style="height:340px;border:1px solid var(--line);border-radius:12px;margin-top:10px;display:none"></div>
@@ -1221,10 +1221,16 @@ var USERS=%%USERS%%;
      throw e;
    });
  }
- document.getElementById("osmSearch").onclick=leadSearch;
- document.getElementById("osmNear").onclick=umkreisSearch;
- document.getElementById("osmWas").addEventListener("keydown",function(e){if(e.key==="Enter")leadSearch();});
- document.getElementById("osmWo").addEventListener("keydown",function(e){if(e.key==="Enter")leadSearch();});
+ // Ein "Suchen"-Knopf: Schalter "Umkreis" entscheidet -> Umkreissuche (GPS) oder normale Suche.
+ function doLeadSearch(){var t=document.getElementById("osmNearTgl");if(t&&t.checked)umkreisSearch();else leadSearch();}
+ document.getElementById("osmSearch").onclick=doLeadSearch;
+ document.getElementById("osmWas").addEventListener("keydown",function(e){if(e.key==="Enter")doLeadSearch();});
+ document.getElementById("osmWo").addEventListener("keydown",function(e){if(e.key==="Enter")doLeadSearch();});
+ (function(){var t=document.getElementById("osmNearTgl");if(!t)return;t.addEventListener("change",function(){
+   var on=t.checked;document.getElementById("osmRadius").disabled=!on;
+   var wo=document.getElementById("osmWo");if(wo){wo.disabled=on;wo.style.opacity=on?"0.45":"";}
+   document.getElementById("osmNearHint").textContent=on?"sucht um deinen Standort (GPS) – Radius wählen":"aus = im ganzen Land/Region suchen";
+ });})();
  document.getElementById("osmResults").addEventListener("click",function(e){
    if(e.target.closest("a"))return; // Web-Links normal lassen
    if(e.target.id==="osmMore"){aiMore();return;}
@@ -1767,7 +1773,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v32";
+const CACHE="vertrieb-v33";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png",
   "./vendor/leaflet.js","./vendor/leaflet.css",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
