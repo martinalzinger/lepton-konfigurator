@@ -985,7 +985,7 @@ var USERS=%%USERS%%;
  // langsame Namens-Regex nur EINMAL gebündelt am Ende.
  function osmFilters(term){
    var t=(term||"").toLowerCase(),tags=[],names=[];
-   if(/kompost/.test(t)){tags.push('nwr["industrial"="composting"]');tags.push('nwr["amenity"="recycling"]["recycling:organic"="yes"]');names.push("kompost");}
+   if(/kompost|bio(m[uü]ll|abf|gut|ton)|gr[uü]n(gut|schnitt|abf)|gaerrest|gärrest/.test(t)){tags.push('nwr["industrial"="composting"]');tags.push('nwr["amenity"="recycling"]["recycling:organic"="yes"]');names.push("kompost");names.push("bioabfall");}
    if(/recycl|wertstoff|wertstoffhof/.test(t)){tags.push('nwr["amenity"="recycling"]["recycling_type"="centre"]');}
    if(/entsorg|abfall|müll|mull|deponie|landfill/.test(t)){tags.push('nwr["landuse"="landfill"]');tags.push('nwr["amenity"="waste_transfer_station"]');tags.push('nwr["amenity"="waste_disposal"]');names.push("entsorg");}
    if(/schrott|scrap|metall/.test(t)){tags.push('nwr["industrial"="scrap_yard"]');}
@@ -1167,23 +1167,39 @@ var USERS=%%USERS%%;
    osmLoading("Standort wird ermittelt … (bitte Standort-Freigabe erlauben)");
    navigator.geolocation.getCurrentPosition(function(pos){
      var lat=pos.coords.latitude,lon=pos.coords.longitude;
-     lastQuery=was+" im Umkreis "+km+" km";
-     osmLoading('Suche „'+esc(was)+'“ im Umkreis '+km+' km um deinen Standort …');
-     osmReverse(lat,lon).then(function(rg){if(rg&&rg.cc)searchLand=rg.cc.toUpperCase();if(rg&&rg.ort)lastQuery=was+" im Umkreis "+km+" km um "+rg.ort;}).catch(function(){});
-     osmOverpass(osmBuildQuery({around:[km*1000,lat,lon]},osmFilters(was))).then(function(els){
-       var seen={},out=[];els.forEach(function(el){var t=el.tags||{};if(!t.name)return;var k=el.type+"/"+el.id;if(seen[k])return;seen[k]=1;out.push(el);});
-       _searchSrc="Umkreis "+km+" km";renderOsm(out);
-       if(!out.length)osmStatus('Keine Anlagen im Umkreis '+km+' km gefunden. Größeren Radius wählen oder anderen Begriff (z. B. „Recycling", „Erden") versuchen.');
-     }).catch(function(e){
-       osmClearResults();var m=String((e&&e.message)||e);
-       if(/Failed to fetch|NetworkError|Load failed|fetch resource/i.test(m))osmStatus('Die Online-Suche ist von diesem Gerät blockiert (Firewall/Browser-Schutz). Am Handy/Mobilfunk versuchen.');
-       else if(/overpass/.test(m))osmStatus('Umkreissuche fehlgeschlagen (Kartendienst überlastet). Bitte erneut versuchen.');
-       else osmStatus('Umkreissuche gerade nicht möglich. Später erneut versuchen.');
+     lastQuery=was+" im Umkreis "+km+" km";_lastWas=was;
+     osmLoading('Standort gefunden – suche „'+esc(was)+'“ im Umkreis '+km+' km …');
+     osmReverse(lat,lon).then(function(rg){return rg;},function(){return null;}).then(function(rg){
+       var ort=(rg&&rg.ort)||"";if(rg&&rg.cc)searchLand=rg.cc.toUpperCase();
+       if(ort)lastQuery=was+" im Umkreis "+km+" km um "+ort;
+       // KI bevorzugt – findet auch Betriebe, die NICHT in OpenStreetMap stehen (z. B. Biomüll/Kompost).
+       if(aiReady()){
+         var wo=(ort||(lat.toFixed(3)+", "+lon.toFixed(3)))+" und Umgebung (Umkreis ca. "+km+" km)";_lastWo=wo;
+         osmLoading('KI sucht „'+esc(was)+'“ im Umkreis '+km+' km um '+esc(ort||"deinen Standort")+' … <b>~1–2 Min</b>');
+         aiSearchRetry(was,wo,1).then(function(leads){
+           if(leads&&leads.length){_searchSrc="KI · Umkreis "+km+" km";renderOsm(leads.map(aiToEl));}
+           else osmUmkreis(lat,lon,km,was);
+         }).catch(function(e){_aiErr=String((e&&e.message)||e);osmUmkreis(lat,lon,km,was);});
+       } else { osmUmkreis(lat,lon,km,was); }
      });
    },function(err){
      var c=err&&err.code;
      osmStatus(c===1?'Standort-Freigabe wurde abgelehnt. Bitte erlaube der Seite den Zugriff auf den Standort (Browser-/Handy-Einstellungen) und tippe erneut.':'Standort konnte nicht ermittelt werden. Bitte erneut versuchen (in Gebäuden ist GPS oft ungenau).');
    },{enableHighAccuracy:true,timeout:15000,maximumAge:60000});
+ }
+ // Umkreis ueber die kostenlose Karten-Suche (OSM around:) – Fallback, wenn keine KI / keine KI-Treffer.
+ function osmUmkreis(lat,lon,km,was){
+   osmLoading('Suche „'+esc(was)+'“ im Umkreis '+km+' km (Karten-Suche) …');
+   osmOverpass(osmBuildQuery({around:[km*1000,lat,lon]},osmFilters(was))).then(function(els){
+     var seen={},out=[];els.forEach(function(el){var t=el.tags||{};if(!t.name)return;var k=el.type+"/"+el.id;if(seen[k])return;seen[k]=1;out.push(el);});
+     _searchSrc="Umkreis "+km+" km";renderOsm(out);
+     if(!out.length)osmStatus('Keine Treffer im Umkreis '+km+' km'+(_aiErr?(' (KI: '+esc(_aiErr)+')'):'')+'. Größeren Radius wählen oder anderen Begriff (z. B. „Kompost", „Recycling", „Erden") versuchen.');
+   }).catch(function(e){
+     osmClearResults();var m=String((e&&e.message)||e);
+     if(/Failed to fetch|NetworkError|Load failed|fetch resource/i.test(m))osmStatus('Die Online-Suche ist von diesem Gerät blockiert (Firewall/Browser-Schutz). Am Handy/Mobilfunk versuchen.');
+     else if(/overpass/.test(m))osmStatus('Umkreissuche fehlgeschlagen (Kartendienst überlastet). Bitte erneut versuchen.');
+     else osmStatus('Umkreissuche gerade nicht möglich. Später erneut versuchen.');
+   });
  }
  // Haupt-Einstieg der Lead-Suche: KI (falls eingerichtet) zuerst, sonst/als Fallback OSM-Karten-Suche.
  function leadSearch(){
@@ -1773,7 +1789,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v33";
+const CACHE="vertrieb-v34";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png",
   "./vendor/leaflet.js","./vendor/leaflet.css",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
