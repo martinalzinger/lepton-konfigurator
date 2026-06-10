@@ -24,7 +24,7 @@ LOGO_L=A["LOGO_L"]; LOGO_D=A["LOGO_D"]; RED=A["RED"]; RED2=A["RED2"]
 
 # Dieselbe Anmelde-Benutzerliste wie der Konfigurator (build.py). Bewusst gespiegelt,
 # damit /vertrieb/ eigenständig funktioniert und den eingeloggten Vertriebler kennt.
-USERS_JS='[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324",n:""},{h:"e5dca8f9c2337bcc4fc9df0c78714044754ce68c0685d5bb7c250dcaf7069615",n:"Johannes Rudel"},{h:"b6b00d05870bc4a123c79e339113393677abc681c59f1f82808b72770499e9dd",n:"Tobias Ermel"},{h:"c88ea0954fae0ae122032164bcd08d488841e5083c218766b77578068a054af9",n:"Richard Alzinger",tel:"+49 170 3336025",mail:"richard@alzinger-maschinenbau.de"},{h:"9833d8644a16501b9eab7a849a294b8b209e32db63366041b50bbfa0107da4d3",n:"Adam Domaradzki"},{h:"0ad1350f32d0d469d4c044cb1ad38b4964763caf497112c76bfc462a81ccda9b",n:"Łukasz Zdziennicki"},{h:"6dce472c58a319f6b55518c7ddcb0e438cdc50c1566ff46ec420a12289df2980",n:"Martin Alzinger",tel:"+49 170 3128533",mail:"martin@alzinger-maschinenbau.de"}]'
+USERS_JS='[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324",n:""},{h:"e5dca8f9c2337bcc4fc9df0c78714044754ce68c0685d5bb7c250dcaf7069615",n:"Johannes Rudel"},{h:"b6b00d05870bc4a123c79e339113393677abc681c59f1f82808b72770499e9dd",n:"Tobias Ermel"},{h:"c88ea0954fae0ae122032164bcd08d488841e5083c218766b77578068a054af9",n:"Richard Alzinger",tel:"+49 170 3336025",mail:"richard@alzinger-maschinenbau.de"},{h:"9833d8644a16501b9eab7a849a294b8b209e32db63366041b50bbfa0107da4d3",n:"Adam Domaradzki",hd:1},{h:"0ad1350f32d0d469d4c044cb1ad38b4964763caf497112c76bfc462a81ccda9b",n:"Łukasz Zdziennicki",hd:1},{h:"6dce472c58a319f6b55518c7ddcb0e438cdc50c1566ff46ec420a12289df2980",n:"Martin Alzinger",tel:"+49 170 3128533",mail:"martin@alzinger-maschinenbau.de"}]'
 
 TPL = r'''<!DOCTYPE html>
 <html lang="de">
@@ -1010,8 +1010,8 @@ var USERS=%%USERS%%;
 
  /* ---------- Kontaktliste ---------- */
  function fillSelect(sel,opts,all){sel.innerHTML='<option value="">'+all+'</option>'+opts.map(function(o){return '<option value="'+o[0]+'">'+esc(o[1])+'</option>';}).join("");}
- // Vertriebler-Filter = ganzes Team (USERS) + alle in den Kontakten vorkommenden Betreuer (auch alte Namen).
- function ownerOpts(){var seen={},out=[];USERS.forEach(function(u){if(u.n&&!seen[u.n]){seen[u.n]=1;out.push([u.n,u.n]);}});DB.contacts.forEach(function(c){if(c.owner&&!seen[c.owner]){seen[c.owner]=1;out.push([c.owner,c.owner]);}});return out;}
+ // Vertriebler-Filter = internes Team (USERS ohne Händler, hd:1) + alle in den Kontakten vorkommenden Betreuer.
+ function ownerOpts(){var seen={},out=[];USERS.forEach(function(u){if(u.n&&!u.hd&&!seen[u.n]){seen[u.n]=1;out.push([u.n,u.n]);}});DB.contacts.forEach(function(c){if(c.owner&&!seen[c.owner]){seen[c.owner]=1;out.push([c.owner,c.owner]);}});return out;}
  // Länder-Filter = bekannte Liste + alle in den Kontakten tatsächlich vorkommenden Codes
  function landOpts(){var seen={},out=[];LANDS.forEach(function(l){seen[l[0]]=1;out.push(l);});DB.contacts.forEach(function(c){var cc=(c.land||"").toUpperCase();if(cc&&!seen[cc]){seen[cc]=1;out.push([cc,landLabel(cc)]);}});return out;}
  // Bundesländer (DE). contactBundesland() nimmt das gesetzte Feld oder leitet es aus der Notiz ab
@@ -1745,7 +1745,7 @@ var USERS=%%USERS%%;
    var landSel='<div class="fg"><label>Land</label><select class="field" id="f_land">'+LANDS.map(function(l){return '<option value="'+l[0]+'"'+((c.land||"DE")===l[0]?' selected':'')+'>'+esc(l[1])+'</option>';}).join("")+'</select></div>';
    var blandSel='<div class="fg"><label>Bundesland</label><select class="field" id="f_bundesland"><option value="">—</option>'+BL.map(function(b){return '<option'+(contactBundesland(c)===b?' selected':'')+'>'+esc(b)+'</option>';}).join("")+'</select></div>';
    var ownerSel='<div class="fg"><label>Betreuer (Vertriebler)</label><select class="field" id="f_owner"><option value="">—</option>'+
-     USERS.filter(function(u){return u.n;}).map(function(u){var sel=(c.owner||(CUR&&CUR.n))===u.n?' selected':'';return '<option'+sel+'>'+esc(u.n)+'</option>';}).join("")+'</select></div>';
+     USERS.filter(function(u){return u.n&&!u.hd;}).map(function(u){var sel=(c.owner||(CUR&&CUR.n))===u.n?' selected':'';return '<option'+sel+'>'+esc(u.n)+'</option>';}).join("")+'</select></div>';
    var html=''+
    '<button class="btn ghost sm" id="fBack" style="margin-bottom:10px">← Zurück</button>'+
    '<h2 class="vh">'+(isNew?"Neuer Kontakt / Lead":"Kontakt bearbeiten")+'</h2>'+
@@ -2108,7 +2108,7 @@ var USERS=%%USERS%%;
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v63";
+ var APP_VER="v64";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
@@ -2152,7 +2152,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v63";
+const CACHE="vertrieb-v64";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png",
   "./vendor/leaflet.js","./vendor/leaflet.css","./vendor/msal-browser.min.js",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
