@@ -767,15 +767,17 @@ var USERS=%%USERS%%;
  // Notizbuchname -> ISO-Land (Fallback, wenn die KI kein Land erkennt).
  var NB_LAND={deutschland:"DE",polen:"PL","österreich":"AT",osterreich:"AT",schweiz:"CH",holland:"NL",niederlande:"NL",belgien:"BE",frankreich:"FR",italien:"IT",ungarn:"HU",griechenland:"GR",tschechien:"CZ",kroatien:"HR","rumänien":"RO",rumaenien:"RO",norwegen:"NO",finland:"FI",finnland:"FI",schweden:"SE",dänemark:"DK",daenemark:"DK",usa:"US",england:"GB",grossbritannien:"GB","großbritannien":"GB",spanien:"ES",portugal:"PT",slowenien:"SI",slowakei:"SK",bulgarien:"BG",serbien:"RS",türkei:"TR",tuerkei:"TR",afrika:"ZA",irland:"IE",litauen:"LT",lettland:"LV",estland:"EE"};
  function landFromBook(book){var k=String(book||"").toLowerCase();for(var key in NB_LAND){if(k.indexOf(key)>=0)return NB_LAND[key];}return "";}
- // Seiteninhalt (HTML) -> reiner Text + Bild-URLs (Graph-Ressourcen). Nutzt contentUrl (wichtig fuer GETEILTE).
+ // Seiteninhalt (HTML) -> reiner Text + Bild-URLs. preAuthenticated=true -> Bildlinks ohne erneute Anmeldung ladbar.
  function graphPageContent(token,page){
-   var url=(page&&page.contentUrl)||("https://graph.microsoft.com/v1.0/me/onenote/pages/"+((page&&page.id)||page)+"/content");
+   var base=(page&&page.contentUrl)||("https://graph.microsoft.com/v1.0/me/onenote/pages/"+((page&&page.id)||page)+"/content");
+   var url=base+(base.indexOf("?")<0?"?":"&")+"preAuthenticated=true";
    return fetch(url,{headers:{Authorization:"Bearer "+token}}).then(function(r){if(!r.ok)throw new Error("content "+r.status);return r.text();})
-     .then(function(html){var d=document.createElement("div");d.innerHTML=html;var imgs=[];d.querySelectorAll("img").forEach(function(im){var s=im.getAttribute("src")||im.getAttribute("data-fullres-src")||"";if(/graph\.microsoft\.com/.test(s))imgs.push(s);});var txt=(d.innerText||d.textContent||"").replace(/\n{3,}/g,"\n\n").trim();return {text:txt,imgs:imgs};});
+     .then(function(html){var d=document.createElement("div");d.innerHTML=html;var imgs=[];d.querySelectorAll("img").forEach(function(im){var s=im.getAttribute("data-fullres-src")||im.getAttribute("src")||"";if(/^https?:\/\//.test(s))imgs.push(s);});var txt=(d.innerText||d.textContent||"").replace(/\n{3,}/g,"\n\n").trim();return {text:txt,imgs:imgs};});
  }
- // Graph-Bild laden (mit Token) -> verkleinertes JPEG-DataURI.
+ // OneNote-Bild laden -> verkleinertes JPEG-DataURI. Erst ohne Auth (pre-authenticated URL), sonst mit Token.
  function graphImage(token,url){
-   return fetch(url,{headers:{Authorization:"Bearer "+token}}).then(function(r){if(!r.ok)throw new Error("img");return r.blob();}).then(function(b){return new Promise(function(res){var u=URL.createObjectURL(b);downscaleSrc(u,1400,function(d){URL.revokeObjectURL(u);res(d);});});});
+   function grab(useAuth){return fetch(url,useAuth?{headers:{Authorization:"Bearer "+token}}:{}).then(function(r){if(!r.ok)throw new Error("img "+r.status);return r.blob();});}
+   return grab(false).catch(function(){return grab(true);}).then(function(b){return new Promise(function(res){var u=URL.createObjectURL(b);downscaleSrc(u,1400,function(d){URL.revokeObjectURL(u);res(d);});});});
  }
  // Foto verkleinern (Längste Seite maxDim) und als JPEG-Data-URI zurückgeben -> kleine Payload.
  function downscaleImage(file,maxDim,cb){
@@ -1912,7 +1914,7 @@ var USERS=%%USERS%%;
      if(!names.length){say("Bitte mindestens ein Notizbuch auswählen.","#b91c1c");return;}
      _msStop=false;goBtn.disabled=true;btn.disabled=true;stopBtn.classList.remove("hidden");setBar(0,1);
      say("Öffne "+names.length+" Notizbuch(ern) … ("+esc(names.join(", "))+")");
-     var added=[],fail=0,skip=0,token=_token,pages=[],dbg=[];
+     var added=[],fail=0,skip=0,token=_token,pages=[],dbg=[],imgFound=0,imgLoaded=0;
      // Abschnitte der Auswahl ermitteln (recent: per URL aufloesen; sections: aus Cache filtern)
      var secsP;
      if(_mode==="recent"){secsP=sectionsFromBooks(token,chosen,function(bi,bt,b){say("Öffne Notizbuch "+(bi+1)+" / "+bt+": <b>"+esc(b.name)+"</b> …");},dbg);}
@@ -1933,8 +1935,8 @@ var USERS=%%USERS%%;
                var c=res.contact||{};var fa=String(c.firma||"").trim()||String(p.title||"").trim();
                var dk="dk:"+dedupKey(fa,c.ort);if(ex[dk]){skip++;return null;}
                // Bilder der Seite laden (max 4)
-               var imgUrls=(pc.imgs||[]).slice(0,4),bilder=[];
-               return imgUrls.reduce(function(pr,u){return pr.then(function(){return graphImage(token,u).then(function(d){if(d&&d.length<2500000)bilder.push(d);}).catch(function(){});});},Promise.resolve()).then(function(){
+               var imgUrls=(pc.imgs||[]).slice(0,4),bilder=[];imgFound+=imgUrls.length;
+               return imgUrls.reduce(function(pr,u){return pr.then(function(){return graphImage(token,u).then(function(d){if(d&&d.length<2500000){bilder.push(d);imgLoaded++;}}).catch(function(e){if(dbg.length<8)dbg.push("Bild: "+String((e&&e.message)||e));});});},Promise.resolve()).then(function(){
                  var lf=landFromBook(p.book),ki=String(c.land||"").toUpperCase().slice(0,2);
                  var rec={id:uid(),created:Date.now(),updated:Date.now(),status:"lead",land:(lf||ki||"DE"),activities:[],owner:(CUR&&CUR.n)||""};
                  rec.firma=fa;["anrede","vorname","nachname","strasse","plz","ort","bundesland","tel","mobil","mail","web","ustid"].forEach(function(k){var v=c[k]&&String(c[k]).trim();if(v)rec[k]=v;});
@@ -1956,7 +1958,8 @@ var USERS=%%USERS%%;
            if(added.length)bulkSave(added.slice(),false);
            initFilters();renderDashboard();
            goBtn.disabled=false;btn.disabled=false;stopBtn.classList.add("hidden");
-           say((_msStop?"Gestoppt. ":"Fertig! ")+"<b>"+added.length+"</b> Kontakte angelegt"+(skip?(", "+skip+" bereits vorhanden/übersprungen"):"")+(fail?(", "+fail+" Fehler"):"")+".","#15803d");
+           var imgInfo=imgFound?(" · Bilder "+imgLoaded+"/"+imgFound):"";
+           say((_msStop?"Gestoppt. ":"Fertig! ")+"<b>"+added.length+"</b> Kontakte angelegt"+(skip?(", "+skip+" bereits vorhanden/übersprungen"):"")+(fail?(", "+fail+" Fehler"):"")+imgInfo+(imgFound&&!imgLoaded&&dbg.length?(" ["+dbg.slice(0,2).join(" | ")+"]"):"")+".","#15803d");
          }
          nextPage(0);
        })
@@ -2091,7 +2094,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v47";
+const CACHE="vertrieb-v48";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png",
   "./vendor/leaflet.js","./vendor/leaflet.css","./vendor/msal-browser.min.js",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
