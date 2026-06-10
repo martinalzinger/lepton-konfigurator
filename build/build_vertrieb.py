@@ -1010,7 +1010,8 @@ var USERS=%%USERS%%;
 
  /* ---------- Kontaktliste ---------- */
  function fillSelect(sel,opts,all){sel.innerHTML='<option value="">'+all+'</option>'+opts.map(function(o){return '<option value="'+o[0]+'">'+esc(o[1])+'</option>';}).join("");}
- function ownerOpts(){var seen={},out=[];DB.contacts.forEach(function(c){if(c.owner&&!seen[c.owner]){seen[c.owner]=1;out.push([c.owner,c.owner]);}});return out;}
+ // Vertriebler-Filter = ganzes Team (USERS) + alle in den Kontakten vorkommenden Betreuer (auch alte Namen).
+ function ownerOpts(){var seen={},out=[];USERS.forEach(function(u){if(u.n&&!seen[u.n]){seen[u.n]=1;out.push([u.n,u.n]);}});DB.contacts.forEach(function(c){if(c.owner&&!seen[c.owner]){seen[c.owner]=1;out.push([c.owner,c.owner]);}});return out;}
  // Länder-Filter = bekannte Liste + alle in den Kontakten tatsächlich vorkommenden Codes
  function landOpts(){var seen={},out=[];LANDS.forEach(function(l){seen[l[0]]=1;out.push(l);});DB.contacts.forEach(function(c){var cc=(c.land||"").toUpperCase();if(cc&&!seen[cc]){seen[cc]=1;out.push([cc,landLabel(cc)]);}});return out;}
  // Bundesländer (DE). contactBundesland() nimmt das gesetzte Feld oder leitet es aus der Notiz ab
@@ -2107,7 +2108,7 @@ var USERS=%%USERS%%;
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v62";
+ var APP_VER="v63";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
@@ -2151,7 +2152,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v62";
+const CACHE="vertrieb-v63";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png",
   "./vendor/leaflet.js","./vendor/leaflet.css","./vendor/msal-browser.min.js",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
