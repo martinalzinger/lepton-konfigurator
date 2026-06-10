@@ -233,7 +233,8 @@ for mk,rel in list(MODELS.items()):
         if info:
             if info.get("art"): toks.add(str(info["art"]).lower())
             if info.get("name"): toks.add(str(info["name"]).lower())
-            if info.get("name_en"): toks.add(str(info["name_en"]).lower())
+            for _lk in ("name_en","name_pl","name_fr"):
+                if info.get(_lk): toks.add(str(info[_lk]).lower())
     if toks: PARTIDX[mk]=" ␟ ".join(sorted(toks))
 print("PARTIDX: %d Modelle indexiert (%d Teile-Tokens gesamt)"%(len(PARTIDX),sum(v.count('␟')+1 for v in PARTIDX.values())))
 
@@ -355,6 +356,7 @@ body{font-family:var(--sans);background:var(--paper);color:var(--ink);line-heigh
 .citem .ci-th svg{width:30px;height:30px;stroke:#b7b3a8;fill:none;stroke-width:1.4}
 .citem .ci-n{flex:1;min-width:0}
 .citem .ci-name{font-size:13px;font-weight:600;line-height:1.25}
+.ci-name .loc,.dtbl .nm .loc{color:var(--muted);font-weight:400}
 .citem .ci-art{font-family:var(--mono);font-size:10px;color:var(--faint)}
 .citem .ci-price{font-family:var(--mono);font-size:11.5px;color:var(--red);margin-top:2px}
 .qty{display:inline-flex;align-items:center;border:1px solid var(--line-strong);border-radius:7px;overflow:hidden;background:#fff}
@@ -630,6 +632,11 @@ const ICONS={
  function saveCart(){try{localStorage.setItem(CKEY,JSON.stringify(cart));}catch(e){}}
  function catName(c){return (lang!=="de"&&c["h_"+lang])?c["h_"+lang]:c.h;}
  function pName(p){return (lang!=="de"&&p["name_"+lang])?p["name_"+lang]:p.name;}
+ // Warenkorb/Anfrage: immer Deutsch, zusätzlich Fremdsprache
+ function partDE(p){return p.name||"";}
+ function partLOC(p){return (p.name_loc!=null)?p.name_loc:pName(p);}
+ function partBoth(p){var de=partDE(p),lo=partLOC(p);return (lang!=="de"&&lo&&lo!==de)?esc(de)+'<span class="loc"> / '+esc(lo)+'</span>':esc(de);}
+ function partBothTxt(p){var de=partDE(p),lo=partLOC(p);return (lang!=="de"&&lo&&lo!==de)?de+" / "+lo:de;}
  function pDesc(p){return (lang!=="de"&&p["desc_"+lang])?p["desc_"+lang]:(p.desc||"");}
  // index parts by id
  var byId={}; CAT.forEach(function(c){c.items.forEach(function(p){byId[p.id]=p;});});
@@ -697,7 +704,7 @@ const ICONS={
  function addToCart(id){cart[id]=(cart[id]||0)+1;saveCart();updateBadge();renderCatalog();renderCart();toast(t("toast_added"));}
  function fmtKg(w){return (w||0).toLocaleString(LOCALE[lang]||"de-DE",{maximumFractionDigits:2})+" kg";}
  function totalWeight(){var s=0;lines().forEach(function(l){if(typeof l.p.weight==="number")s+=l.p.weight*l.q;});return s;}
- function addSub(art,name,weight,zoll,pimg){var id="sub:"+art;subReg[id]={art:art,name:name,price:0,weight:(typeof weight==="number"?weight:null),zoll:zoll||null,pimg:pimg||null};saveSub();cart[id]=(cart[id]||0)+1;saveCart();updateBadge();renderCart();toast(t("toast_added"));}
+ function addSub(art,nameDe,nameLoc,weight,zoll,pimg){var id="sub:"+art;subReg[id]={art:art,name:nameDe,name_loc:(nameLoc&&nameLoc!==nameDe?nameLoc:null),price:0,weight:(typeof weight==="number"?weight:null),zoll:zoll||null,pimg:pimg||null};saveSub();cart[id]=(cart[id]||0)+1;saveCart();updateBadge();renderCart();toast(t("toast_added"));}
  function setQty(id,q){q=Math.max(0,q|0);if(q===0){delete cart[id];if(subReg[id]){delete subReg[id];saveSub();}}else cart[id]=q;saveCart();updateBadge();renderCatalog();renderCart();}
  function renderCart(){
   var ids=Object.keys(cart).filter(function(id){return item(id);});
@@ -707,7 +714,7 @@ const ICONS={
   document.getElementById("sendMail").disabled=false;document.getElementById("printReq").disabled=false;document.getElementById("exportXlsx").disabled=false;
   var h="",sub=0,anyPrice=false;
   ids.forEach(function(id){var p=item(id),q=cart[id];if(p.price>0){sub+=p.price*q;anyPrice=true;}
-   h+='<div class="citem"><div class="ci-th">'+thumbHTML(p)+'</div><div class="ci-n"><div class="ci-name">'+esc(pName(p))+'</div><div class="ci-art">'+t("art_prefix")+esc(p.art)+(p.weight>0?'  ·  '+esc(fmtKg(p.weight)):'')+(p.zoll?'  ·  '+t("col_zoll")+' '+esc(p.zoll):'')+'</div><div class="ci-price">'+priceHTML(p)+'</div>'
+   h+='<div class="citem"><div class="ci-th">'+thumbHTML(p)+'</div><div class="ci-n"><div class="ci-name">'+partBoth(p)+'</div><div class="ci-art">'+t("art_prefix")+esc(p.art)+(p.weight>0?'  ·  '+esc(fmtKg(p.weight)):'')+(p.zoll?'  ·  '+t("col_zoll")+' '+esc(p.zoll):'')+'</div><div class="ci-price">'+priceHTML(p)+'</div>'
     +'<button class="ci-rm" data-rm="'+esc(id)+'">'+t("cart_remove")+'</button></div>'
     +'<div class="qty"><button data-dec="'+esc(id)+'">−</button><input data-q="'+esc(id)+'" value="'+q+'" inputmode="numeric"><button data-inc="'+esc(id)+'">+</button></div></div>';
   });
@@ -795,7 +802,7 @@ const ICONS={
  function pdmCanon(s){var m=String(s||"").match(/^PDM_0*(\d+)/i);return m?("PDM_"+m[1]):String(s||"");}
  function buildGroups(root){
   var map={},order=[];
-  root.traverse(function(o){if(o.isMesh){var key=normPart(nodeName(o)||"(unbenannt)");var g=map[key];if(!g){var info=PARTMAP[pdmCanon(key)];g={raw:key,label:cleanLabel(key),art:(info&&info.art)||key,name:(info&&((lang!=="de"&&info["name_"+lang])||info.name))||cleanLabel(key),weight:(info&&typeof info.weight==="number")?info.weight:null,zoll:(info&&info.zoll)||null,pimg:PARTIMG[pdmCanon(key)]||null,meshes:[],visible:true,count:0};map[key]=g;order.push(g);}g.meshes.push(o);o.userData._g=g;}});
+  root.traverse(function(o){if(o.isMesh){var key=normPart(nodeName(o)||"(unbenannt)");var g=map[key];if(!g){var info=PARTMAP[pdmCanon(key)];g={raw:key,label:cleanLabel(key),art:(info&&info.art)||key,nameDe:(info&&info.name)||cleanLabel(key),name:(info&&((lang!=="de"&&info["name_"+lang])||info.name))||cleanLabel(key),weight:(info&&typeof info.weight==="number")?info.weight:null,zoll:(info&&info.zoll)||null,pimg:PARTIMG[pdmCanon(key)]||null,meshes:[],visible:true,count:0};map[key]=g;order.push(g);}g.meshes.push(o);o.userData._g=g;}});
   // echte Stückzahl = Anzahl Instanz-Wurzeln (Knoten mit Artikelname ohne gleichnamigen Vorfahren),
   // NICHT die Mesh-Anzahl (ein Bauteil besteht oft aus mehreren Meshes)
   root.traverse(function(o){if(o.name){var nm=normPart(o.name);var g=map[nm];if(!g)return;var anc=o.parent,isRoot=true;while(anc){if(anc.name&&normPart(anc.name)===nm){isRoot=false;break;}anc=anc.parent;}if(isRoot)g.count++;}});
@@ -855,7 +862,7 @@ const ICONS={
   list.querySelectorAll(".prow").forEach(function(r){r.__g=groups[+r.getAttribute("data-i")];});
   list.querySelectorAll("[data-sel]").forEach(function(el){el.addEventListener("click",function(){selectGroup(groups[+el.getAttribute("data-sel")],false);});});
   list.querySelectorAll("[data-eye]").forEach(function(b){b.addEventListener("click",function(e){e.stopPropagation();toggleGroup(groups[+b.getAttribute("data-eye")]);});});
-  list.querySelectorAll("[data-pcart]").forEach(function(b){b.addEventListener("click",function(e){e.stopPropagation();var g=groups[+b.getAttribute("data-pcart")];addSub(g.art,g.name,g.weight,g.zoll,g.pimg);});});
+  list.querySelectorAll("[data-pcart]").forEach(function(b){b.addEventListener("click",function(e){e.stopPropagation();var g=groups[+b.getAttribute("data-pcart")];addSub(g.art,g.nameDe,g.name,g.weight,g.zoll,g.pimg);});});
  }
  function showNo(msg){document.getElementById("mvLoad").style.display="none";var no=document.getElementById("mvNo");no.style.display="flex";no.textContent=msg||t("no_3d");}
  function focusPart(q){
@@ -915,7 +922,7 @@ const ICONS={
   var L=lines();if(!L.length){toast(t("alert_empty"));return;}
   if(!validateRequired())return;
   var body=t("mail_intro")+"\n\n";
-  L.forEach(function(l){body+="  "+l.q+"× "+l.p.art+"  "+pName(l.p)+(l.p.zoll?"   "+t("col_zoll")+" "+l.p.zoll:"")+(l.p.weight>0?"   "+fmtKg(l.p.weight*l.q):"")+(l.p.price>0?"   "+money(l.p.price*l.q):"")+"\n";});
+  L.forEach(function(l){body+="  "+l.q+"× "+l.p.art+"  "+partBothTxt(l.p)+(l.p.zoll?"   "+t("col_zoll")+" "+l.p.zoll:"")+(l.p.weight>0?"   "+fmtKg(l.p.weight*l.q):"")+(l.p.price>0?"   "+money(l.p.price*l.q):"")+"\n";});
   var tw=totalWeight();if(tw>0)body+="\n"+t("weight_total")+": "+fmtKg(tw)+"\n";
   var sub=subtotal();if(sub>0)body+=t("cart_subtotal")+": "+money(sub)+"\n";
   body+="\n"+t("lbl_liefer")+": "+t("liefer_"+(fv("c_liefer")||"standard"))+"\n";
@@ -934,7 +941,7 @@ const ICONS={
   var date=new Date().toLocaleDateString(LOCALE[lang]||"de-DE",{day:"2-digit",month:"2-digit",year:"numeric"});
   var rows="",sub=0,anyP=false;
   L.forEach(function(l,i){var line=l.p.price>0?l.p.price*l.q:0;if(l.p.price>0){sub+=line;anyP=true;}
-   rows+='<tr><td>'+(i+1)+'</td><td class="zoll">'+esc(l.p.art)+'</td><td class="nm">'+(l.p.pimg?'<img class="pdfimg" src="'+l.p.pimg+'">':'')+esc(pName(l.p))+'</td><td class="zoll">'+esc(l.p.zoll||"—")+'</td><td class="r">'+l.q+'</td><td class="r">'+(l.p.weight>0?esc(fmtKg(l.p.weight*l.q)):"—")+'</td><td class="r">'+(l.p.price>0?money(l.p.price):t("price_request"))+'</td><td class="r">'+(l.p.price>0?money(line):"—")+'</td></tr>';});
+   rows+='<tr><td>'+(i+1)+'</td><td class="zoll">'+esc(l.p.art)+'</td><td class="nm">'+(l.p.pimg?'<img class="pdfimg" src="'+l.p.pimg+'">':'')+partBoth(l.p)+'</td><td class="zoll">'+esc(l.p.zoll||"—")+'</td><td class="r">'+l.q+'</td><td class="r">'+(l.p.weight>0?esc(fmtKg(l.p.weight*l.q)):"—")+'</td><td class="r">'+(l.p.price>0?money(l.p.price):t("price_request"))+'</td><td class="r">'+(l.p.price>0?money(line):"—")+'</td></tr>';});
   var tw=totalWeight();
   var from=[fv("c_firma"),fv("c_name"),fv("c_mail"),fv("c_tel")].filter(Boolean).map(esc).join("<br>")||'<span style="color:#9a9aa0">—</span>';
   var doc=stripe+'<div class="dpad">'
@@ -1012,7 +1019,7 @@ const ICONS={
   aoa.push([t("lbl_liefer"),t("liefer_"+(fv("c_liefer")||"standard"))]);
   aoa.push([]);
   aoa.push([t("col_pos"),t("col_art"),t("col_name"),t("col_zoll"),t("col_qty"),t("col_weight")]);
-  L.forEach(function(l,i){aoa.push([i+1,l.p.art,pName(l.p),l.p.zoll||"",l.q,(l.p.weight>0?+(l.p.weight*l.q).toFixed(2):0)]);});
+  L.forEach(function(l,i){aoa.push([i+1,l.p.art,partBothTxt(l.p),l.p.zoll||"",l.q,(l.p.weight>0?+(l.p.weight*l.q).toFixed(2):0)]);});
   var tw=totalWeight();aoa.push([]);aoa.push(["","",t("weight_total"),"","",+tw.toFixed(2)]);
   var firm=((fv("c_firma")||"Alzinger").trim()||"Alzinger").replace(/[^A-Za-z0-9\-_]+/g,"_").replace(/^_+|_+$/g,"")||"Alzinger";
   var name="Ersatzteilanfrage_"+firm+"_"+new Date().toISOString().slice(0,10)+".xlsx";
