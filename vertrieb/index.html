@@ -667,7 +667,7 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
  var MS_CLIENT_ID="c4cd70b7-2bbe-41ed-ba3e-5621037c49ae";
  var MS_TENANT_ID="f4c543ca-6d4a-4beb-8f4f-90924543f46a";
  var MS_REDIRECT="https://alzingermaschinenbau.github.io/lepton-konfigurator/vertrieb/";
- var MS_SCOPES=["Notes.Read","User.Read"];
+ var MS_SCOPES=["Notes.Read.All","User.Read"]; // .All -> auch GETEILTE Notizbuecher (Kollegen)
  var _msal=null,_msStop=false;
  function loadScript(src){return new Promise(function(res,rej){var s=document.createElement("script");s.src=src;s.onload=function(){res();};s.onerror=function(){rej(new Error("scr "+src));};document.head.appendChild(s);});}
  function ensureMsal(){
@@ -688,31 +688,28 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
  function graphGet(token,url){return fetch(url,{headers:{Authorization:"Bearer "+token}}).then(function(r){if(!r.ok)throw new Error("Graph "+r.status);return r.json();});}
  // Generischer Paginierer: alle Seiten einer Liste (@odata.nextLink) einsammeln und je Eintrag mappen.
  function graphPaged(token,url,map,acc){acc=acc||[];return graphGet(token,url).then(function(j){(j.value||[]).forEach(function(v){acc.push(map(v));});var nx=j["@odata.nextLink"];if(nx&&!_msStop)return graphPaged(token,nx,map,acc);return acc;});}
- // Alle Notizbücher (eigene + geteilte) -> [{id,name,owner}].
- function graphNotebooks(token){
-   return graphPaged(token,"https://graph.microsoft.com/v1.0/me/onenote/notebooks?$select=id,displayName&$orderby=displayName",function(n){return {id:n.id,name:n.displayName||"(ohne Namen)"};});
- }
- // Alle Abschnitte (flach, inkl. Abschnittsgruppen) mit Notizbuch-Zuordnung -> [{id,name,bookId,book}].
+ // Alle Abschnitte (flach, inkl. Abschnittsgruppen, auch GETEILTE) mit Notizbuch-Zuordnung.
  function graphAllSections(token){
-   return graphPaged(token,"https://graph.microsoft.com/v1.0/me/onenote/sections?$top=100&$select=id,displayName&$expand=parentNotebook($select=id,displayName)",function(s){return {id:s.id,name:s.displayName||"",bookId:(s.parentNotebook&&s.parentNotebook.id)||"",book:(s.parentNotebook&&s.parentNotebook.displayName)||""};});
+   return graphPaged(token,"https://graph.microsoft.com/v1.0/me/onenote/sections?$top=100&$select=id,displayName&$expand=parentNotebook($select=id,displayName)",function(s){return {id:s.id,name:s.displayName||"",bookId:(s.parentNotebook&&s.parentNotebook.id)||("?"+(s.parentNotebook&&s.parentNotebook.displayName||s.id)),book:(s.parentNotebook&&s.parentNotebook.displayName)||"(ohne Notizbuch)"};});
+ }
+ // Aus den Abschnitten die Notizbuch-Liste ableiten (zeigt auch geteilte) -> [{id,name,count}].
+ function notebooksFromSections(secs){
+   var seen={},out=[];secs.forEach(function(s){var k=s.bookId;if(!seen[k]){seen[k]={id:k,name:s.book,count:0};out.push(seen[k]);}seen[k].count++;});
+   out.sort(function(a,b){return a.name.localeCompare(b.name);});return out;
  }
  // Seiten eines Abschnitts -> [{id,title,section,book}].
  function graphPagesOf(token,sec){
    return graphPaged(token,"https://graph.microsoft.com/v1.0/me/onenote/sections/"+sec.id+"/pages?$top=100&$select=id,title",function(p){return {id:p.id,title:p.title||"",section:sec.name,book:sec.book};});
  }
- // Alle Seiten der gewaehlten Notizbuecher (bookIds=null -> alle). Abschnitt fuer Abschnitt -> zuverlaessig.
- function graphAllPages(token,bookIds,onSec){
-   var want=(bookIds&&bookIds.length)?{}:null;if(want)bookIds.forEach(function(id){want[id]=1;});
-   return graphAllSections(token).then(function(secs){
-     if(want)secs=secs.filter(function(s){return want[s.bookId];});
-     var out=[];
-     function nextSec(i){
-       if(_msStop||i>=secs.length)return out;
-       if(onSec)onSec(i,secs.length,secs[i]);
-       return graphPagesOf(token,secs[i]).then(function(ps){ps.forEach(function(p){out.push(p);});return nextSec(i+1);}).catch(function(){return nextSec(i+1);});
-     }
-     return nextSec(0);
-   });
+ // Seiten der ausgewaehlten Abschnitte einsammeln (Abschnitt fuer Abschnitt -> zuverlaessig).
+ function pagesFromSections(token,secs,onSec){
+   var out=[];
+   function nextSec(i){
+     if(_msStop||i>=secs.length)return out;
+     if(onSec)onSec(i,secs.length,secs[i]);
+     return graphPagesOf(token,secs[i]).then(function(ps){ps.forEach(function(p){out.push(p);});return nextSec(i+1);}).catch(function(){return nextSec(i+1);});
+   }
+   return nextSec(0);
  }
  // Notizbuchname -> ISO-Land (Fallback, wenn die KI kein Land erkennt).
  var NB_LAND={deutschland:"DE",polen:"PL","österreich":"AT",osterreich:"AT",schweiz:"CH",holland:"NL",niederlande:"NL",belgien:"BE",frankreich:"FR",italien:"IT",ungarn:"HU",griechenland:"GR",tschechien:"CZ",kroatien:"HR","rumänien":"RO",rumaenien:"RO",norwegen:"NO",finland:"FI",finnland:"FI",schweden:"SE",dänemark:"DK",daenemark:"DK",usa:"US",england:"GB",grossbritannien:"GB","großbritannien":"GB",spanien:"ES",portugal:"PT",slowenien:"SI",slowakei:"SK",bulgarien:"BG",serbien:"RS",türkei:"TR",tuerkei:"TR",afrika:"ZA",irland:"IE",litauen:"LT",lettland:"LV",estland:"EE"};
@@ -1831,20 +1828,20 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
    var btn=document.getElementById("msBtn");if(!btn)return;
    var stopBtn=document.getElementById("msStop"),prog=document.getElementById("msProg"),bar=document.getElementById("msBar"),msg=document.getElementById("msMsg");
    var booksBox=document.getElementById("msBooks"),bookList=document.getElementById("msBookList"),goBtn=document.getElementById("msGo");
-   var _token=null,_books=[];
+   var _token=null,_books=[],_sections=[];
    function setBar(done,total){bar.style.width=(total?Math.round(done/total*100):0)+"%";}
    function say(t,col){prog.style.display="block";msg.style.color=col||"var(--muted)";msg.innerHTML=t;}
    stopBtn.onclick=function(){_msStop=true;say("Wird gestoppt …");};
-   // 1) Login + Notizbuecher laden, Auswahl anzeigen
+   // 1) Login + Abschnitte laden (auch geteilte) -> Notizbuch-Auswahl anzeigen
    btn.onclick=function(){
      if(!aiReady()){say("Bitte zuerst die KI einrichten (Reiter Daten → KI-Schlüssel).","#b91c1c");return;}
      _msStop=false;btn.disabled=true;booksBox.style.display="none";setBar(0,1);say("Anmeldung bei Microsoft … (Pop-up bestätigen)");
-     msToken().then(function(t){_token=t;say("Angemeldet. Lese Notizbücher …");return graphNotebooks(t);})
-       .then(function(nbs){
-         btn.disabled=false;
-         if(!nbs.length){say("Keine Notizbücher gefunden.","#b91c1c");return;}
-         _books=nbs;
-         bookList.innerHTML=nbs.map(function(n,i){return '<label style="display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer"><input type="checkbox" class="msBk" data-i="'+i+'" checked> '+esc(n.name)+'</label>';}).join("");
+     msToken().then(function(t){_token=t;say("Angemeldet. Lese Notizbücher &amp; Abschnitte (auch geteilte) …");return graphAllSections(t);})
+       .then(function(secs){
+         btn.disabled=false;_sections=secs;
+         if(!secs.length){say("Keine Abschnitte/Notizbücher gefunden. (Mit Notes.Read.All anmelden und im Pop-up zustimmen.)","#b91c1c");return;}
+         _books=notebooksFromSections(secs);
+         bookList.innerHTML=_books.map(function(n,i){return '<label style="display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer"><input type="checkbox" class="msBk" data-i="'+i+'" checked> '+esc(n.name)+' <span style="color:var(--muted)">('+n.count+' Abschnitte)</span></label>';}).join("");
          booksBox.style.display="block";prog.style.display="none";
          btn.textContent="Erneut anmelden";
        })
@@ -1854,12 +1851,13 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
    document.getElementById("msNone").onclick=function(){bookList.querySelectorAll(".msBk").forEach(function(c){c.checked=false;});};
    // 2) Import der gewaehlten Notizbuecher
    goBtn.onclick=function(){
-     var ids=[],names=[];bookList.querySelectorAll(".msBk").forEach(function(c){if(c.checked){var b=_books[+c.getAttribute("data-i")];ids.push(b.id);names.push(b.name);}});
-     if(!ids.length){say("Bitte mindestens ein Notizbuch auswählen.","#b91c1c");return;}
+     var ids={},names=[];bookList.querySelectorAll(".msBk").forEach(function(c){if(c.checked){var b=_books[+c.getAttribute("data-i")];ids[b.id]=1;names.push(b.name);}});
+     if(!names.length){say("Bitte mindestens ein Notizbuch auswählen.","#b91c1c");return;}
+     var secs=_sections.filter(function(s){return ids[s.bookId];});
      _msStop=false;goBtn.disabled=true;btn.disabled=true;stopBtn.classList.remove("hidden");setBar(0,1);
-     say("Lese Abschnitte aus "+ids.length+" Notizbuch(ern) … ("+esc(names.join(", "))+")");
+     say("Lese Seiten aus "+names.length+" Notizbuch(ern), "+secs.length+" Abschnitte … ("+esc(names.join(", "))+")");
      var added=[],fail=0,skip=0,token=_token,pages=[];
-     graphAllPages(token,ids,function(si,st,sec){if(si%5===0)say("Abschnitte werden gelesen … "+(si+1)+" / "+st+" &nbsp; <b>"+esc(sec.book||"")+"</b>");})
+     pagesFromSections(token,secs,function(si,st,sec){if(si%5===0)say("Abschnitte werden gelesen … "+(si+1)+" / "+st+" &nbsp; <b>"+esc(sec.book||"")+"</b>");})
        .then(function(ps){pages=ps;if(!pages.length){throw new Error("Keine Seiten in den gewählten Notizbüchern gefunden.");}say(pages.length+" Seiten gefunden – Verarbeitung startet …");
          var ex=osmExisting();
          function nextPage(i){
