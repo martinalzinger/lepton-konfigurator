@@ -214,7 +214,8 @@ Deno.serve(async (req: Request) => {
   const enc = new TextEncoder();
   const stream = new ReadableStream({
     async start(controller) {
-      const keepalive = setInterval(() => { try { controller.enqueue(enc.encode(" ")); } catch (_) { /* zu */ } }, 7000);
+      try { controller.enqueue(enc.encode(" ")); } catch (_) { /* sofort, gegen kurze Proxy-Timeouts */ }
+      const keepalive = setInterval(() => { try { controller.enqueue(enc.encode(" ")); } catch (_) { /* zu */ } }, 2000);
       let out: unknown;
       try { out = await research(apiKey, String(was), String(wo)); }
       catch (e) { out = { leads: [], error: String((e as Error)?.message || e) }; }

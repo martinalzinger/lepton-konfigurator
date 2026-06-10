@@ -615,12 +615,12 @@ var USERS=%%USERS%%;
    });
  }
  function apiAi(was,wo){
-   // 1) "Einfacher" Aufruf ohne CORS-Vorabpruefung (kommt durch strenge Proxies, z. B. Firmen-PC).
-   // 2) Klappt der nicht -> klassischer Aufruf (funktioniert am iPhone zuverlaessig).
-   // So kann der neue Weg das iPhone NICHT kaputtmachen (Fallback bleibt der bewaehrte Weg).
-   return aiPostSimple("lead-ai",was,wo)
-     .catch(function(e){if(e&&e.status===404)return aiPostSimple("lead-ai-",was,wo);throw e;})
-     .catch(function(){return aiPost("lead-ai",was,wo).catch(function(e){if(e&&e.status===404)return aiPost("lead-ai-",was,wo);throw e;});})
+   // 1) ZUERST der klassische Aufruf -> funktioniert am iPhone IMMER (bewaehrt).
+   // 2) Scheitert der (z. B. Desktop-Firmen-Proxy blockt die CORS-Vorabpruefung) ->
+   //    der "einfache" Aufruf ohne Vorabpruefung. So bleibt das iPhone unberuehrt.
+   return aiPost("lead-ai",was,wo)
+     .catch(function(e){if(e&&e.status===404)return aiPost("lead-ai-",was,wo);throw e;})
+     .catch(function(){return aiPostSimple("lead-ai",was,wo).catch(function(e){if(e&&e.status===404)return aiPostSimple("lead-ai-",was,wo);throw e;});})
      .then(function(d){return (d.leads||[]).filter(function(x){return x&&(x.firma||x.name);});});
  }
  /* --- Visitenkarten-Scan (Claude-Vision über dieselbe Edge Function "lead-ai") --- */
@@ -1700,7 +1700,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v27";
+const CACHE="vertrieb-v28";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png",
   "./vendor/leaflet.js","./vendor/leaflet.css",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];

@@ -587,12 +587,12 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
    });
  }
  function apiAi(was,wo){
-   // 1) "Einfacher" Aufruf ohne CORS-Vorabpruefung (kommt durch strenge Proxies, z. B. Firmen-PC).
-   // 2) Klappt der nicht -> klassischer Aufruf (funktioniert am iPhone zuverlaessig).
-   // So kann der neue Weg das iPhone NICHT kaputtmachen (Fallback bleibt der bewaehrte Weg).
-   return aiPostSimple("lead-ai",was,wo)
-     .catch(function(e){if(e&&e.status===404)return aiPostSimple("lead-ai-",was,wo);throw e;})
-     .catch(function(){return aiPost("lead-ai",was,wo).catch(function(e){if(e&&e.status===404)return aiPost("lead-ai-",was,wo);throw e;});})
+   // 1) ZUERST der klassische Aufruf -> funktioniert am iPhone IMMER (bewaehrt).
+   // 2) Scheitert der (z. B. Desktop-Firmen-Proxy blockt die CORS-Vorabpruefung) ->
+   //    der "einfache" Aufruf ohne Vorabpruefung. So bleibt das iPhone unberuehrt.
+   return aiPost("lead-ai",was,wo)
+     .catch(function(e){if(e&&e.status===404)return aiPost("lead-ai-",was,wo);throw e;})
+     .catch(function(){return aiPostSimple("lead-ai",was,wo).catch(function(e){if(e&&e.status===404)return aiPostSimple("lead-ai-",was,wo);throw e;});})
      .then(function(d){return (d.leads||[]).filter(function(x){return x&&(x.firma||x.name);});});
  }
  /* --- Visitenkarten-Scan (Claude-Vision über dieselbe Edge Function "lead-ai") --- */
