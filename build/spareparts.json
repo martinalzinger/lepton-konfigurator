@@ -17,6 +17,24 @@
           "img": "fahrgestell",
           "name_pl": "Podstawa",
           "name_fr": "Base"
+        },
+        {
+          "id": "FG-RAUPENLAUFWERK",
+          "art": "—",
+          "name": "Option Raupenlaufwerk",
+          "name_en": "Crawler track option",
+          "desc": "Komplette Baugruppe – im 3D alle Einzelteile auswählbar und bestellbar",
+          "desc_en": "Complete assembly – pick and order all individual parts in 3D",
+          "price": 0,
+          "model": "fahrgestell-raupenlaufwerk.glb",
+          "img": "fahrgestell_raupenlaufwerk",
+          "rot": [
+            -90,
+            0,
+            0
+          ],
+          "name_pl": "Opcja podwozie gąsienicowe",
+          "name_fr": "Option train de chenilles"
         }
       ],
       "h_pl": "Podwozie",
