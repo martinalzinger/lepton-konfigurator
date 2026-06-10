@@ -96,6 +96,10 @@ h2.vh{font-size:20px;font-weight:800;letter-spacing:-.01em;margin-bottom:2px}
 .stat .l{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-top:6px}
 .stat.accent{border-color:var(--red);background:var(--red-soft)}
 .stat.accent .n{color:var(--red)}
+/* Status-farbige Kacheln */
+.stat.s-lead{background:#fff3e0;border-color:#ffe2bd}.stat.s-lead .n{color:var(--warn)}
+.stat.s-angebot{background:#e7f0ff;border-color:#cfe0ff}.stat.s-angebot .n{color:#1d4ed8}
+.stat.s-kunde{background:#e6f4ea;border-color:#c2e6cd}.stat.s-kunde .n{color:var(--pos)}
 
 .card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:12px}
 .card h3{font-size:13px;font-family:var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;display:flex;align-items:center;gap:8px}
@@ -1082,9 +1086,9 @@ var USERS=%%USERS%%;
    stats.innerHTML=
      '<div class="stat'+(od.length?' accent':'')+'" data-go="due" style="cursor:pointer" title="Fällige Rückrufe anzeigen"><div class="n">'+od.length+'</div><div class="l">Rückrufe fällig</div></div>'+
      '<div class="stat" data-go="all" style="cursor:pointer" title="Alle Kontakte"><div class="n">'+DB.contacts.length+'</div><div class="l">Kontakte</div></div>'+
-     '<div class="stat" data-go="lead" style="cursor:pointer" title="Offene Leads"><div class="n">'+(st.lead+st.interessent)+'</div><div class="l">Offene Leads</div></div>'+
-     '<div class="stat" data-go="angebot" style="cursor:pointer" title="Offene Angebote"><div class="n">'+st.angebot+'</div><div class="l">Angebote offen</div></div>'+
-     '<div class="stat" data-go="kunde" style="cursor:pointer" title="Kunden"><div class="n">'+st.kunde+'</div><div class="l">Kunden</div></div>';
+     '<div class="stat s-lead" data-go="lead" style="cursor:pointer" title="Offene Leads"><div class="n">'+(st.lead+st.interessent)+'</div><div class="l">Offene Leads</div></div>'+
+     '<div class="stat s-angebot" data-go="angebot" style="cursor:pointer" title="Offene Angebote"><div class="n">'+st.angebot+'</div><div class="l">Angebote offen</div></div>'+
+     '<div class="stat s-kunde" data-go="kunde" style="cursor:pointer" title="Kunden"><div class="n">'+st.kunde+'</div><div class="l">Kunden</div></div>';
    // Wiedervorlagen
    document.getElementById("fuCnt").textContent=fu.length;
    var fl=document.getElementById("fuList");
@@ -2391,7 +2395,7 @@ var USERS=%%USERS%%;
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v91";
+ var APP_VER="v92";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
@@ -2436,7 +2440,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v91";
+const CACHE="vertrieb-v92";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png","./icon-32.png","./favicon.ico",
   "./vendor/leaflet.js","./vendor/leaflet.css","./vendor/msal-browser.min.js",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
