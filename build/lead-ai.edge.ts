@@ -154,6 +154,47 @@ async function scanCard(apiKey: string, image: string): Promise<Response> {
   return json({ contact });
 }
 
+/* ============================ C) NOTIZ -> KONTAKT + VERLAUF ============================ */
+// Wertet eine Vertriebs-Notiz (z. B. aus OneNote) aus: Kontaktdaten + datierter Verlauf.
+const NOTE_PROMPT =
+`Du erhältst eine Vertriebs-Notiz (z. B. aus OneNote) zu EINER Firma. Extrahiere
+1) die Kontaktdaten und 2) den chronologischen Verlauf als Aktivitäten.
+Gib AUSSCHLIESSLICH ein JSON-Objekt zurück (kein Fließtext, kein Markdown, keine \`\`\`):
+{"contact":{"firma":"","anrede":"","vorname":"","nachname":"","position":"","strasse":"","plz":"","ort":"","bundesland":"","land":"DE","tel":"","mobil":"","mail":"","web":""},
+ "activities":[{"date":"YYYY-MM-DD","type":"notiz","note":""}]}
+Regeln:
+- firma: Firmenname (oft die Überschrift). vorname/nachname: Ansprechpartner. position: Funktion, falls genannt.
+- bundesland: deutsches Bundesland, aus Ort/Adresse ableiten falls möglich, sonst "".
+- land als Ländercode (DE/AT/CH/...).
+- activities: JEDE datierte Zeile = ein Eintrag. date als YYYY-MM-DD
+  (deutsche Datumsangaben wie "23.09.24" -> "2024-09-23", "10.03.2026" -> "2026-03-10").
+  type: einer von "anruf","mailout","mailin","besuch","angebot","notiz" – passend:
+  telefoniert/angerufen -> anruf; Mail/Werbemail RAUS -> mailout; Mail/Antwort REIN -> mailin;
+  vor Ort/Besuch/Termin -> besuch; Angebot gesendet -> angebot; sonst -> notiz.
+  note: der Inhalt der Zeile OHNE das Datum, inhaltlich vollständig.
+- Reihenfolge der activities chronologisch (älteste zuerst).
+- Unbekannte Felder als "". NICHTS erfinden – nur was in der Notiz steht.`;
+async function parseNote(apiKey: string, notiz: string): Promise<Response> {
+  const r = await fetch(ANTHROPIC_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01" },
+    body: JSON.stringify({
+      model: MODEL, max_tokens: 4000,
+      messages: [{ role: "user", content: NOTE_PROMPT + "\n\n--- NOTIZ ---\n" + notiz.slice(0, 12000) }],
+    }),
+  });
+  if (!r.ok) { const t = await r.text(); return json({ error: "anthropic " + r.status, detail: t.slice(0, 300) }, 502); }
+  const data: any = await r.json();
+  let text = (data?.content || []).filter((b: any) => b.type === "text").map((b: any) => b.text).join("\n").trim()
+    .replace(/```json/gi, "").replace(/```/g, "");
+  let obj: any = null;
+  const mm = text.match(/\{[\s\S]*\}/);
+  if (mm) { try { obj = JSON.parse(mm[0]); } catch (_) { /* weiter */ } }
+  if (!obj) { try { obj = JSON.parse(text); } catch (_) { /* weiter */ } }
+  if (!obj || typeof obj !== "object") return json({ contact: {}, activities: [], debug: { sample: text.slice(0, 400) } });
+  return json({ contact: obj.contact || {}, activities: Array.isArray(obj.activities) ? obj.activities : [] });
+}
+
 /* ============================ HINTERGRUND-JOB (für strenge Proxies) ============================ */
 // Schreibt das Ergebnis in die Tabelle public.ai_jobs (per Service-Role-Key). Die App holt es
 // dann per normaler DB-Abfrage ab -> funktioniert auch hinter Proxies, die lange Antworten kappen.
@@ -193,9 +234,15 @@ Deno.serve(async (req: Request) => {
     catch (e) { return json({ error: String((e as Error)?.message || e) }, 500); }
   }
 
+  // C) Notiz/OneNote -> Kontakt + Verlauf.
+  if (body && typeof body.notiz === "string" && body.notiz.trim()) {
+    try { return await parseNote(apiKey, body.notiz); }
+    catch (e) { return json({ error: String((e as Error)?.message || e) }, 500); }
+  }
+
   // A) Lead-Suche
   const was = body?.was, wo = body?.wo, jobId = body?.jobId;
-  if (!was || !wo) return json({ error: "Bitte was+wo (Lead-Suche) oder image (Visitenkarte) senden" }, 400);
+  if (!was || !wo) return json({ error: "Bitte was+wo (Lead-Suche), image (Visitenkarte) oder notiz senden" }, 400);
 
   // A1) Mit jobId -> Hintergrund-Job: SOFORT antworten, Ergebnis kommt in die Tabelle ai_jobs.
   if (jobId) {
