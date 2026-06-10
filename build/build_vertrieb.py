@@ -475,6 +475,9 @@ create policy "crm all" on contacts
       <p style="font-size:13px;color:var(--muted);margin-bottom:10px">Entfernt <b>leere Import-Kontakte</b> (aus OneNote, ohne Adresse, Kontaktdaten, Person, Verlauf oder Bilder – meist durch Drosselung beim Import entstanden). Echte Kontakte bleiben unberührt.</p>
       <button class="btn" id="cleanEmptyBtn" type="button">Leere Import-Kontakte entfernen</button>
       <span id="cleanEmptyMsg" style="font-size:13px;color:var(--muted);margin-left:8px"></span>
+      <p style="font-size:13px;color:var(--muted);margin:14px 0 8px">Lagert <b>eingebettete Bilder in den Cloud-Speicher</b> aus (Kontakt speichert dann nur noch eine kurze URL). Verkleinert die Daten massiv und verhindert Speicher-Überlauf. Voraussetzung: Storage-Bucket <span class="mono">crm-bilder</span> ist angelegt (Anleitung bekommst du von Martin).</p>
+      <button class="btn" id="migImgBtn" type="button">Bilder in den Cloud-Speicher auslagern</button>
+      <span id="migImgMsg" style="font-size:13px;color:var(--muted);margin-left:8px"></span>
     </div>
     <div class="card">
       <h3 style="color:var(--red)">Gefahrenzone</h3>
@@ -629,6 +632,26 @@ var USERS=%%USERS%%;
  function sbReady(){return !!(SB&&SB.url&&SB.key);}
  function sbBase(){return SB.url.replace(/\/+$/,"")+"/rest/v1/contacts";}
  function sbHeaders(extra){var h={"apikey":SB.key,"Authorization":"Bearer "+SB.key,"Content-Type":"application/json"};if(extra)for(var k in extra)h[k]=extra[k];return h;}
+ /* ---- Bilder in Supabase Storage auslagern (statt base64 im Kontakt) -> klein & skalierbar ---- */
+ var IMG_BUCKET="crm-bilder";
+ function isStored(s){return /^https?:\/\//.test(String(s||""));}            // schon eine URL?
+ // Ein Bild (Data-URI) hochladen -> oeffentliche URL. Wirft, wenn Storage/Bucket nicht erreichbar.
+ function sbUploadImage(dataUri){
+   if(!(SB&&SB.url&&SB.key))return Promise.reject(new Error("keine Cloud"));
+   if(isStored(dataUri))return Promise.resolve(dataUri);
+   var base=SB.url.replace(/\/+$/,"");
+   return fetch(dataUri).then(function(r){return r.blob();}).then(function(blob){
+     var path="c/"+Date.now().toString(36)+Math.random().toString(36).slice(2,9)+".jpg";
+     return fetch(base+"/storage/v1/object/"+IMG_BUCKET+"/"+path,{method:"POST",headers:{apikey:SB.key,Authorization:"Bearer "+SB.key,"Content-Type":blob.type||"image/jpeg","x-upsert":"true"},body:blob}).then(function(r){
+       if(!r.ok)throw new Error("upload "+r.status);
+       return base+"/storage/v1/object/public/"+IMG_BUCKET+"/"+path;
+     });
+   });
+ }
+ // Liste von Data-URIs hochladen -> URLs. Bei Fehler bleibt das jeweilige Bild als Data-URI erhalten (kein Verlust).
+ function sbStoreImages(uris){
+   return (uris||[]).reduce(function(pr,u){return pr.then(function(acc){return sbUploadImage(u).then(function(url){acc.push(url);return acc;},function(){acc.push(u);return acc;});});},Promise.resolve([]));
+ }
  // Supabase liefert pro Anfrage max. 1000 Zeilen -> seitenweise alle holen.
  function sbGet(){
    var all=[];
@@ -1601,7 +1624,9 @@ var USERS=%%USERS%%;
    var pBtn=document.getElementById("photoBtn"),pIn=document.getElementById("photoIn");
    if(pBtn&&pIn){pBtn.onclick=function(){pIn.click();};
      pIn.onchange=function(){var files=Array.prototype.slice.call(pIn.files||[]);if(!files.length)return;pBtn.disabled=true;var old=pBtn.innerHTML;pBtn.textContent="…";
-       var done=0;files.forEach(function(f){downscaleImage(f,1400,function(d){if(d){if(!c.bilder)c.bilder=[];c.bilder.push(d);}if(++done===files.length){c.updated=Date.now();saveContact(c);pBtn.disabled=false;pBtn.innerHTML=old;openDetail(curId);}});});
+       var uris=[],done=0;
+       function finalize(){sbStoreImages(uris).then(function(urls){if(urls.length){if(!c.bilder)c.bilder=[];urls.forEach(function(u){c.bilder.push(u);});c.updated=Date.now();saveContact(c);}pBtn.disabled=false;pBtn.innerHTML=old;openDetail(curId);});}
+       files.forEach(function(f){downscaleImage(f,1200,function(d){if(d)uris.push(d);if(++done===files.length)finalize();});});
      };
    }
    document.getElementById("offerBtn").onclick=function(){gotoConfigurator(c,false);};
@@ -2047,7 +2072,7 @@ var USERS=%%USERS%%;
      function loadImgs(pc){
        imgRaw+=(pc.raw||0);if(!imgSample&&pc.sample)imgSample=pc.sample;
        var iu=(pc.imgs||[]).slice(0,4),bl=[];imgFound+=iu.length;
-       return iu.reduce(function(pr,u){return pr.then(function(){return graphImage(token,sitesToken,u).then(function(d){if(d&&d.length<2500000){bl.push(d);imgLoaded++;}}).catch(function(e){if(dbg.length<8)dbg.push("Bild: "+String((e&&e.message)||e));});});},Promise.resolve()).then(function(){return bl;});
+       return iu.reduce(function(pr,u){return pr.then(function(){return graphImage(token,sitesToken,u).then(function(d){if(d&&d.length<2500000){bl.push(d);imgLoaded++;}}).catch(function(e){if(dbg.length<8)dbg.push("Bild: "+String((e&&e.message)||e));});});},Promise.resolve()).then(function(){return sbStoreImages(bl);}); // -> URLs (Storage), Data-URI nur als Fallback
      }
      // Abschnitte der Auswahl ermitteln (recent: per URL aufloesen; sections: aus Cache filtern)
      var secsP;
@@ -2165,6 +2190,25 @@ var USERS=%%USERS%%;
    msg.style.color="var(--pos)";msg.textContent=leer.length+" entfernt. ✓";
    initFilters();renderDashboard();
  };
+ // Migration: alle eingebetteten (base64) Bilder in den Cloud-Speicher auslagern und durch URLs ersetzen.
+ document.getElementById("migImgBtn").onclick=function(){
+   var btn=this,msg=document.getElementById("migImgMsg");
+   if(!(SB&&SB.url&&SB.key)){msg.style.color="#b91c1c";msg.textContent="Erst mit der Cloud verbinden.";return;}
+   var todo=DB.contacts.filter(function(c){return (c.bilder||[]).some(function(b){return !isStored(b);});});
+   if(!todo.length){msg.style.color="var(--pos)";msg.textContent="Alle Bilder liegen bereits im Cloud-Speicher. ✓";return;}
+   if(!confirm("Bilder von "+todo.length+" Kontakt(en) in den Cloud-Speicher auslagern? (einmalig, kann etwas dauern)"))return;
+   btn.disabled=true;var done=0,changed=0,failPrev=false;
+   function nextC(i){
+     if(i>=todo.length){btn.disabled=false;bulkSave([],false);initFilters();renderDashboard();msg.style.color=failPrev?"#b45309":"var(--pos)";msg.textContent=changed+" Kontakt(e) ausgelagert"+(failPrev?" – einige Bilder blieben eingebettet (Bucket angelegt?)":"")+". ✓";return;}
+     var c=todo[i];done++;msg.style.color="var(--muted)";msg.textContent="Lade hoch … "+done+" / "+todo.length;
+     sbStoreImages(c.bilder||[]).then(function(urls){
+       var ok=urls.every(isStored);if(!ok)failPrev=true;
+       if(JSON.stringify(urls)!==JSON.stringify(c.bilder)){c.bilder=urls;c.updated=Date.now();saveContact(c);changed++;}
+       setTimeout(function(){nextC(i+1);},60);
+     });
+   }
+   nextC(0);
+ };
 
  /* ---------- Daten-Reiter: Verbindungsstatus + Cloud-Konfiguration ---------- */
  function renderDataConn(){
@@ -2235,7 +2279,7 @@ var USERS=%%USERS%%;
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v77";
+ var APP_VER="v78";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
@@ -2280,7 +2324,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v77";
+const CACHE="vertrieb-v78";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png","./icon-32.png","./favicon.ico",
   "./vendor/leaflet.js","./vendor/leaflet.css","./vendor/msal-browser.min.js",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
