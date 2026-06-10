@@ -802,16 +802,18 @@ var USERS=%%USERS%%;
      .then(function(html){var d=document.createElement("div");d.innerHTML=html;var all=d.querySelectorAll("img"),imgs=[],sample="";all.forEach(function(im){var pre=im.getAttribute("src")||"",full=im.getAttribute("data-fullres-src")||im.getAttribute("data-render-src")||"";if(!full&&pre)full=pre;if(!pre&&full)pre=full;if(/^https?:\/\//.test(pre)||/^https?:\/\//.test(full)){imgs.push({pre:pre,full:full});if(!sample)sample=(full||pre);}});var txt=(d.innerText||d.textContent||"").replace(/\n{3,}/g,"\n\n").trim();return {text:txt,imgs:imgs,raw:all.length,sample:sample};});
  }
  // OneNote-Bild laden -> verkleinertes JPEG-DataURI. im={pre,full}.
- // 1) $value mit Sites-Token (deterministisch, falls Admin-Freigabe da). 2) <img crossOrigin> auf preAuth. 3) fetch preAuth.
+ // publicAuth-Links verweigern fetch (400) -> rohe Ressourcen-URL (ohne ?publicAuth...) MIT Sites-Token zuerst,
+ // danach <img crossOrigin> auf den preAuth-Link, zuletzt fetch-Varianten.
  function graphImage(token,sitesToken,im){
    var pre=(im&&im.pre)||im,full=(im&&im.full)||im;
+   var raw=String(full||pre||"").split("?")[0]; // .../onenote/resources/{id}/content bzw. /$value
    function viaFetch(url,authTok){return fetch(url,authTok?{headers:{Authorization:"Bearer "+authTok}}:{}).then(function(r){if(!r.ok)throw new Error("img "+r.status);return r.blob();}).then(function(b){if(!b||!b.size)throw new Error("leer");return new Promise(function(res,rej){var u=URL.createObjectURL(b);downscaleSrc(u,1600,function(d){URL.revokeObjectURL(u);if(d)res(d);else rej(new Error("decode"));});});});}
    function viaImg(url){return new Promise(function(res,rej){downscaleSrc(url,1600,function(d){d?res(d):rej(new Error("imgEl"));},true);});}
    var p=Promise.reject(new Error("start"));
-   if(sitesToken&&full)p=p.catch(function(){return viaFetch(full,sitesToken);}); // bestes Ergebnis
+   if(sitesToken&&raw)p=p.catch(function(){return viaFetch(raw,sitesToken);});   // bestes Ergebnis (Admin-Freigabe da)
+   if(raw)p=p.catch(function(){return viaFetch(raw,token);});                    // manche Ressourcen reichen mit Notes-Token
    p=p.catch(function(){return viaImg(pre);});
    p=p.catch(function(){return viaFetch(pre,null);});
-   p=p.catch(function(){return viaFetch(pre,token);});
    return p;
  }
  // Foto verkleinern (Längste Seite maxDim) und als JPEG-Data-URI zurückgeben -> kleine Payload.
@@ -2172,7 +2174,7 @@ var USERS=%%USERS%%;
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v66";
+ var APP_VER="v67";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
@@ -2217,7 +2219,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v66";
+const CACHE="vertrieb-v67";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png",
   "./vendor/leaflet.js","./vendor/leaflet.css","./vendor/msal-browser.min.js",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
