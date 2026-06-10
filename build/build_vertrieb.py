@@ -581,6 +581,17 @@ var USERS=%%USERS%%;
      .then(function(r){if(!r.ok)return r.text().then(function(t){var e=parse(t);var err=new Error("ai "+r.status+(e&&e.error?(": "+e.error):""));err.status=r.status;throw err;});return r.text().then(parse);})
      .then(function(d){done();return d;},function(e){done();if(e&&(e.name==="AbortError"||/abort/i.test(String(e&&e.message)))){var er=new Error("Zeitüberschreitung – die KI-Suche hat zu lange gebraucht. Bitte Region enger fassen und erneut versuchen.");er.status=0;throw er;}throw e;});
  }
+ // "Einfacher" Aufruf OHNE CORS-Vorabpruefung (kein OPTIONS): apikey als Query, Secret im Body,
+ // Content-Type text/plain -> kommt auch durch strenge Firmen-Proxies, die /functions-OPTIONS blocken.
+ function aiPostSimple(name,was,wo){
+   var ctl=("AbortController" in window)?new AbortController():null;
+   var to=ctl?setTimeout(function(){try{ctl.abort();}catch(_){}},120000):0;
+   function parse(t){try{return JSON.parse(String(t||"").trim()||"{}");}catch(_){return {};}}
+   var url=SB.url.replace(/\/+$/,"")+"/functions/v1/"+name+"?apikey="+encodeURIComponent(SB.key);
+   return fetch(url,{method:"POST",headers:{"Content-Type":"text/plain;charset=UTF-8"},body:JSON.stringify({was:was,wo:wo,secret:AISECRET}),signal:ctl?ctl.signal:undefined})
+     .then(function(r){if(!r.ok)return r.text().then(function(t){var e=parse(t);var err=new Error("ai "+r.status+(e&&e.error?(": "+e.error):""));err.status=r.status;throw err;});return r.text().then(parse);})
+     .then(function(d){if(to)clearTimeout(to);return d;},function(e){if(to)clearTimeout(to);if(e&&(e.name==="AbortError"||/abort/i.test(String(e&&e.message)))){var er=new Error("Zeitüberschreitung");er.status=0;throw er;}throw e;});
+ }
  // Hintergrund-Job starten (kurzer Aufruf, < 1s -> kommt auch durch strenge Proxies).
  function aiJobStart(name,was,wo,jobId){
    return fetch(SB.url.replace(/\/+$/,"")+"/functions/v1/"+name,{method:"POST",headers:{"Authorization":"Bearer "+SB.key,"apikey":SB.key,"Content-Type":"application/json","x-crm-secret":AISECRET},body:JSON.stringify({was:was,wo:wo,jobId:jobId})})
@@ -604,9 +615,12 @@ var USERS=%%USERS%%;
    });
  }
  function apiAi(was,wo){
-   // Direkter Aufruf (Streaming) – funktioniert am iPhone zuverlässig. Der Funktionsname
-   // kann „lead-ai" oder „lead-ai-" sein -> bei 404 die zweite Variante versuchen.
-   return aiPost("lead-ai",was,wo).catch(function(e){if(e&&e.status===404)return aiPost("lead-ai-",was,wo);throw e;})
+   // 1) "Einfacher" Aufruf ohne CORS-Vorabpruefung (kommt durch strenge Proxies, z. B. Firmen-PC).
+   // 2) Klappt der nicht -> klassischer Aufruf (funktioniert am iPhone zuverlaessig).
+   // So kann der neue Weg das iPhone NICHT kaputtmachen (Fallback bleibt der bewaehrte Weg).
+   return aiPostSimple("lead-ai",was,wo)
+     .catch(function(e){if(e&&e.status===404)return aiPostSimple("lead-ai-",was,wo);throw e;})
+     .catch(function(){return aiPost("lead-ai",was,wo).catch(function(e){if(e&&e.status===404)return aiPost("lead-ai-",was,wo);throw e;});})
      .then(function(d){return (d.leads||[]).filter(function(x){return x&&(x.firma||x.name);});});
  }
  /* --- Visitenkarten-Scan (Claude-Vision über dieselbe Edge Function "lead-ai") --- */
@@ -1686,7 +1700,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v26";
+const CACHE="vertrieb-v27";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png",
   "./vendor/leaflet.js","./vendor/leaflet.css",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];

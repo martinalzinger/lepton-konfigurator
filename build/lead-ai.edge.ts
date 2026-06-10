@@ -177,12 +177,15 @@ Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   if (req.method !== "POST") return json({ error: "POST erforderlich" }, 405);
 
-  const secret = Deno.env.get("CRM_SECRET") || "";
-  if (secret && req.headers.get("x-crm-secret") !== secret) return json({ error: "unauthorized" }, 401);
   const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
   if (!apiKey) return json({ error: "ANTHROPIC_API_KEY fehlt (Secret setzen)" }, 500);
 
   const body = await req.json().catch(() => ({}));
+  // Secret aus Header ODER Body akzeptieren: der "einfache" Aufruf (ohne CORS-Vorabpruefung)
+  // kann keinen x-crm-secret-Header senden und liefert das Secret daher im Body mit.
+  const secret = Deno.env.get("CRM_SECRET") || "";
+  const provided = req.headers.get("x-crm-secret") || (body && body.secret) || "";
+  if (secret && provided !== secret) return json({ error: "unauthorized" }, 401);
 
   // B) Visitenkarte: kurze Antwort, kein Streaming nötig.
   if (body && typeof body.image === "string" && body.image) {
