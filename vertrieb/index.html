@@ -332,7 +332,20 @@ textarea.field{min-height:74px;resize:vertical;line-height:1.5}
   <!-- DATEN -->
   <section class="view" id="view-data">
     <h2 class="vh">Daten</h2>
-    <div class="sub">Server-Verbindung, Sichern, Übertragen und Importieren.</div>
+    <div class="sub">Auswertung, Server-Verbindung, Sichern, Übertragen und Importieren.</div>
+    <div class="card" id="evalCard">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px">
+        <h3 style="margin:0">Vertriebler-Auswertung</h3>
+        <select class="field" id="evalRange" style="width:auto;padding:6px 10px;font-size:13px">
+          <option value="7">Letzte 7 Tage</option>
+          <option value="30">Letzte 30 Tage</option>
+          <option value="month">Dieser Monat</option>
+          <option value="year">Dieses Jahr</option>
+          <option value="all" selected>Gesamt</option>
+        </select>
+      </div>
+      <div id="evalBody" style="overflow-x:auto"></div>
+    </div>
     <div class="card" id="connData">
       <h3>Geteilte Daten / Server</h3>
       <div id="connDataBody"></div>
@@ -1015,7 +1028,7 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
    window.scrollTo(0,0);
    document.getElementById("fab").style.display=(view==="detail"||view==="form")?"none":"flex";
  }
- document.getElementById("nav").addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;var v=b.getAttribute("data-view");if(v){if(v==="dashboard")renderDashboard();if(v==="list")renderList();if(v==="leads")renderLeads();show(v);}});
+ document.getElementById("nav").addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;var v=b.getAttribute("data-view");if(v){if(v==="dashboard")renderDashboard();if(v==="list")renderList();if(v==="leads")renderLeads();if(v==="data")renderAuswertung();show(v);}});
  // Dashboard-Kacheln klickbar -> direkt in die passende Kontaktliste springen.
  document.getElementById("stats").addEventListener("click",function(e){
    var s=e.target.closest("[data-go]");if(!s)return;var go=s.getAttribute("data-go");
@@ -2220,6 +2233,49 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
    nextC(0);
  };
 
+ /* ---------- Vertriebler-Auswertung (Aktivitäten je Person) ---------- */
+ var EVAL_TYPES=[["anruf","Anrufe"],["mailout","Mail raus"],["mailin","Mail rein"],["besuch","Besuche"],["angebot","Angebote"],["notiz","Notizen"]];
+ function evalFrom(){
+   var v=(document.getElementById("evalRange")||{}).value||"all";var now=new Date();
+   if(v==="all")return 0;
+   if(v==="month")return new Date(now.getFullYear(),now.getMonth(),1).getTime();
+   if(v==="year")return new Date(now.getFullYear(),0,1).getTime();
+   return Date.now()-parseInt(v,10)*86400000;
+ }
+ function renderAuswertung(){
+   var body=document.getElementById("evalBody");if(!body)return;
+   var from=evalFrom();
+   var who={}; // name -> {anruf,mailout,...,total,betrag,kunden}
+   function row(n){if(!who[n])who[n]={total:0,betrag:0,kunden:0};return who[n];}
+   USERS.forEach(function(u){if(u.n&&!u.hd)row(u.n);}); // Team immer zeigen (auch mit 0)
+   DB.contacts.forEach(function(c){
+     if(c.owner)row(c.owner).kunden++;
+     (c.activities||[]).forEach(function(a){
+       if(from&&(a.date||0)<from)return;
+       var n=a.by||"(ohne Name)";var r=row(n);var t=(a&&a.type)||"notiz";
+       r[t]=(r[t]||0)+1;r.total++;
+       if(t==="angebot"&&a.betrag){var b=parseFloat(String(a.betrag).replace(/[^0-9.,-]/g,"").replace(/\./g,"").replace(",","."));if(!isNaN(b))r.betrag+=b;}
+     });
+   });
+   var names=Object.keys(who).sort(function(a,b){return who[b].total-who[a].total||a.localeCompare(b);});
+   var tot={total:0,betrag:0,kunden:0};EVAL_TYPES.forEach(function(t){tot[t[0]]=0;});
+   names.forEach(function(n){var r=who[n];tot.total+=r.total;tot.betrag+=r.betrag;tot.kunden+=r.kunden;EVAL_TYPES.forEach(function(t){tot[t[0]]+=(r[t[0]]||0);});});
+   var th='<th style="text-align:left;padding:7px 8px;font-size:12px;color:var(--muted);font-weight:600">Vertriebler</th>'+
+     EVAL_TYPES.map(function(t){return '<th style="padding:7px 8px;font-size:12px;color:var(--muted);font-weight:600;text-align:right">'+t[1]+'</th>';}).join("")+
+     '<th style="padding:7px 8px;font-size:12px;color:var(--muted);font-weight:700;text-align:right">Gesamt</th>'+
+     '<th style="padding:7px 8px;font-size:12px;color:var(--muted);font-weight:600;text-align:right">Angebote €</th>'+
+     '<th style="padding:7px 8px;font-size:12px;color:var(--muted);font-weight:600;text-align:right">Kunden</th>';
+   function cells(n,r,bold){var s=bold?"font-weight:700;":"";
+     return '<td style="padding:7px 8px;'+s+'">'+esc(n)+'</td>'+
+       EVAL_TYPES.map(function(t){var v=r[t[0]]||0;return '<td style="padding:7px 8px;text-align:right;'+s+(v?'':'color:var(--faint)')+'">'+v+'</td>';}).join("")+
+       '<td style="padding:7px 8px;text-align:right;font-weight:700;'+s+'">'+r.total+'</td>'+
+       '<td style="padding:7px 8px;text-align:right;'+s+(r.betrag?'':'color:var(--faint)')+'">'+(r.betrag?fmtEur(Math.round(r.betrag)):"–")+'</td>'+
+       '<td style="padding:7px 8px;text-align:right;'+s+(r.kunden?'':'color:var(--faint)')+'">'+(r.kunden||0)+'</td>';}
+   var rows=names.map(function(n){return '<tr style="border-top:1px solid var(--line)">'+cells(n,who[n],false)+'</tr>';}).join("");
+   var totRow='<tr style="border-top:2px solid var(--line-strong);background:var(--field)">'+cells("Gesamt",tot,true)+'</tr>';
+   body.innerHTML='<table style="width:100%;border-collapse:collapse;font-size:14px;min-width:560px"><thead><tr>'+th+'</tr></thead><tbody>'+rows+totRow+'</tbody></table>'+
+     '<div style="font-size:12px;color:var(--muted);margin-top:8px">Zählt Aktivitäten nach <b>wer sie erfasst hat</b> im gewählten Zeitraum. „Kunden" = aktuell betreute Kontakte.</div>';
+ }
  /* ---------- Daten-Reiter: Verbindungsstatus + Cloud-Konfiguration ---------- */
  function renderDataConn(){
    var body=document.getElementById("connDataBody");if(!body)return;
@@ -2242,6 +2298,7 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
    var aiSt=document.getElementById("aiState");
    if(aiSt){aiSt.textContent=aiReady()?"✓ KI-Suche aktiv":(SB&&SB.url&&SB.key?"Schlüssel fehlt – KI-Suche aus":"erst Cloud-Datenbank verbinden");aiSt.style.color=aiReady()?"var(--pos)":"var(--muted)";}
  }
+ document.getElementById("evalRange").onchange=renderAuswertung;
  document.getElementById("reconnBtn").onclick=function(){var b=this;b.textContent="Prüfe…";initBackend();setTimeout(function(){b.textContent="Verbindung prüfen";renderDataConn();},900);};
  // Einrichtungs-Link erzeugen: bettet Cloud-Zugang (+ KI-Schluessel) ein -> Kollege klickt, ist verbunden, muss nur einloggen.
  document.getElementById("setupLinkBtn").onclick=function(){
@@ -2289,7 +2346,7 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v85";
+ var APP_VER="v86";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
