@@ -871,8 +871,12 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
  function addContactMarker(L,c){
    if(!_cmarkers||c.lat==null||c.lon==null)return;
    var loc=[c.plz,c.ort].filter(Boolean).join(" ");
+   var gmq=(c.lat!=null&&c.lon!=null)?(c.lat+","+c.lon):encodeURIComponent([c.strasse,[c.plz,c.ort].filter(Boolean).join(" "),landLabel(c.land)].filter(Boolean).join(", "));
    var pop='<b>'+esc(displayName(c))+'</b>'+(loc?'<br>'+esc(loc):'')+(c.land?' ('+esc(c.land)+')':'')+
-     '<br><button data-cid="'+c.id+'" style="margin-top:6px;border:0;background:#c00000;color:#fff;border-radius:6px;padding:5px 9px;font:600 12px sans-serif;cursor:pointer">Öffnen</button>';
+     '<div style="margin-top:7px;display:flex;gap:6px;flex-wrap:wrap">'+
+       '<button data-cid="'+c.id+'" style="border:0;background:#c00000;color:#fff;border-radius:6px;padding:5px 9px;font:600 12px sans-serif;cursor:pointer">Öffnen</button>'+
+       '<a href="https://www.google.com/maps?q='+gmq+'" target="_blank" rel="noopener" style="border:1px solid #c00000;color:#c00000;border-radius:6px;padding:5px 9px;font:600 12px sans-serif;text-decoration:none">In Google Maps</a>'+
+     '</div>';
    L.marker([c.lat,c.lon],{icon:flagIcon(L)}).addTo(_cmarkers).bindPopup(pop);
  }
  function geocodeContact(c){

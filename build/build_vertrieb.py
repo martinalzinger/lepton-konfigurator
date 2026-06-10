@@ -899,8 +899,12 @@ var USERS=%%USERS%%;
  function addContactMarker(L,c){
    if(!_cmarkers||c.lat==null||c.lon==null)return;
    var loc=[c.plz,c.ort].filter(Boolean).join(" ");
+   var gmq=(c.lat!=null&&c.lon!=null)?(c.lat+","+c.lon):encodeURIComponent([c.strasse,[c.plz,c.ort].filter(Boolean).join(" "),landLabel(c.land)].filter(Boolean).join(", "));
    var pop='<b>'+esc(displayName(c))+'</b>'+(loc?'<br>'+esc(loc):'')+(c.land?' ('+esc(c.land)+')':'')+
-     '<br><button data-cid="'+c.id+'" style="margin-top:6px;border:0;background:#c00000;color:#fff;border-radius:6px;padding:5px 9px;font:600 12px sans-serif;cursor:pointer">Öffnen</button>';
+     '<div style="margin-top:7px;display:flex;gap:6px;flex-wrap:wrap">'+
+       '<button data-cid="'+c.id+'" style="border:0;background:#c00000;color:#fff;border-radius:6px;padding:5px 9px;font:600 12px sans-serif;cursor:pointer">Öffnen</button>'+
+       '<a href="https://www.google.com/maps?q='+gmq+'" target="_blank" rel="noopener" style="border:1px solid #c00000;color:#c00000;border-radius:6px;padding:5px 9px;font:600 12px sans-serif;text-decoration:none">In Google Maps</a>'+
+     '</div>';
    L.marker([c.lat,c.lon],{icon:flagIcon(L)}).addTo(_cmarkers).bindPopup(pop);
  }
  function geocodeContact(c){
@@ -1723,7 +1727,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v30";
+const CACHE="vertrieb-v31";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png",
   "./vendor/leaflet.js","./vendor/leaflet.css",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
