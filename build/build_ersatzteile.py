@@ -349,6 +349,8 @@ body{font-family:var(--sans);background:var(--paper);color:var(--ink);line-heigh
 .pacts .badd{background:var(--red);border-color:var(--red);color:#fff}
 .pacts .badd:hover{background:var(--red2)}
 .emptymsg{text-align:center;color:var(--faint);padding:50px 0;font-size:14px}
+.catfoot{margin:34px auto 28px;text-align:center;font-family:var(--mono);font-size:10.5px;letter-spacing:.05em;color:var(--faint)}
+.catfoot .ver{opacity:.75;margin-left:6px}
 /* Drawer */
 .drawer-backdrop{position:fixed;inset:0;background:rgba(16,17,19,.45);opacity:0;pointer-events:none;transition:.2s;z-index:95}
 .drawer-backdrop.open{opacity:1;pointer-events:auto}
@@ -546,6 +548,7 @@ body{font-family:var(--sans);background:var(--paper);color:var(--ink);line-heigh
   </div>
   <div id="catalog"></div>
   <div id="empty" class="emptymsg" data-i18n="no_results" style="display:none"></div>
+  <footer class="catfoot">Alzinger Maschinenbau · Lepton 5100 Ersatzteilkatalog <span class="ver">%%VERSION%%</span></footer>
 </div>
 <div class="drawer-backdrop" id="backdrop"></div>
 <aside class="drawer" id="drawer" aria-hidden="true">
@@ -1098,9 +1101,11 @@ out=out.replace("%%CAT%%",json.dumps(CAT,ensure_ascii=False))
 out=out.replace("%%I18N%%",json.dumps(I18N,ensure_ascii=False))
 out=out.replace("%%PARTMAP%%",json.dumps(PARTMAP,ensure_ascii=False))
 out=out.replace("%%PARTIDX%%",json.dumps(PARTIDX,ensure_ascii=False))
+import datetime as _dt
+out=out.replace("%%VERSION%%","v"+_dt.date.today().strftime("%Y.%m.%d"))
 out=out.replace("%%PARTIMG%%",json.dumps(PARTIMG,ensure_ascii=False))
 
-for tok in ["%%RED%%","%%RED2%%","%%HERO%%","%%LOGOL%%","%%LOGOD%%","%%MAIL%%","%%IMG%%","%%MODELS%%","%%CAT%%","%%I18N%%","%%PARTMAP%%","%%PARTIMG%%","%%PARTIDX%%"]:
+for tok in ["%%RED%%","%%RED2%%","%%HERO%%","%%LOGOL%%","%%LOGOD%%","%%MAIL%%","%%IMG%%","%%MODELS%%","%%CAT%%","%%I18N%%","%%PARTMAP%%","%%PARTIMG%%","%%PARTIDX%%","%%VERSION%%"]:
     assert tok not in out, "Token übrig: "+tok
 for need in ['id="cartBtn"','id="tcanvas"','id="partList"','renderCatalog','data-lang="pl"','ensureThree','importmap','./vendor/GLTFLoader.js']:
     assert need in out, "fehlt: "+need
