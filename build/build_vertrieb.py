@@ -586,7 +586,7 @@ var USERS=%%USERS%%;
    return aiPost("lead-ai",was,wo).catch(function(e){if(e&&e.status===404)return aiPost("lead-ai-",was,wo);throw e;})
      .then(function(d){return (d.leads||[]).filter(function(x){return x&&(x.firma||x.name);});});
  }
- /* --- Visitenkarten-Scan (Claude-Vision über Edge Function "card-scan") --- */
+ /* --- Visitenkarten-Scan (Claude-Vision über dieselbe Edge Function "lead-ai") --- */
  function cardPost(name,dataUri){
    var ctl=("AbortController" in window)?new AbortController():null;
    var to=ctl?setTimeout(function(){try{ctl.abort();}catch(_){}} ,60000):0;
@@ -595,7 +595,9 @@ var USERS=%%USERS%%;
      .then(function(d){if(to)clearTimeout(to);return d;},function(e){if(to)clearTimeout(to);if(e&&(e.name==="AbortError"||/abort/i.test(String(e&&e.message)))){var er=new Error("Zeitüberschreitung beim Auswerten.");throw er;}throw e;});
  }
  function apiCardScan(dataUri){
-   return cardPost("card-scan",dataUri).catch(function(e){if(e&&e.status===404)return cardPost("card-scan-",dataUri);throw e;})
+   // Dieselbe Funktion wie die Lead-Suche (lead-ai / lead-ai-): sie erkennt das Bild und
+   // wertet die Visitenkarte aus. So gibt es nur EINE Edge Function zu pflegen.
+   return cardPost("lead-ai",dataUri).catch(function(e){if(e&&e.status===404)return cardPost("lead-ai-",dataUri);throw e;})
      .then(function(d){return (d&&d.contact)||{};});
  }
  // Foto verkleinern (Längste Seite maxDim) und als JPEG-Data-URI zurückgeben -> kleine Payload.
@@ -1494,7 +1496,7 @@ var USERS=%%USERS%%;
            msg.style.color=any?"#15803d":"var(--muted)";
            msg.textContent=any?"✓ Übernommen – bitte prüfen, ggf. ergänzen und speichern.":"Auf dem Foto konnten keine Daten erkannt werden. Schärfer/näher fotografieren und erneut versuchen.";
            _scanBtn.disabled=false;
-         }).catch(function(err){msg.style.color="#b91c1c";msg.textContent="Scan fehlgeschlagen: "+String((err&&err.message)||err)+(/scan 404/.test(String(err&&err.message))?" (Edge Function card-scan ist noch nicht deployt)":"");_scanBtn.disabled=false;});
+         }).catch(function(err){msg.style.color="#b91c1c";msg.textContent="Scan fehlgeschlagen: "+String((err&&err.message)||err)+(/scan 404/.test(String(err&&err.message))?" (KI-Funktion noch nicht eingerichtet – Reiter Daten)":"");_scanBtn.disabled=false;});
        });
      };
    }
@@ -1661,7 +1663,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v23";
+const CACHE="vertrieb-v24";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png",
   "./vendor/leaflet.js","./vendor/leaflet.css",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];

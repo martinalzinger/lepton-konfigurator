@@ -1,26 +1,17 @@
 // Supabase Edge Function: "lead-ai"
-// KI-Lead-Suche für das Alzinger Vertriebs-CRM. Hält den Anthropic-API-Key sicher
-// serverseitig und ruft Claude mit Web-Suche auf, um echte Firmen-Leads zu finden.
+// EINE Funktion für ZWEI Aufgaben des Alzinger Vertriebs-CRM:
+//   A) Lead-Suche:      bekommt { was, wo }   -> liefert { leads: [...] }   (Claude + Web-Suche)
+//   B) Visitenkarte:    bekommt { image }     -> liefert { contact: {...} } (Claude-Vision)
+// Der Anthropic-Key bleibt serverseitig. Die App ruft IMMER diese eine Funktion auf.
 //
 // EINRICHTEN (einmalig, im Supabase-Dashboard):
-//  1. Edge Functions -> "Deploy a new function" -> Name: lead-ai
-//     (oder per CLI: supabase functions new lead-ai)  Diesen Code einfügen.
-//  2. WICHTIG: "Verify JWT" AUSschalten (Enforce JWT verification = off),
-//     sonst lehnt die Funktion den Publishable-Key ab.
-//  3. Secrets setzen (Edge Functions -> Manage secrets / Settings):
-//       ANTHROPIC_API_KEY  = dein Anthropic-Key (sk-ant-...)
-//       CRM_SECRET         = ein selbst ausgedachtes Passwort (auch in der App eintragen)
-//  4. Deploy. Aufruf-URL: https://<projekt>.supabase.co/functions/v1/lead-ai
-//
-// Die App schickt { was, wo } und den Header x-crm-secret und bekommt { leads: [...] }.
-//
-// WICHTIG (Desktop/Firmen-Proxy): Die Antwort wird als STREAM geschickt. Während der
-// Recherche (kann ~60 s dauern) sendet die Funktion alle paar Sekunden ein Leerzeichen
-// als "Keepalive" – so kappt ein strenger Firmen-Proxy die lange Verbindung nicht.
-// Am Ende wird das JSON angehängt. Die App liest den Text und macht JSON.parse(trim()).
+//  1. Edge Functions -> Funktion "lead-ai" (oder "lead-ai-") -> Code: DIESEN Code einfügen.
+//  2. "Verify JWT" AUSschalten (Enforce JWT verification = off).
+//  3. Secrets: ANTHROPIC_API_KEY = sk-ant-... , CRM_SECRET = dasselbe Passwort wie in der App.
+//  4. Deploy.
 
 const MODEL = "claude-opus-4-8";
-// URL gestückelt, damit sie beim Kopieren nicht automatisch in <…> verlinkt wird.
+// URL gestückelt, damit sie beim Kopieren nicht automatisch verlinkt wird.
 const ANTHROPIC_URL = "https" + "://api.anthropic" + ".c" + "om/v1/messages";
 
 const cors = {
@@ -37,7 +28,8 @@ function json(obj: unknown, status = 200): Response {
   });
 }
 
-// Robustes Herausziehen des JSON-Arrays von Objekten (ignoriert Quellen-Fußnoten wie [1]).
+/* ============================ A) LEAD-SUCHE ============================ */
+
 function extractLeads(t: string): any[] | null {
   const m = t.match(/\[\s*\{[\s\S]*\}\s*\]/);
   if (m) { try { const a = JSON.parse(m[0]); if (Array.isArray(a)) return a; } catch (_) { /* weiter */ } }
@@ -53,7 +45,6 @@ function extractLeads(t: string): any[] | null {
   return null;
 }
 
-// Die eigentliche Recherche (Anthropic + Web-Suche). Gibt das Ergebnis-Objekt zurück.
 async function research(apiKey: string, was: string, wo: string): Promise<unknown> {
   const prompt =
 `Du bist Vertriebs-Rechercheur für Alzinger Maschinenbau. Verkauft wird die mobile
@@ -69,15 +60,13 @@ Antworte AUSSCHLIESSLICH mit einem JSON-Array (kein Fließtext, kein Markdown, k
 Jedes Element exakt so:
 {"firma":"","strasse":"","plz":"","ort":"","land":"DE","web":"","tel":"","email":"","geschaeftsfuehrer":"","betriebsleiter":"","jahresmenge":"","siebtechnik":"","news":"","quelle":""}
 - land als Ländercode (DE/AT/CH/...).
-- ort und plz sind WICHTIG: ort (Stadt/Gemeinde) IMMER ausfüllen; plz möglichst
-  immer mitliefern (aus Impressum/Adresse). Lieber Ort ohne PLZ als gar nichts.
+- ort und plz sind WICHTIG: ort (Stadt/Gemeinde) IMMER ausfüllen; plz möglichst immer mitliefern.
 - email: allgemeine Kontakt-/Info-Adresse, wenn auffindbar (z.B. aus dem Impressum).
-- geschaeftsfuehrer / betriebsleiter: Namen, wenn auffindbar (Impressum/Handelsregister/LinkedIn).
-- jahresmenge: verarbeitete Menge pro Jahr mit Einheit, falls öffentlich (z.B. "ca. 30.000 t/Jahr"), sonst "".
-- siebtechnik: welche Siebanlage der Betrieb einsetzt – NUR "Trommelsieb" oder "Sternsieb",
-  wenn es klar aus Website/News/Bildern hervorgeht; sonst "" (nicht raten!).
-- news: ein relevanter aktueller Punkt mit Jahr (z.B. Erweiterung, Investition, neue Anlage), sonst "".
-- quelle: kurz, woher die Infos stammen (z.B. Website, Handelsregister, Presseartikel).
+- geschaeftsfuehrer / betriebsleiter: Namen, wenn auffindbar.
+- jahresmenge: verarbeitete Menge pro Jahr mit Einheit, falls öffentlich, sonst "".
+- siebtechnik: NUR "Trommelsieb" oder "Sternsieb", wenn klar erkennbar; sonst "" (nicht raten!).
+- news: ein relevanter aktueller Punkt mit Jahr, sonst "".
+- quelle: kurz, woher die Infos stammen.
 - WICHTIG: Unbekannte Felder als leerer String "". Nichts erfinden – lieber leer lassen.
 - 6–8 Firmen pro Antwort genügen. Nur echte, im Web auffindbare Betriebe (keine Dubletten).`;
 
@@ -92,11 +81,7 @@ Jedes Element exakt so:
   for (let i = 0; i < 10; i++) {
     const r = await fetch(ANTHROPIC_URL, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-      },
+      headers: { "Content-Type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01" },
       body: JSON.stringify({ ...base, messages }),
     });
     if (!r.ok) {
@@ -112,54 +97,93 @@ Jedes Element exakt so:
   }
 
   let text = (data?.content || [])
-    .filter((b: any) => b.type === "text")
-    .map((b: any) => b.text)
-    .join("\n")
-    .trim();
+    .filter((b: any) => b.type === "text").map((b: any) => b.text).join("\n").trim();
   text = text.replace(/```json/gi, "").replace(/```/g, "");
 
   const leads = extractLeads(text);
   if (leads === null) {
-    return {
-      leads: [],
-      debug: {
-        stop_reason: data?.stop_reason || null,
-        text_len: text.length,
-        truncated: data?.stop_reason === "max_tokens",
-        sample: text.slice(0, 500),
-      },
-    };
+    return { leads: [], debug: { stop_reason: data?.stop_reason || null, text_len: text.length, sample: text.slice(0, 500) } };
   }
   return { leads };
 }
+
+/* ============================ B) VISITENKARTE ============================ */
+
+const CARD_PROMPT =
+`Du extrahierst Kontaktdaten von einer abfotografierten VISITENKARTE.
+Gib AUSSCHLIESSLICH ein JSON-Objekt zurück (kein Fließtext, kein Markdown, keine \`\`\`),
+exakt mit diesen Feldern:
+{"firma":"","anrede":"","vorname":"","nachname":"","position":"","strasse":"","plz":"","ort":"","land":"DE","tel":"","mobil":"","mail":"","web":"","ustid":""}
+Regeln:
+- land als Ländercode (DE/AT/CH/...). Sonst "DE".
+- anrede: akademische/höfliche Anrede falls vorhanden (z.B. "Dr.", "Herr", "Frau"); sonst "".
+- position: Funktion/Titel auf der Karte (z.B. "Geschäftsführer"); sonst "".
+- tel = Festnetz, mobil = Handynummer (Mobil/Mobile/Handy/M: oder +.. 1xx -> mobil, sonst tel).
+- mail = E-Mail, web = Webseite (ohne "http://"). strasse mit Hausnummer; plz und ort getrennt.
+- Unbekannte Felder als leerer String "". NICHTS erfinden – nur was auf der Karte steht.`;
+
+async function scanCard(apiKey: string, image: string): Promise<Response> {
+  const m = image.match(/^data:([^;]+);base64,([\s\S]*)$/);
+  const media_type = m ? m[1] : "image/jpeg";
+  const dataB64 = m ? m[2] : image;
+  const r = await fetch(ANTHROPIC_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01" },
+    body: JSON.stringify({
+      model: MODEL,
+      max_tokens: 1200,
+      messages: [{
+        role: "user",
+        content: [
+          { type: "image", source: { type: "base64", media_type, data: dataB64 } },
+          { type: "text", text: CARD_PROMPT },
+        ],
+      }],
+    }),
+  });
+  if (!r.ok) { const t = await r.text(); return json({ error: "anthropic " + r.status, detail: t.slice(0, 300) }, 502); }
+  const data: any = await r.json();
+  let text = (data?.content || [])
+    .filter((b: any) => b.type === "text").map((b: any) => b.text).join("\n").trim()
+    .replace(/```json/gi, "").replace(/```/g, "");
+  let contact: any = null;
+  const mm = text.match(/\{[\s\S]*\}/);
+  if (mm) { try { contact = JSON.parse(mm[0]); } catch (_) { /* weiter */ } }
+  if (!contact) { try { contact = JSON.parse(text); } catch (_) { /* weiter */ } }
+  if (!contact || typeof contact !== "object") return json({ contact: {}, debug: { sample: text.slice(0, 400) } });
+  return json({ contact });
+}
+
+/* ============================ ROUTER ============================ */
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   if (req.method !== "POST") return json({ error: "POST erforderlich" }, 405);
 
-  // Schnelle Vorab-Prüfungen -> sofortige Antwort (kein Streaming nötig).
   const secret = Deno.env.get("CRM_SECRET") || "";
   if (secret && req.headers.get("x-crm-secret") !== secret) return json({ error: "unauthorized" }, 401);
   const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
   if (!apiKey) return json({ error: "ANTHROPIC_API_KEY fehlt (Secret setzen)" }, 500);
-  const body = await req.json().catch(() => ({}));
-  const was = body?.was, wo = body?.wo;
-  if (!was || !wo) return json({ error: "Bitte was und wo angeben" }, 400);
 
-  // Streaming-Antwort mit Keepalive: hält die Verbindung "aktiv", damit strenge
-  // Firmen-Proxies die lange Recherche nicht als Leerlauf kappen.
+  const body = await req.json().catch(() => ({}));
+
+  // B) Visitenkarte: kurze Antwort, kein Streaming nötig.
+  if (body && typeof body.image === "string" && body.image) {
+    try { return await scanCard(apiKey, body.image); }
+    catch (e) { return json({ error: String((e as Error)?.message || e) }, 500); }
+  }
+
+  // A) Lead-Suche: mit Keepalive-Streaming (gegen Proxy-Timeout am Desktop).
+  const was = body?.was, wo = body?.wo;
+  if (!was || !wo) return json({ error: "Bitte was+wo (Lead-Suche) oder image (Visitenkarte) senden" }, 400);
+
   const enc = new TextEncoder();
   const stream = new ReadableStream({
     async start(controller) {
-      const keepalive = setInterval(() => {
-        try { controller.enqueue(enc.encode(" ")); } catch (_) { /* geschlossen */ }
-      }, 7000);
+      const keepalive = setInterval(() => { try { controller.enqueue(enc.encode(" ")); } catch (_) { /* zu */ } }, 7000);
       let out: unknown;
-      try {
-        out = await research(apiKey, String(was), String(wo));
-      } catch (e) {
-        out = { leads: [], error: String((e as Error)?.message || e) };
-      }
+      try { out = await research(apiKey, String(was), String(wo)); }
+      catch (e) { out = { leads: [], error: String((e as Error)?.message || e) }; }
       clearInterval(keepalive);
       try { controller.enqueue(enc.encode("\n" + JSON.stringify(out))); } catch (_) { /* ignore */ }
       controller.close();
