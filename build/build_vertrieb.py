@@ -329,7 +329,7 @@ textarea.field{min-height:74px;resize:vertical;line-height:1.5}
     <h2 class="vh">Kontakte</h2>
     <div class="sub" id="listSub">Adressen, Ansprechpartner &amp; Verlauf</div>
     <div class="toolbar">
-      <input class="search" id="q" placeholder="Suchen: Firma, Name, Ort, Telefon, E-Mail…">
+      <input class="search" id="q" placeholder="Volltextsuche: Firma, Person, Ort, Telefon, E-Mail, Notizen, Verlauf…">
     </div>
     <div class="toolbar">
       <select class="filter" id="fStatus"><option value="">Alle Status</option></select>
@@ -1165,7 +1165,18 @@ var USERS=%%USERS%%;
    refillSel("fOwner",ownerOpts(),"Alle Vertriebler");
    refillSel("fLeadLand",landOpts(),"Alle Länder");
  }
- function matchQ(c,q){if(!q)return true;q=q.toLowerCase();var hay=[c.firma,c.firma2,c.vorname,c.nachname,c.strasse,c.ort,c.plz,c.tel,c.mobil,c.mail,c.quelle,c.notiz].join(" ").toLowerCase();return hay.indexOf(q)>=0;}
+ function matchQ(c,q){
+   if(!q)return true;
+   // Volltext: ALLE Felder + kompletter Verlauf (Aktivitaeten/Notizen) + Wiedervorlage
+   var hay=[c.firma,c.firma2,c.anrede,c.vorname,c.nachname,c.strasse,c.plz,c.ort,contactBundesland(c),landLabel(c.land),c.tel,c.mobil,c.mail,c.web,c.ustid,c.quelle,c.owner,c.notiz,c.news,statusLabel(c.status)];
+   (c.activities||[]).forEach(function(a){if(a){hay.push(a.note,a.offerNr,a.by,actLabel(a.type));}});
+   if(c.followup&&c.followup.note)hay.push(c.followup.note);
+   hay=hay.join(" ").toLowerCase();
+   // mehrere Begriffe -> ALLE muessen vorkommen (UND-Suche)
+   var terms=q.toLowerCase().split(/\s+/).filter(Boolean);
+   for(var i=0;i<terms.length;i++){if(hay.indexOf(terms[i])<0)return false;}
+   return true;
+ }
  function contactRow(c){
    var due=(c.followup&&!c.followup.done&&c.followup.due)?'<span class="due '+dueClass(c.followup.due)+'">'+dueLabel(c.followup.due)+'</span>':'';
    var sub=fullName(c);var loc=[c.strasse,[c.plz,c.ort].filter(Boolean).join(" ")].filter(Boolean).join(", ");
@@ -2461,7 +2472,7 @@ var USERS=%%USERS%%;
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v97";
+ var APP_VER="v98";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
@@ -2506,7 +2517,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v97";
+const CACHE="vertrieb-v98";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png","./icon-32.png","./favicon.ico",
   "./vendor/leaflet.js","./vendor/leaflet.css","./vendor/msal-browser.min.js",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
