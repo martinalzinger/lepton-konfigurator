@@ -479,7 +479,7 @@ create policy "crm all" on contacts
   <section class="view" id="view-form"></section>
 
   <div class="foot">
-    Alzinger Maschinenbau · Vertrieb / CRM — PWA, online wie offline.<br>
+    Alzinger Maschinenbau · Vertrieb / CRM — PWA, online wie offline. <span id="appVer" style="opacity:.6"></span><br>
     <a href="../index.html">Konfigurator</a> · <a href="../ersatzteile/">Ersatzteile</a>
   </div>
 </div>
@@ -2068,8 +2068,10 @@ var USERS=%%USERS%%;
 
  /* ---------- Start ---------- */
  var booted=false;
+ var APP_VER="v56";
  function boot(){
    if(booted)return;booted=true;
+   try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
    initFilters();renderDashboard();renderList();show("dashboard");
    refreshNotifBtn();renderDataConn();
    initBackend();                // Cloud/Server erkennen + geteilte Daten laden (sonst lokal)
@@ -2110,7 +2112,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v55";
+const CACHE="vertrieb-v56";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png",
   "./vendor/leaflet.js","./vendor/leaflet.css","./vendor/msal-browser.min.js",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];

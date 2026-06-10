@@ -451,7 +451,7 @@ create policy "crm all" on contacts
   <section class="view" id="view-form"></section>
 
   <div class="foot">
-    Alzinger Maschinenbau · Vertrieb / CRM — PWA, online wie offline.<br>
+    Alzinger Maschinenbau · Vertrieb / CRM — PWA, online wie offline. <span id="appVer" style="opacity:.6"></span><br>
     <a href="../index.html">Konfigurator</a> · <a href="../ersatzteile/">Ersatzteile</a>
   </div>
 </div>
@@ -2040,8 +2040,10 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
 
  /* ---------- Start ---------- */
  var booted=false;
+ var APP_VER="v56";
  function boot(){
    if(booted)return;booted=true;
+   try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
    initFilters();renderDashboard();renderList();show("dashboard");
    refreshNotifBtn();renderDataConn();
    initBackend();                // Cloud/Server erkennen + geteilte Daten laden (sonst lokal)
