@@ -1,6 +1,6 @@
 // Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v13";
+const CACHE="vertrieb-v14";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png",
   "./vendor/leaflet.js","./vendor/leaflet.css",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
@@ -27,7 +27,7 @@ self.addEventListener("fetch",e=>{
   if(req.method!=="GET")return;
   if(req.url.indexOf("api.php")>=0)return;            // dynamische API immer direkt ans Netz, nie cachen
   if(req.url.indexOf("nominatim")>=0||req.url.indexOf("overpass")>=0)return; // Karten-Lead-Suche: immer live
-  if(req.url.indexOf("tile.openstreetmap")>=0)return;  // Karten-Kacheln nicht cachen (Browser-Cache reicht)
+  if(req.url.indexOf("tile.openstreetmap")>=0||req.url.indexOf("arcgisonline")>=0)return; // Karten-/Satellitenkacheln nicht cachen (Browser-Cache reicht)
   if(req.url.indexOf("supabase.co")>=0)return;          // Cloud-DB immer live, nie cachen
   const isHTML=req.mode==="navigate"||(req.headers.get("accept")||"").includes("text/html");
   if(isHTML){
