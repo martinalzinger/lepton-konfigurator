@@ -729,6 +729,27 @@ var USERS=%%USERS%%;
  function sbReady(){return !!(SB&&SB.url&&SB.key);}
  function sbBase(){return SB.url.replace(/\/+$/,"")+"/rest/v1/contacts";}
  function sbHeaders(extra){var h={"apikey":SB.key,"Authorization":"Bearer "+SB.key,"Content-Type":"application/json"};if(extra)for(var k in extra)h[k]=extra[k];return h;}
+ /* ---- Inkrementeller Sync: nur GEÄNDERTE Kontakte laden (spart Datenverkehr/Egress massiv) ----
+    _lastUA = höchstes bisher gesehenes updated_at (Server-Format). Wird in localStorage gemerkt.
+    Beim 30-Sek-Sync fragen wir nur Zeilen mit updated_at > (_lastUA − Überlappung) ab. */
+ var UAKEY="amb_crm_ua";
+ var _lastUA=(function(){try{return localStorage.getItem(UAKEY)||"";}catch(e){return "";}})();
+ function setUA(ua){if(ua&&ua>_lastUA){_lastUA=ua;try{localStorage.setItem(UAKEY,ua);}catch(e){}}}
+ // Nur Zeilen, die sich seit sinceISO geändert haben (inkl. Tombstones mit _deleted). Liefert {rows:[data...], ua}.
+ function sbGetSince(sinceISO){
+   var rows=[],maxUA=_lastUA;
+   function page(off){
+     return fetch(sbBase()+"?select=data,updated_at&updated_at=gt."+encodeURIComponent(sinceISO)+"&order=updated_at.asc&limit=1000&offset="+off,{cache:"no-store",headers:sbHeaders()})
+       .then(function(r){if(!r.ok)throw new Error("sb "+r.status);return r.json();})
+       .then(function(rr){for(var i=0;i<rr.length;i++){if(rr[i]&&rr[i].data)rows.push(rr[i].data);if(rr[i]&&rr[i].updated_at&&rr[i].updated_at>maxUA)maxUA=rr[i].updated_at;}if(rr.length>=1000)return page(off+1000);return {rows:rows,ua:maxUA};});
+   }
+   return page(0);
+ }
+ // Löschen = kleine "Tombstone"-Zeile schreiben (statt Zeile entfernen) -> andere Geräte sehen die Löschung beim inkrementellen Sync.
+ function sbTombstone(id){
+   var row={id:id,data:{id:id,_deleted:true,updated:Date.now()},updated_at:new Date().toISOString()};
+   return fetch(sbBase(),{method:"POST",headers:sbHeaders({"Prefer":"resolution=merge-duplicates,return=minimal"}),body:JSON.stringify([row])}).then(function(r){if(!r.ok)throw new Error("sb "+r.status);});
+ }
  /* ---- Bilder in Supabase Storage auslagern (statt base64 im Kontakt) -> klein & skalierbar ---- */
  var IMG_BUCKET="crm-bilder";
  function isStored(s){return /^https?:\/\//.test(String(s||""));}            // schon eine URL?
@@ -749,19 +770,20 @@ var USERS=%%USERS%%;
  function sbStoreImages(uris){
    return (uris||[]).reduce(function(pr,u){return pr.then(function(acc){return sbUploadImage(u).then(function(url){acc.push(url);return acc;},function(){acc.push(u);return acc;});});},Promise.resolve([]));
  }
- // Supabase liefert pro Anfrage max. 1000 Zeilen -> seitenweise alle holen.
+ // Supabase liefert pro Anfrage max. 1000 Zeilen -> seitenweise alle holen. Tombstones (_deleted) auslassen; _lastUA setzen.
  function sbGet(){
-   var all=[];
+   var all=[],maxUA=_lastUA;
    function page(off){
-     return fetch(sbBase()+"?select=data&limit=1000&offset="+off,{cache:"no-store",headers:sbHeaders()})
+     return fetch(sbBase()+"?select=data,updated_at&order=updated_at.asc&limit=1000&offset="+off,{cache:"no-store",headers:sbHeaders()})
        .then(function(r){if(!r.ok)throw new Error("sb "+r.status);return r.json();})
-       .then(function(rows){for(var i=0;i<rows.length;i++)if(rows[i]&&rows[i].data)all.push(rows[i].data);if(rows.length>=1000)return page(off+1000);return all;});
+       .then(function(rows){for(var i=0;i<rows.length;i++){var d=rows[i]&&rows[i].data;if(d&&!d._deleted)all.push(d);if(rows[i]&&rows[i].updated_at&&rows[i].updated_at>maxUA)maxUA=rows[i].updated_at;}if(rows.length>=1000)return page(off+1000);setUA(maxUA);return all;});
    }
    return page(0);
  }
  function sbUpsert(list){
    if(!list||!list.length)return Promise.resolve();
-   var rows=list.map(function(c){return {id:c.id,data:c};});
+   // updated_at mitschreiben (Client-Zeit) -> inkrementeller Sync erkennt Änderungen auch ohne DB-Trigger.
+   var rows=list.map(function(c){return {id:c.id,data:c,updated_at:new Date(c.updated||Date.now()).toISOString()};});
    // In ~1-MB-Pakete aufteilen, damit kein Request zu gross wird (Bilder!). Einzelner grosser Kontakt geht allein raus.
    var batches=[],cur=[],size=0;
    rows.forEach(function(r){var s=JSON.stringify(r).length+2;if(cur.length&&size+s>1000000){batches.push(cur);cur=[];size=0;}cur.push(r);size+=s;});
@@ -1086,6 +1108,35 @@ var USERS=%%USERS%%;
    (DB.contacts||[]).forEach(function(c){if(c&&!seen[c.id]&&(pending[c.id]===1||fresh(c.id)))out.push(c);});
    return out;
  }
+ // Inkrementelles Zusammenführen: nur die geänderten/gelöschten Zeilen (rows = data-Objekte, ggf. mit _deleted) in DB.contacts einarbeiten.
+ // Dieselben Schutzregeln wie mergeCloud (lokale, gerade bearbeitete/ausstehende Änderungen gewinnen; "Erledigt" bleibt klebrig).
+ function applyDelta(rows){
+   if(!rows||!rows.length)return false;
+   var GRACE=15000,DELGRACE=45000,now=Date.now();
+   function fresh(id){return (now-(_recentEdits[id]||0))<GRACE;}
+   function justDeleted(id){return (now-(_recentDeletes[id]||0))<DELGRACE;}
+   var pending={};queueRead().forEach(function(op){if(!op)return;if(op.op==="upsert"&&op.contact)pending[op.contact.id]=1;if(op.op==="delete"&&op.id)pending[op.id]=2;if(op.op==="bulk")(op.contacts||[]).forEach(function(c){if(c)pending[c.id]=1;});});
+   var idx={};(DB.contacts||[]).forEach(function(c,i){if(c)idx[c.id]=i;});
+   var changed=false;
+   rows.forEach(function(d){
+     if(!d||!d.id)return;var id=d.id;
+     if(d._deleted){ // Löschung von einem anderen Gerät
+       if(pending[id]===1||fresh(id))return; // lokal gerade bearbeitet -> nicht löschen
+       if(idx[id]!=null){DB.contacts[idx[id]]=null;changed=true;}
+       return;
+     }
+     if(pending[id]===2||justDeleted(id))return; // lokal gelöscht -> nicht zurückholen
+     var lc=(idx[id]!=null)?DB.contacts[idx[id]]:null;
+     var keepLocal=lc&&(pending[id]===1||fresh(id)||(lc.updated||0)>=(d.updated||0));
+     if(lc&&lc.followup&&d.followup&&lc.followup.due===d.followup.due&&(lc.followup.done||d.followup.done))d.followup.done=true; // "Erledigt" klebrig
+     if(keepLocal)return;
+     if(lc&&lc.lat!=null&&d.lat==null){d.lat=lc.lat;d.lon=lc.lon;} // lokale Koordinaten erhalten
+     if(idx[id]!=null)DB.contacts[idx[id]]=d;else{DB.contacts.push(d);idx[id]=DB.contacts.length-1;}
+     changed=true;
+   });
+   if(changed)DB.contacts=DB.contacts.filter(function(c){return c;});
+   return changed;
+ }
  function queueWrite(q){try{localStorage.setItem(QKEY,JSON.stringify(q));}catch(e){}}
  function enqueue(op){var q=queueRead();q.push(op);queueWrite(q);}
  var _flushing=false,_flushAgain=false;
@@ -1107,7 +1158,7 @@ var USERS=%%USERS%%;
      if(i>=q.length)return Promise.resolve();
      var op=q[i],pr;
      if(op.op==="upsert")pr=sbUpsert([op.contact]);
-     else if(op.op==="delete")pr=sbDelete(op.id);
+     else if(op.op==="delete")pr=sbTombstone(op.id);
      else if(op.op==="bulk")pr=op.replace?sbDeleteAll().then(function(){return sbUpsert(op.contacts||[]);}):sbUpsert(op.contacts||[]);
      else pr=Promise.resolve();
      return pr.then(function(){i++;return step();});
@@ -1134,11 +1185,25 @@ var USERS=%%USERS%%;
  function bulkSave(list,replace){cacheSave();if(MODE!=="local"){enqueue({op:"bulk",contacts:list,replace:!!replace});flush();}}
 
  /* --- Online-Sync --- */
+ // Voller Abgleich (App-Start, manuelles "Aktualisieren", Reconnect): lädt alle Kontakte, behandelt auch Löschungen.
  function pull(){
    if(MODE==="cloud")return sbGet().then(function(list){DB.contacts=mergeCloud(list);cacheSave();rerenderCurrent();});
    return apiGet().then(function(d){DB.contacts=d.contacts||[];DB.rev=d.rev||0;cacheSave();rerenderCurrent();});
  }
+ // Inkrementeller Abgleich (30-Sek-Takt): lädt NUR Zeilen, die sich seit dem letzten Mal geändert haben -> minimaler Datenverkehr.
+ var DELTA_OVERLAP=10*60*1000; // 10 Min Überlappung -> verträgt Uhren-Differenzen zwischen Geräten, nichts geht verloren
+ function pullDelta(){
+   if(MODE!=="cloud")return pull();      // PHP-Server: weiterhin voll (eigener Server, kein Egress-Thema)
+   if(!_lastUA)return pull();            // noch kein Stand -> einmal voll, danach inkrementell
+   var t=Date.parse(_lastUA);if(isNaN(t))return pull();
+   var since=new Date(t-DELTA_OVERLAP).toISOString();
+   return sbGetSince(since).then(function(res){
+     var ch=applyDelta(res.rows);setUA(res.ua);
+     if(ch){cacheSave();rerenderCurrent();}
+   });
+ }
  function syncFromServer(){if(MODE==="local")return Promise.resolve();return flush().then(pull).catch(function(){});}
+ function syncDelta(){if(MODE==="local")return Promise.resolve();return flush().then(pullDelta).catch(function(){});}
  // Backend erkennen: zuerst Cloud (Supabase), dann eigener PHP-Server, sonst lokal.
  function initBackend(){
    if(sbReady()){
@@ -2793,7 +2858,7 @@ var USERS=%%USERS%%;
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v117";
+ var APP_VER="v118";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
@@ -2803,8 +2868,8 @@ var USERS=%%USERS%%;
    checkOfferReturn();           // aus dem Konfigurator zurückgekommen? Angebot-Aktivität vorbereiten.
    setTimeout(checkPendingCall,1500); // offener Anruf von vorhin? -> kurz nachfragen
    checkReminders();
-   setInterval(function(){syncFromServer();checkReminders();if(curView==="dashboard")updateBadge();},30*1000);
-   document.addEventListener("visibilitychange",function(){if(!document.hidden){syncFromServer();checkReminders();}});
+   setInterval(function(){syncDelta();checkReminders();if(curView==="dashboard")updateBadge();},30*1000);
+   document.addEventListener("visibilitychange",function(){if(!document.hidden){syncDelta();checkReminders();}});
    window.addEventListener("online",function(){if(MODE==="local")initBackend();else syncFromServer();});
  }
 
@@ -2838,7 +2903,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v117";
+const CACHE="vertrieb-v118";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png","./icon-32.png","./favicon.ico",
   "./vendor/leaflet.js","./vendor/leaflet.css","./vendor/msal-browser.min.js",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
