@@ -326,6 +326,14 @@ textarea.field{min-height:74px;resize:vertical;line-height:1.5}
       <div id="fuList"></div>
     </div>
 
+    <div class="card" id="inboxCard" style="display:none">
+      <h3>
+        <svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:var(--gold);fill:none;stroke-width:1.8"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>
+        Posteingang<span class="cnt" id="inboxCnt">0</span>
+      </h3>
+      <div id="inboxList"></div>
+    </div>
+
     <div class="card">
       <h3>
         <svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:var(--muted);fill:none;stroke-width:1.8"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
@@ -1070,7 +1078,10 @@ var USERS=%%USERS%%;
    var pending={};queueRead().forEach(function(op){if(!op)return;if(op.op==="upsert"&&op.contact)pending[op.contact.id]=1;if(op.op==="delete"&&op.id)pending[op.id]=2;if(op.op==="bulk")(op.contacts||[]).forEach(function(c){if(c)pending[c.id]=1;});});
    var local={};(DB.contacts||[]).forEach(function(c){if(c)local[c.id]=c;});
    var out=[],seen={};
-   (list||[]).forEach(function(cc){if(!cc)return;seen[cc.id]=1;if(pending[cc.id]===2||justDeleted(cc.id))return; /* lokal geloescht -> nicht zurueckholen */ var lc=local[cc.id];var keepLocal=lc&&(pending[cc.id]===1||fresh(cc.id)||(lc.updated||0)>=(cc.updated||0));if(!keepLocal&&lc&&lc.lat!=null&&cc.lat==null){cc.lat=lc.lat;cc.lon=lc.lon;} /* lokal ermittelte Koordinaten erhalten */ out.push(keepLocal?lc:cc);});
+   (list||[]).forEach(function(cc){if(!cc)return;seen[cc.id]=1;if(pending[cc.id]===2||justDeleted(cc.id))return; /* lokal geloescht -> nicht zurueckholen */ var lc=local[cc.id];var keepLocal=lc&&(pending[cc.id]===1||fresh(cc.id)||(lc.updated||0)>=(cc.updated||0));if(!keepLocal&&lc&&lc.lat!=null&&cc.lat==null){cc.lat=lc.lat;cc.lon=lc.lon;} /* lokal ermittelte Koordinaten erhalten */ var chosen=keepLocal?lc:cc;
+     // "Erledigt" ist klebrig: hat EINE Seite die Wiedervorlage (gleiches Fälligkeitsdatum) als erledigt markiert, bleibt sie erledigt -> kein Zurückspringen durch Uhren-Differenz zwischen Geräten.
+     if(lc&&cc&&lc.followup&&cc.followup&&lc.followup.due===cc.followup.due&&(lc.followup.done||cc.followup.done)&&chosen.followup)chosen.followup.done=true;
+     out.push(chosen);});
    // lokal angelegte/geänderte Kontakte, die (noch) nicht in der Cloud sind -> behalten, wenn ausstehend oder gerade bearbeitet
    (DB.contacts||[]).forEach(function(c){if(c&&!seen[c.id]&&(pending[c.id]===1||fresh(c.id)))out.push(c);});
    return out;
@@ -1301,6 +1312,23 @@ var USERS=%%USERS%%;
        '<div class="mid"><div class="nm" style="font-size:14px">'+esc(actLabel(o.a.type))+' · '+esc(displayName(o.c))+'</div>'+
        '<div class="meta"><span>'+fmtDateTime(o.a.date)+'</span>'+(o.a.by?'<span>'+esc(o.a.by)+'</span>':'')+(o.a.note?'<span>'+esc(o.a.note.slice(0,60))+'</span>':'')+'</div></div></div>';
    }).join("");}
+   // Posteingang: alle eingegangenen E-Mails (mailin) ueber alle Kontakte, neueste zuerst
+   var inbox=[];
+   DB.contacts.forEach(function(c){(c.activities||[]).forEach(function(a){if(a.type==="mailin")inbox.push({c:c,a:a});});});
+   inbox.sort(function(x,y){return y.a.date-x.a.date;});
+   var ic=document.getElementById("inboxCard"),il=document.getElementById("inboxList");
+   if(inbox.length){
+     ic.style.display="";document.getElementById("inboxCnt").textContent=inbox.length;
+     il.innerHTML=inbox.slice(0,15).map(function(o){
+       var subj="",m=(o.a.note||"").match(/^Betreff:\s*(.+)$/m);if(m)subj=m[1].trim();
+       var prev=(o.a.note||"").replace(/^Betreff:.*\n?/,"").trim().slice(0,80);
+       return '<div class="crow" data-id="'+o.c.id+'" style="margin-bottom:8px;padding:11px 12px">'+
+         '<div class="av av-'+esc(o.c.status||"lead")+'">'+esc(initials(displayName(o.c)))+'</div>'+
+         '<div class="mid"><div class="nm" style="font-size:14px">'+esc(displayName(o.c))+(subj?' · <span style="font-weight:600">'+esc(subj)+'</span>':'')+'</div>'+
+         '<div class="meta"><span>'+fmtDateTime(o.a.date)+'</span>'+(prev?'<span>'+esc(prev)+'</span>':'')+'</div></div>'+
+         '<div class="right"><button class="btn sm" data-inboxreply="'+o.c.id+'|'+o.a.id+'" title="Mit KI antworten">KI-Antwort</button></div></div>';
+     }).join("");
+   } else { ic.style.display="none"; }
    updateBadge();
  }
  function updateBadge(){var n=overdueOrToday().length;var b=document.getElementById("navBadge");if(n>0){b.textContent=n;b.classList.remove("hidden");}else b.classList.add("hidden");}
@@ -1807,6 +1835,8 @@ var USERS=%%USERS%%;
  /* ---------- Klick auf Kontaktzeile ---------- */
  document.body.addEventListener("click",function(e){
    if(e.target.closest("a"))return;
+   var ir=e.target.closest("[data-inboxreply]");
+   if(ir){e.preventDefault();e.stopPropagation();var parts=ir.getAttribute("data-inboxreply").split("|");openDetail(parts[0]);setTimeout(function(){startMailReply(parts[1]);},60);return;}
    var row=e.target.closest(".crow");if(row&&row.getAttribute("data-id")){openDetail(row.getAttribute("data-id"));}
  });
 
@@ -2756,7 +2786,7 @@ var USERS=%%USERS%%;
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v114";
+ var APP_VER="v115";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
@@ -2801,7 +2831,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v114";
+const CACHE="vertrieb-v115";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png","./icon-32.png","./favicon.ico",
   "./vendor/leaflet.js","./vendor/leaflet.css","./vendor/msal-browser.min.js",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
