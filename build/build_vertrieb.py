@@ -1312,9 +1312,9 @@ var USERS=%%USERS%%;
        '<div class="mid"><div class="nm" style="font-size:14px">'+esc(actLabel(o.a.type))+' · '+esc(displayName(o.c))+'</div>'+
        '<div class="meta"><span>'+fmtDateTime(o.a.date)+'</span>'+(o.a.by?'<span>'+esc(o.a.by)+'</span>':'')+(o.a.note?'<span>'+esc(o.a.note.slice(0,60))+'</span>':'')+'</div></div></div>';
    }).join("");}
-   // Posteingang: alle eingegangenen E-Mails (mailin) ueber alle Kontakte, neueste zuerst
+   // Posteingang: eingegangene E-Mails (mailin), die noch nicht "gelesen" markiert sind, neueste zuerst
    var inbox=[];
-   DB.contacts.forEach(function(c){(c.activities||[]).forEach(function(a){if(a.type==="mailin")inbox.push({c:c,a:a});});});
+   DB.contacts.forEach(function(c){(c.activities||[]).forEach(function(a){if(a.type==="mailin"&&!a.seen)inbox.push({c:c,a:a});});});
    inbox.sort(function(x,y){return y.a.date-x.a.date;});
    var ic=document.getElementById("inboxCard"),il=document.getElementById("inboxList");
    ic.style.display="";document.getElementById("inboxCnt").textContent=inbox.length;
@@ -1324,11 +1324,12 @@ var USERS=%%USERS%%;
      il.innerHTML=inbox.slice(0,15).map(function(o){
        var subj="",m=(o.a.note||"").match(/^Betreff:\s*(.+)$/m);if(m)subj=m[1].trim();
        var prev=(o.a.note||"").replace(/^Betreff:.*\n?/,"").trim().slice(0,80);
-       return '<div class="crow" data-id="'+o.c.id+'" style="margin-bottom:8px;padding:11px 12px">'+
+       return '<div class="crow" data-id="'+o.c.id+'" data-inboxact="'+o.a.id+'" style="margin-bottom:8px;padding:11px 12px">'+
          '<div class="av av-'+esc(o.c.status||"lead")+'">'+esc(initials(displayName(o.c)))+'</div>'+
          '<div class="mid"><div class="nm" style="font-size:14px">'+esc(displayName(o.c))+(subj?' · <span style="font-weight:600">'+esc(subj)+'</span>':'')+'</div>'+
          '<div class="meta"><span>'+fmtDateTime(o.a.date)+'</span>'+(prev?'<span>'+esc(prev)+'</span>':'')+'</div></div>'+
-         '<div class="right"><button class="btn sm" data-inboxreply="'+o.c.id+'|'+o.a.id+'" title="Mit KI antworten">KI-Antwort</button></div></div>';
+         '<div class="right"><button class="btn sm" data-inboxreply="'+o.c.id+'|'+o.a.id+'" title="Mit KI antworten">KI-Antwort</button>'+
+         '<button class="btn sm ghost" data-inboxseen="'+o.c.id+'|'+o.a.id+'" title="Als gelesen markieren (aus Posteingang entfernen)">✓</button></div></div>';
      }).join("");
    }
    updateBadge();
@@ -1835,11 +1836,15 @@ var USERS=%%USERS%%;
  });
 
  /* ---------- Klick auf Kontaktzeile ---------- */
+ // mailin-Aktivität als "gelesen" markieren -> verschwindet aus dem Posteingang, bleibt aber im Kontaktverlauf.
+ function markInboxSeen(cid,aid){var c=byId(cid);if(!c)return;var a=(c.activities||[]).filter(function(x){return x.id===aid;})[0];if(a&&!a.seen){a.seen=true;c.updated=Date.now();saveContact(c);}}
  document.body.addEventListener("click",function(e){
    if(e.target.closest("a"))return;
+   var is=e.target.closest("[data-inboxseen]");
+   if(is){e.preventDefault();e.stopPropagation();var sp=is.getAttribute("data-inboxseen").split("|");markInboxSeen(sp[0],sp[1]);renderDashboard();return;}
    var ir=e.target.closest("[data-inboxreply]");
-   if(ir){e.preventDefault();e.stopPropagation();var parts=ir.getAttribute("data-inboxreply").split("|");openDetail(parts[0]);setTimeout(function(){startMailReply(parts[1]);},60);return;}
-   var row=e.target.closest(".crow");if(row&&row.getAttribute("data-id")){openDetail(row.getAttribute("data-id"));}
+   if(ir){e.preventDefault();e.stopPropagation();var parts=ir.getAttribute("data-inboxreply").split("|");markInboxSeen(parts[0],parts[1]);openDetail(parts[0]);setTimeout(function(){startMailReply(parts[1]);},60);return;}
+   var row=e.target.closest(".crow");if(row&&row.getAttribute("data-id")){var ia=row.getAttribute("data-inboxact");if(ia)markInboxSeen(row.getAttribute("data-id"),ia);openDetail(row.getAttribute("data-id"));}
  });
 
  /* ---------- Detail ---------- */
@@ -2788,7 +2793,7 @@ var USERS=%%USERS%%;
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v116";
+ var APP_VER="v117";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
@@ -2833,7 +2838,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v116";
+const CACHE="vertrieb-v117";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png","./icon-32.png","./favicon.ico",
   "./vendor/leaflet.js","./vendor/leaflet.css","./vendor/msal-browser.min.js",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
