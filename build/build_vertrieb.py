@@ -835,8 +835,9 @@ var USERS=%%USERS%%;
  function gfetch(url,opts,tries){
    tries=tries||0;
    return fetch(url,opts).then(function(r){
-     if((r.status===429||r.status===503||r.status===504)&&tries<5){
-       var ra=parseInt(r.headers.get("Retry-After")||"0",10);var wait=(ra>0?ra*1000:Math.min(30000,2000*(tries+1)));
+     // 429/503/504 = klassische Drosselung; 403 ist bei OneNote oft ebenfalls Drosselung -> wiederholen (laengere Pause).
+     if((r.status===429||r.status===503||r.status===504||r.status===403)&&tries<5){
+       var ra=parseInt(r.headers.get("Retry-After")||"0",10);var base=(r.status===403)?4000:2000;var wait=(ra>0?ra*1000:Math.min(45000,base*(tries+1)));
        return new Promise(function(res){setTimeout(res,wait);}).then(function(){return gfetch(url,opts,tries+1);});
      }
      return r;
@@ -2512,7 +2513,7 @@ var USERS=%%USERS%%;
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v103";
+ var APP_VER="v104";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
@@ -2557,7 +2558,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v103";
+const CACHE="vertrieb-v104";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png","./icon-32.png","./favicon.ico",
   "./vendor/leaflet.js","./vendor/leaflet.css","./vendor/msal-browser.min.js",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];

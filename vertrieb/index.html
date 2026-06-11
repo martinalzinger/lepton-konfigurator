@@ -807,8 +807,9 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
  function gfetch(url,opts,tries){
    tries=tries||0;
    return fetch(url,opts).then(function(r){
-     if((r.status===429||r.status===503||r.status===504)&&tries<5){
-       var ra=parseInt(r.headers.get("Retry-After")||"0",10);var wait=(ra>0?ra*1000:Math.min(30000,2000*(tries+1)));
+     // 429/503/504 = klassische Drosselung; 403 ist bei OneNote oft ebenfalls Drosselung -> wiederholen (laengere Pause).
+     if((r.status===429||r.status===503||r.status===504||r.status===403)&&tries<5){
+       var ra=parseInt(r.headers.get("Retry-After")||"0",10);var base=(r.status===403)?4000:2000;var wait=(ra>0?ra*1000:Math.min(45000,base*(tries+1)));
        return new Promise(function(res){setTimeout(res,wait);}).then(function(){return gfetch(url,opts,tries+1);});
      }
      return r;
@@ -2484,7 +2485,7 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v103";
+ var APP_VER="v104";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
