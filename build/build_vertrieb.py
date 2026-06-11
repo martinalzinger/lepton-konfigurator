@@ -69,6 +69,11 @@ input,select,textarea{font-family:var(--sans);font-size:15px}
 .tb-user{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600}
 .tb-user .av{width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.18);display:inline-flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:12px;font-weight:600}
 .tb-user button{background:none;border:0;color:rgba(255,255,255,.85);font-size:11px;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+#refreshBtn{display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.16)!important;border-radius:8px;padding:6px 11px;text-decoration:none!important;color:#fff!important;font-size:12px}
+#refreshBtn svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+#refreshBtn.spin svg{animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media(max-width:520px){#refreshBtn span{display:none}#refreshBtn{padding:7px}}
 
 /* Tab-Navigation – Pills mit Icon */
 .nav{position:sticky;top:0;z-index:70;background:var(--surface);border-bottom:1px solid var(--line)}
@@ -280,6 +285,7 @@ textarea.field{min-height:74px;resize:vertical;line-height:1.5}
         <span id="connState" class="conn off" title=""></span>
       </div>
       <div class="tb-user">
+        <button id="refreshBtn" type="button" title="Daten jetzt aktualisieren"><svg viewBox="0 0 24 24"><path d="M20 11A8 8 0 105.6 16.5M20 5v6h-6"/></svg><span>Aktualisieren</span></button>
         <span class="av" id="uAv">–</span>
         <button id="logoutBtn" type="button">Abmelden</button>
       </div>
@@ -633,6 +639,11 @@ var USERS=%%USERS%%;
   else{document.getElementById("gerr").textContent="Benutzername oder Passwort falsch.";var gp=document.getElementById("gp");gp.value="";gp.focus();}
  });
  document.getElementById("logoutBtn").addEventListener("click",function(){try{localStorage.removeItem(AKEY);}catch(_){}location.reload();});
+ document.getElementById("refreshBtn").addEventListener("click",function(){
+   var b=this;if(b.classList.contains("spin"))return;b.classList.add("spin");
+   var p=(MODE==="local")?initBackend():syncFromServer();
+   Promise.resolve(p).catch(function(){}).then(function(){setTimeout(function(){b.classList.remove("spin");},500);});
+ });
 
  /* ---------- Konstanten ---------- */
  var KEY="amb_lepton_crm";
@@ -1007,7 +1018,7 @@ var USERS=%%USERS%%;
    if(MODE==="cloud")return sbGet().then(function(list){DB.contacts=mergeCloud(list);cacheSave();rerenderCurrent();});
    return apiGet().then(function(d){DB.contacts=d.contacts||[];DB.rev=d.rev||0;cacheSave();rerenderCurrent();});
  }
- function syncFromServer(){if(MODE==="local")return;flush().then(pull).catch(function(){});}
+ function syncFromServer(){if(MODE==="local")return Promise.resolve();return flush().then(pull).catch(function(){});}
  // Backend erkennen: zuerst Cloud (Supabase), dann eigener PHP-Server, sonst lokal.
  function initBackend(){
    if(sbReady()){
@@ -2534,7 +2545,7 @@ var USERS=%%USERS%%;
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v106";
+ var APP_VER="v107";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
@@ -2579,7 +2590,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v106";
+const CACHE="vertrieb-v107";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png","./icon-32.png","./favicon.ico",
   "./vendor/leaflet.js","./vendor/leaflet.css","./vendor/msal-browser.min.js",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
