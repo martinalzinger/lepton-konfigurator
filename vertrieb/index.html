@@ -706,6 +706,8 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
  var SIGLOGO=true; try{var _sl=localStorage.getItem(SIGLOGOKEY);SIGLOGO=(_sl===null?true:_sl==="1");}catch(e){}
  // Signatur an einen Mailtext anhängen (nur wenn aktiviert, vorhanden und noch nicht enthalten).
  function withSig(body){body=body||"";if(!SIGAUTO||!SIG)return body;if(body.indexOf(SIG)>=0)return body;return body.replace(/\s+$/,"")+"\n\n"+SIG;}
+ // KI-/Angebots-Text sauber abschließen: Signatur anhängen – oder, falls keine gesetzt, eine schlichte Grußformel.
+ function mailBodyFinal(body){body=(body||"").replace(/\s+$/,"");if(SIGAUTO&&SIG)return body.indexOf(SIG)>=0?body:body+"\n\n"+SIG;return body+"\n\nMit freundlichen Grüßen\n"+((typeof CUR!=="undefined"&&CUR&&CUR.n)||"");}
  // Einrichtungs-Link (#s=...) fuer Team-Rollout: Cloud-Zugang automatisch uebernehmen, dann aus der URL entfernen.
  (function(){try{var m=(location.hash||"").match(/[#&]s=([^&]+)/);if(!m)return;var o=JSON.parse(decodeURIComponent(escape(atob(m[1].replace(/-/g,"+").replace(/_/g,"/")))));if(o&&o.u&&o.k){SB={url:o.u,key:o.k};try{localStorage.setItem(SBKEY,JSON.stringify(SB));}catch(e){}}if(o&&o.c){AISECRET=o.c;try{localStorage.setItem(AIKEY,AISECRET);}catch(e){}}history.replaceState(null,"",location.pathname+location.search);}catch(e){}})();
  function cacheRead(){try{var o=JSON.parse(localStorage.getItem(KEY)||"{}");if(!o.contacts)o.contacts=[];return o;}catch(e){return {contacts:[]};}}
@@ -2244,7 +2246,7 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
      if(!document.getElementById("actMailSend").checked){document.getElementById("actMailSend").checked=true;document.getElementById("actMailFields").style.display="";}
      if(d.subject)document.getElementById("actMailSubj").value=d.subject;
      setNoteMode("text");
-     if(d.body)document.getElementById("actNote").value=withSig(d.body);
+     if(d.body)document.getElementById("actNote").value=mailBodyFinal(d.body);
      var to=document.getElementById("actMailTo");if(to&&!to.value)to.value=c.mail||"";
    },function(e){btn.disabled=false;btn.innerHTML=old;alert("KI-Vorschlag fehlgeschlagen: "+(e&&e.message||e));});
  };
@@ -2282,8 +2284,8 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
    var nt=document.getElementById("actNote");
    var anrede=c.nachname?("Sehr geehrte"+( (c.anrede||"").indexOf("Frau")>=0?" Frau ":(c.anrede||"").indexOf("Herr")>=0?"r Herr ":" Damen und Herren")):"Sehr geehrte Damen und Herren";
    var name=(c.anrede&&c.nachname)?(anrede+c.nachname):anrede;
-   var closeNm=SIG?"":("\n"+((CUR&&CUR.n)||"")+"\nAlzinger Maschinenbau GmbH");
-   nt.value=withSig(name+",\n\nvielen Dank für Ihr Interesse an der Sternsiebanlage Lepton 5100. Im Anhang finden Sie unser Angebot.\n\nFür Rückfragen stehe ich Ihnen gerne zur Verfügung.\n\nMit freundlichen Grüßen"+closeNm);
+   // Kurz und sachlich – passt zum Maschinenbau-Ton. Gruß + Signatur hängt mailBodyFinal an.
+   nt.value=mailBodyFinal(name+",\n\nanbei unser Angebot für die Sternsiebanlage Lepton 5100. Bei Fragen melden Sie sich gerne.");
  }
  modal.addEventListener("click",function(e){if(e.target===modal)modal.classList.remove("open");});
 
@@ -2882,7 +2884,7 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v122";
+ var APP_VER="v123";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
