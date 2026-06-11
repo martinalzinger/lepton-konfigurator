@@ -961,7 +961,7 @@ var USERS=%%USERS%%;
    var pending={};queueRead().forEach(function(op){if(!op)return;if(op.op==="upsert"&&op.contact)pending[op.contact.id]=1;if(op.op==="delete"&&op.id)pending[op.id]=2;if(op.op==="bulk")(op.contacts||[]).forEach(function(c){if(c)pending[c.id]=1;});});
    var local={};(DB.contacts||[]).forEach(function(c){if(c)local[c.id]=c;});
    var out=[],seen={};
-   (list||[]).forEach(function(cc){if(!cc)return;seen[cc.id]=1;if(pending[cc.id]===2||justDeleted(cc.id))return; /* lokal geloescht -> nicht zurueckholen */ var lc=local[cc.id];out.push((lc&&(pending[cc.id]===1||fresh(cc.id)||(lc.updated||0)>=(cc.updated||0)))?lc:cc);});
+   (list||[]).forEach(function(cc){if(!cc)return;seen[cc.id]=1;if(pending[cc.id]===2||justDeleted(cc.id))return; /* lokal geloescht -> nicht zurueckholen */ var lc=local[cc.id];var keepLocal=lc&&(pending[cc.id]===1||fresh(cc.id)||(lc.updated||0)>=(cc.updated||0));if(!keepLocal&&lc&&lc.lat!=null&&cc.lat==null){cc.lat=lc.lat;cc.lon=lc.lon;} /* lokal ermittelte Koordinaten erhalten */ out.push(keepLocal?lc:cc);});
    // lokal angelegte/geänderte Kontakte, die (noch) nicht in der Cloud sind -> behalten, wenn ausstehend oder gerade bearbeitet
    (DB.contacts||[]).forEach(function(c){if(c&&!seen[c.id]&&(pending[c.id]===1||fresh(c.id)))out.push(c);});
    return out;
@@ -1317,7 +1317,7 @@ var USERS=%%USERS%%;
  function geocodePending(L,list,i){
    if(i>=list.length||!cMapOpen){_geoBusy=false;return;}
    var c=list[i];
-   geocodeContact(c).then(function(p){c.lat=p.lat;c.lon=p.lon;saveContact(c);if(cMapOpen)addContactMarker(L,c);}).catch(function(){}).then(function(){setTimeout(function(){geocodePending(L,list,i+1);},600);});
+   geocodeContact(c).then(function(p){c.lat=p.lat;c.lon=p.lon;cacheSave();if(cMapOpen)addContactMarker(L,c);}).catch(function(){}).then(function(){setTimeout(function(){geocodePending(L,list,i+1);},600);});
  }
  function showContactsMap(){
    var div=document.getElementById("cMap");
@@ -1532,7 +1532,7 @@ var USERS=%%USERS%%;
    var ll=contactLatLon(c);
    ensureLeaflet().then(function(L){
      if(ll){draw(L,ll.lat,ll.lon);return;}
-     geocodeContact(c).then(function(p){c.lat=p.lat;c.lon=p.lon;c.updated=Date.now();_detUpd=(c.updated||0);saveContact(c);draw(L,p.lat,p.lon);}).catch(function(){el.style.display="none";});
+     geocodeContact(c).then(function(p){c.lat=p.lat;c.lon=p.lon;cacheSave();draw(L,p.lat,p.lon);}).catch(function(){el.style.display="none";});
    }).catch(function(){el.style.display="none";});
  }
  function osmShowMap(els){
@@ -2545,7 +2545,7 @@ var USERS=%%USERS%%;
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v107";
+ var APP_VER="v108";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
@@ -2590,7 +2590,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v107";
+const CACHE="vertrieb-v108";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png","./icon-32.png","./favicon.ico",
   "./vendor/leaflet.js","./vendor/leaflet.css","./vendor/msal-browser.min.js",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
