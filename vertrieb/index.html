@@ -290,20 +290,20 @@ textarea.field{min-height:74px;resize:vertical;line-height:1.5}
 
     <div class="stats" id="stats"></div>
 
-    <div class="card">
-      <h3>
-        <svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:var(--red);fill:none;stroke-width:1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
-        Wiedervorlagen / Rückrufe<span class="cnt" id="fuCnt">0</span>
-      </h3>
-      <div id="fuList"></div>
-    </div>
-
     <div class="card" id="inboxCard" style="display:none">
       <h3>
         <svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:var(--gold);fill:none;stroke-width:1.8"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>
         Posteingang<span class="cnt" id="inboxCnt">0</span>
       </h3>
       <div id="inboxList"></div>
+    </div>
+
+    <div class="card">
+      <h3>
+        <svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:var(--red);fill:none;stroke-width:1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        Wiedervorlagen / Rückrufe<span class="cnt" id="fuCnt">0</span>
+      </h3>
+      <div id="fuList"></div>
     </div>
 
     <div class="card">
@@ -1289,8 +1289,10 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
    DB.contacts.forEach(function(c){(c.activities||[]).forEach(function(a){if(a.type==="mailin")inbox.push({c:c,a:a});});});
    inbox.sort(function(x,y){return y.a.date-x.a.date;});
    var ic=document.getElementById("inboxCard"),il=document.getElementById("inboxList");
-   if(inbox.length){
-     ic.style.display="";document.getElementById("inboxCnt").textContent=inbox.length;
+   ic.style.display="";document.getElementById("inboxCnt").textContent=inbox.length;
+   if(!inbox.length){
+     il.innerHTML='<div style="font-size:13px;color:var(--faint);padding:6px 0">Noch keine eingegangenen E-Mails. Tippe oben auf <b>„E-Mails abrufen"</b>, um deine Outlook-Mails zu laden.</div>';
+   } else {
      il.innerHTML=inbox.slice(0,15).map(function(o){
        var subj="",m=(o.a.note||"").match(/^Betreff:\s*(.+)$/m);if(m)subj=m[1].trim();
        var prev=(o.a.note||"").replace(/^Betreff:.*\n?/,"").trim().slice(0,80);
@@ -1300,7 +1302,7 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
          '<div class="meta"><span>'+fmtDateTime(o.a.date)+'</span>'+(prev?'<span>'+esc(prev)+'</span>':'')+'</div></div>'+
          '<div class="right"><button class="btn sm" data-inboxreply="'+o.c.id+'|'+o.a.id+'" title="Mit KI antworten">KI-Antwort</button></div></div>';
      }).join("");
-   } else { ic.style.display="none"; }
+   }
    updateBadge();
  }
  function updateBadge(){var n=overdueOrToday().length;var b=document.getElementById("navBadge");if(n>0){b.textContent=n;b.classList.remove("hidden");}else b.classList.add("hidden");}
@@ -2758,7 +2760,7 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v115";
+ var APP_VER="v116";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
