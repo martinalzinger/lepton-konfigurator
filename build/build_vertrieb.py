@@ -601,13 +601,13 @@ create policy "crm all" on contacts
     <div id="actMailWrap" style="display:none;margin-bottom:10px;border:1px solid var(--line-strong);border-radius:11px;padding:11px;background:#fafafa">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px">
         <label class="chk" style="margin:0"><input type="checkbox" id="actMailSend"> <b>E-Mail jetzt über Microsoft 365 senden</b></label>
-        <button type="button" class="btn ghost sm" id="actMailAI" title="KI entwirft eine Antwort"><svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.7"><path d="M12 3l2 5 5 2-5 2-2 5-2-5-5-2 5-2z"/></svg>KI-Vorschlag</button>
+        <button type="button" class="btn ghost sm" id="actMailAI" title="KI formuliert die Mail – aus deinem Stichwort oben oder als allgemeine Nachfass-Mail"><svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.7"><path d="M12 3l2 5 5 2-5 2-2 5-2-5-5-2 5-2z"/></svg>KI-Vorschlag</button>
       </div>
       <div id="actMailFields" style="display:none">
         <div class="fg" style="margin-bottom:8px"><label>An</label><input class="field" id="actMailTo" type="email" placeholder="empfaenger@firma.de"></div>
         <div class="fg" style="margin-bottom:8px"><label>Betreff</label><input class="field" id="actMailSubj" placeholder="Betreff"></div>
         <div id="actMailAtt" style="display:none;font-size:12px;margin:2px 0 4px;color:#0a7d3a"><svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:1.8;vertical-align:-2px"><path d="M21 11.5l-8.5 8.5a5 5 0 01-7-7l8.5-8.5a3.5 3.5 0 015 5l-8.5 8.5a2 2 0 01-3-3l8-8"/></svg> <span id="actMailAttName"></span></div>
-        <div id="actMailHint" style="font-size:12px;color:var(--muted);margin-top:2px">Der Text unten wird als E-Mail gesendet <b>und</b> im Verlauf gespeichert.</div>
+        <div id="actMailHint" style="font-size:12px;color:var(--muted);margin-top:2px">Der Text unten wird als E-Mail gesendet <b>und</b> im Verlauf gespeichert. Tipp: für <b>KI-Vorschlag</b> oben kurz ein Stichwort ins Textfeld schreiben (z. B. „Angebot nachfassen, auf der Bauma kennengelernt") – daraus formuliert die KI die Mail.</div>
       </div>
     </div>
     <div class="fg" style="margin-bottom:6px">
@@ -2258,9 +2258,13 @@ var USERS=%%USERS%%;
    var c=byId(actForId);if(!c)return;
    if(!aiReady()){alert("Bitte zuerst den KI-Schlüssel (CRM_SECRET) unter Daten eintragen.");return;}
    var btn=this;btn.disabled=true;var old=btn.innerHTML;btn.textContent="KI denkt…";
-   // Kontext: letzte eingegangene Mail (falls per „KI-Antwort" gestartet) ODER aktueller Notiztext
+   // Kontext: letzte eingegangene Mail (falls per „KI-Antwort" gestartet) ODER das, was du oben ins Textfeld als Auftrag schreibst.
    var ctx=_mailReplyCtx;
-   var payload={firma:c.firma||"",name:displayName(c),subject:ctx?(ctx.subject||""):(document.getElementById("actMailSubj").value||""),text:ctx?(ctx.text||""):(document.getElementById("actNote").value||"(keine eingegangene Nachricht – formuliere eine freundliche Erstkontakt-/Nachfass-Mail)")};
+   // Signatur aus dem Briefing herausnehmen, damit die KI sie NICHT als Auftrag missversteht.
+   var briefing=document.getElementById("actNote").value||"";
+   if(SIG&&briefing.indexOf(SIG)>=0)briefing=briefing.split(SIG).join("");
+   briefing=briefing.replace(/\s+$/,"").replace(/^\s+/,"");
+   var payload={firma:c.firma||"",name:displayName(c),subject:ctx?(ctx.subject||""):(document.getElementById("actMailSubj").value||""),text:ctx?(ctx.text||""):(briefing||"(keine eingegangene Nachricht und kein Stichwort – formuliere eine freundliche, kurze Nachfass-/Erstkontakt-Mail zur Sternsiebanlage Lepton 5100)")};
    apiMailReply(payload).then(function(d){
      btn.disabled=false;btn.innerHTML=old;
      if(d&&d.error){alert("KI-Fehler: "+d.error);return;}
@@ -2905,7 +2909,7 @@ var USERS=%%USERS%%;
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v120";
+ var APP_VER="v121";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
@@ -2950,7 +2954,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v120";
+const CACHE="vertrieb-v121";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png","./icon-32.png","./favicon.ico",
   "./vendor/leaflet.js","./vendor/leaflet.css","./vendor/msal-browser.min.js",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
