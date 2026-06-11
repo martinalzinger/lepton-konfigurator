@@ -950,21 +950,30 @@ var USERS=%%USERS%%;
    var pending={};queueRead().forEach(function(op){if(!op)return;if(op.op==="upsert"&&op.contact)pending[op.contact.id]=1;if(op.op==="delete"&&op.id)pending[op.id]=2;if(op.op==="bulk")(op.contacts||[]).forEach(function(c){if(c)pending[c.id]=1;});});
    var local={};(DB.contacts||[]).forEach(function(c){if(c)local[c.id]=c;});
    var out=[],seen={};
-   (list||[]).forEach(function(cc){if(!cc)return;seen[cc.id]=1;if(pending[cc.id]===2||justDeleted(cc.id))return; /* lokal geloescht -> nicht zurueckholen */ var lc=local[cc.id];out.push((lc&&(pending[cc.id]===1||fresh(cc.id)||(lc.updated||0)>(cc.updated||0)))?lc:cc);});
+   (list||[]).forEach(function(cc){if(!cc)return;seen[cc.id]=1;if(pending[cc.id]===2||justDeleted(cc.id))return; /* lokal geloescht -> nicht zurueckholen */ var lc=local[cc.id];out.push((lc&&(pending[cc.id]===1||fresh(cc.id)||(lc.updated||0)>=(cc.updated||0)))?lc:cc);});
    // lokal angelegte/geänderte Kontakte, die (noch) nicht in der Cloud sind -> behalten, wenn ausstehend oder gerade bearbeitet
    (DB.contacts||[]).forEach(function(c){if(c&&!seen[c.id]&&(pending[c.id]===1||fresh(c.id)))out.push(c);});
    return out;
  }
  function queueWrite(q){try{localStorage.setItem(QKEY,JSON.stringify(q));}catch(e){}}
  function enqueue(op){var q=queueRead();q.push(op);queueWrite(q);}
+ var _flushing=false,_flushAgain=false;
  function flush(){
    if(MODE==="local")return Promise.resolve();
+   if(_flushing){_flushAgain=true;return Promise.resolve();} // keine parallele Synchronisation
    var q=queueRead();if(!q.length)return Promise.resolve();
-   if(MODE==="server")return apiPost("batch",{ops:q}).then(function(res){queueWrite([]);if(res&&res.rev!=null)DB.rev=res.rev;}).catch(function(){/* offline: behalten */});
+   _flushing=true;
+   function done(processed){
+     // NUR die tatsaechlich gesendeten Ops vorne entfernen; waehrenddessen neu hinzugekommene bleiben erhalten (sonst Datenverlust!)
+     if(processed>0){try{queueWrite(queueRead().slice(processed));}catch(e){}}
+     _flushing=false;
+     if(_flushAgain){_flushAgain=false;return flush();}
+   }
+   if(MODE==="server")return apiPost("batch",{ops:q}).then(function(res){if(res&&res.rev!=null)DB.rev=res.rev;done(q.length);},function(){done(0);});
    // cloud: Ops sequenziell an Supabase; bei Fehler Rest behalten und später erneut
    var i=0;
    function step(){
-     if(i>=q.length){queueWrite([]);return Promise.resolve();}
+     if(i>=q.length)return Promise.resolve();
      var op=q[i],pr;
      if(op.op==="upsert")pr=sbUpsert([op.contact]);
      else if(op.op==="delete")pr=sbDelete(op.id);
@@ -972,7 +981,7 @@ var USERS=%%USERS%%;
      else pr=Promise.resolve();
      return pr.then(function(){i++;return step();});
    }
-   return step().catch(function(){if(i>0)queueWrite(q.slice(i));});
+   return step().then(function(){done(i);},function(){done(i);});
  }
 
  /* --- Mutationen: lokal optimistisch + (online) in die geteilte Quelle --- */
@@ -2525,7 +2534,7 @@ var USERS=%%USERS%%;
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v105";
+ var APP_VER="v106";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
@@ -2570,7 +2579,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v105";
+const CACHE="vertrieb-v106";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png","./icon-32.png","./favicon.ico",
   "./vendor/leaflet.js","./vendor/leaflet.css","./vendor/msal-browser.min.js",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
