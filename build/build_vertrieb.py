@@ -585,6 +585,7 @@ create policy "crm all" on contacts
       <div id="actMailFields" style="display:none">
         <div class="fg" style="margin-bottom:8px"><label>An</label><input class="field" id="actMailTo" type="email" placeholder="empfaenger@firma.de"></div>
         <div class="fg" style="margin-bottom:8px"><label>Betreff</label><input class="field" id="actMailSubj" placeholder="Betreff"></div>
+        <div id="actMailAtt" style="display:none;font-size:12px;margin:2px 0 4px;color:#0a7d3a"><svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:1.8;vertical-align:-2px"><path d="M21 11.5l-8.5 8.5a5 5 0 01-7-7l8.5-8.5a3.5 3.5 0 015 5l-8.5 8.5a2 2 0 01-3-3l8-8"/></svg> <span id="actMailAttName"></span></div>
         <div id="actMailHint" style="font-size:12px;color:var(--muted);margin-top:2px">Der Text unten wird als E-Mail gesendet <b>und</b> im Verlauf gespeichert.</div>
       </div>
     </div>
@@ -979,9 +980,15 @@ var USERS=%%USERS%%;
    function page(u){return gfetch(u,{headers:{Authorization:"Bearer "+token,Prefer:'outlook.body-content-type="text"'}}).then(function(r){if(!r.ok)throw new Error("msg "+r.status);return r.json();}).then(function(j){(j.value||[]).forEach(function(m){out.push(m);});var nx=j["@odata.nextLink"];if(nx&&out.length<maxN&&!_msStop)return page(nx);return out;});}
    return page(url);
  }
- // Antwort senden (Graph Mail.Send) -> liegt danach im "Gesendet"-Ordner.
- function graphSendMail(token,to,subject,bodyText){
+ // Antwort senden (Graph Mail.Send) -> liegt danach im "Gesendet"-Ordner. attach=[{name,dataUri}] optional.
+ function graphSendMail(token,to,subject,bodyText,attach){
    var msg={message:{subject:subject,body:{contentType:"Text",content:bodyText},toRecipients:[{emailAddress:{address:to}}]},saveToSentItems:true};
+   if(attach&&attach.length){
+     msg.message.attachments=attach.map(function(f){
+       var b64=String(f.dataUri||"").replace(/^data:[^,]*,/,"");
+       return {"@odata.type":"#microsoft.graph.fileAttachment",name:f.name||"Anhang.pdf",contentType:f.contentType||"application/pdf",contentBytes:b64};
+     });
+   }
    return fetch("https://graph.microsoft.com/v1.0/me/sendMail",{method:"POST",headers:{Authorization:"Bearer "+token,"Content-Type":"application/json"},body:JSON.stringify(msg)}).then(function(r){if(!r.ok)throw new Error("send "+r.status);return true;});
  }
  // E-Mails aus dem eigenen Postfach abrufen und passenden Kontakten als Aktivitaet (mailin/mailout) zuordnen. Dedup ueber msgId.
@@ -2002,7 +2009,8 @@ var USERS=%%USERS%%;
      if(openable)offer='<a class="tl-offer" href="../index.html" data-actid="'+a.id+'"'+(a.offer?(' data-loadoffer="'+esc(a.offer)+'"'):'')+' title="Angebot im Konfigurator öffnen">'+_osvg+bits.join(" · ")+' ↗</a>';
      else offer='<span class="tl-offer" style="cursor:default">'+_osvg+bits.join(" · ")+'</span>';}
    var _psvg='<svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/><path d="M14 3v5h5"/></svg>';
-   if(a.pdf)offer+='<button class="tl-offer" data-pdfact="'+a.id+'" title="Fertiges PDF ansehen (ohne Konfigurator)">'+_psvg+'PDF ansehen</button>';
+   if(a.pdf){offer+='<button class="tl-offer" data-pdfact="'+a.id+'" title="Fertiges PDF ansehen (ohne Konfigurator)">'+_psvg+'PDF ansehen</button>';
+     offer+='<button class="tl-offer" data-mailoffer="'+a.id+'" style="background:#eafaf0;color:#0a7d3a" title="Angebot als PDF per E-Mail senden"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>Per E-Mail senden</button>';}
    else if(a.config){
      if(_pdfActive[curId+"/"+a.id])offer+='<span class="tl-offer" style="cursor:default;opacity:.7">'+_psvg+'PDF wird erstellt …</span>';
      else offer+='<button class="tl-offer" data-makepdf="'+a.id+'" title="PDF jetzt erzeugen und hier ablegen">'+_psvg+'PDF erstellen</button>';
@@ -2030,6 +2038,7 @@ var USERS=%%USERS%%;
    var pb=e.target.closest("[data-pdfact]");if(pb){e.preventDefault();var pid=pb.getAttribute("data-pdfact");var pc=byId(curId);var pa=pc&&(pc.activities||[]).filter(function(x){return x.id===pid;})[0];if(pa&&pa.pdf)openPdfUri(pa.pdf);return;}
    var mb=e.target.closest("[data-makepdf]");if(mb){e.preventDefault();var mid=mb.getAttribute("data-makepdf");if(navigator.onLine===false){alert("Zum Erstellen des PDFs bitte einmal online gehen.");return;}queuePdfGen(curId,mid,true);return;}
    var mr=e.target.closest("[data-mailreply]");if(mr){e.preventDefault();startMailReply(mr.getAttribute("data-mailreply"));return;}
+   var mo=e.target.closest("[data-mailoffer]");if(mo){e.preventDefault();startMailOffer(mo.getAttribute("data-mailoffer"));return;}
    var lo=e.target.closest("[data-actid]");if(lo){var aid=lo.getAttribute("data-actid");var cc=byId(curId);var act=cc&&(cc.activities||[]).filter(function(x){return x.id===aid;})[0];try{if(act&&act.config)localStorage.setItem("amb_lepton_loadoffer_data",JSON.stringify(act.config));else if(act&&act.offer)localStorage.setItem("amb_lepton_loadoffer",act.offer);}catch(_){}return;} // Link navigiert selbst zum Konfigurator
    var d=e.target.closest(".tl-del");if(!d)return;var aid=d.getAttribute("data-act");var c=byId(curId);if(!c)return;
    c.activities=(c.activities||[]).filter(function(x){return x.id!==aid;});c.updated=Date.now();saveContact(c);openDetail(curId);
@@ -2063,7 +2072,8 @@ var USERS=%%USERS%%;
    var mf=document.getElementById("actMailFields");if(mf)mf.style.display="none";
    var mt=document.getElementById("actMailTo");if(mt)mt.value="";
    var msu=document.getElementById("actMailSubj");if(msu)msu.value="";
-   _mailReplyCtx=null;
+   var maw=document.getElementById("actMailAtt");if(maw)maw.style.display="none";
+   _mailReplyCtx=null;_mailAttach=null;
    // Angebote aus Konfigurator füllen
    var offers=loadOffers();var sel=document.getElementById("actOffer");
    var names=Object.keys(offers).sort();
@@ -2106,7 +2116,7 @@ var USERS=%%USERS%%;
  document.getElementById("actCancel").onclick=function(){modal.classList.remove("open");};
  document.getElementById("actCreateOffer").onclick=function(){var c=byId(actForId);if(c){modal.classList.remove("open");gotoConfigurator(c,true);}};
  // Mail senden an/aus -> Adress-/Betreff-Felder zeigen
- var _mailReplyCtx=null;
+ var _mailReplyCtx=null,_mailAttach=null;
  document.getElementById("actMailSend").onchange=function(){
    document.getElementById("actMailFields").style.display=this.checked?"":"none";
    if(this.checked){var c=byId(actForId)||{};var to=document.getElementById("actMailTo");if(to&&!to.value)to.value=c.mail||"";var su=document.getElementById("actMailSubj");if(su&&!su.value)su.value=c.firma?("Ihre Anfrage – "+c.firma):"";}
@@ -2145,6 +2155,25 @@ var USERS=%%USERS%%;
    _mailReplyCtx={subject:m?m[1].trim():"",text:orig};
    // KI gleich starten
    document.getElementById("actMailAI").click();
+ }
+ // „Angebot per E-Mail senden" -> Modal als „Mail raus" öffnen, das PDF anhängen, Standardtext vorbelegen.
+ function startMailOffer(actId){
+   var c=byId(curId);if(!c)return;
+   var src=(c.activities||[]).filter(function(x){return x.id===actId;})[0];if(!src||!src.pdf){alert("Für dieses Angebot gibt es noch kein PDF. Bitte zuerst auf PDF erstellen tippen.");return;}
+   openActModal(curId);
+   actType="mailout";var bs=document.querySelectorAll("#actSeg button");for(var i=0;i<bs.length;i++)bs[i].classList.toggle("on",bs[i].getAttribute("data-t")==="mailout");
+   toggleOfferField();
+   document.getElementById("actMailSend").checked=true;document.getElementById("actMailFields").style.display="";
+   document.getElementById("actMailTo").value=c.mail||"";
+   var nr=src.offerNr?(" "+src.offerNr):"";
+   document.getElementById("actMailSubj").value="Ihr Angebot – Sternsiebanlage Lepton 5100"+nr;
+   var nm="Angebot_Lepton_5100"+(src.offerNr?("_"+String(src.offerNr).replace(/[^0-9A-Za-z-]/g,"")):"")+".pdf";
+   _mailAttach=[{name:nm,dataUri:src.pdf,contentType:"application/pdf"}];
+   var att=document.getElementById("actMailAtt");if(att){att.style.display="";document.getElementById("actMailAttName").textContent=nm+" (wird angehängt)";}
+   var nt=document.getElementById("actNote");
+   var anrede=c.nachname?("Sehr geehrte"+( (c.anrede||"").indexOf("Frau")>=0?" Frau ":(c.anrede||"").indexOf("Herr")>=0?"r Herr ":" Damen und Herren")):"Sehr geehrte Damen und Herren";
+   var name=(c.anrede&&c.nachname)?(anrede+c.nachname):anrede;
+   nt.value=name+",\n\nvielen Dank für Ihr Interesse an der Sternsiebanlage Lepton 5100. Im Anhang finden Sie unser Angebot.\n\nFür Rückfragen stehe ich Ihnen gerne zur Verfügung.\n\nMit freundlichen Grüßen\n"+((CUR&&CUR.n)||"")+"\nAlzinger Maschinenbau GmbH";
  }
  modal.addEventListener("click",function(e){if(e.target===modal)modal.classList.remove("open");});
 
@@ -2237,9 +2266,10 @@ var USERS=%%USERS%%;
      sb.disabled=true;sb.textContent="Sende E-Mail…";
      msMailToken(true).then(function(tok){
        if(!tok)throw new Error("Kein Mail-Zugriff – bitte im Microsoft-Login der Berechtigung Mail.Send zustimmen.");
-       return graphSendMail(tok,to,subj,bodyTxt);
+       return graphSendMail(tok,to,subj,bodyTxt,_mailAttach);
      }).then(function(){
        a.note=(subj?("Betreff: "+subj+"\n"):"")+bodyTxt;a.mailTo=to;a.mailSent=true;
+       if(_mailAttach&&_mailAttach.length)a.mailAtt=_mailAttach[0].name;
        finish();
      },function(e){sb.disabled=false;sb.textContent="Speichern";alert("E-Mail konnte nicht gesendet werden: "+(e&&e.message||e)+"\n\nDie Aktivität wurde NICHT gespeichert.");});
      return;
@@ -2726,7 +2756,7 @@ var USERS=%%USERS%%;
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v113";
+ var APP_VER="v114";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
@@ -2771,7 +2801,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v113";
+const CACHE="vertrieb-v114";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png","./icon-32.png","./favicon.ico",
   "./vendor/leaflet.js","./vendor/leaflet.css","./vendor/msal-browser.min.js",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
