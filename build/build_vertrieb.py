@@ -21,6 +21,7 @@ def jload(name): return json.load(open(os.path.join(HERE,name),encoding="utf8"))
 
 A=jload("assets.b64.json")
 LOGO_L=A["LOGO_L"]; LOGO_D=A["LOGO_D"]; RED=A["RED"]; RED2=A["RED2"]
+MAIL_LOGO=A.get("MAIL_LOGO","")
 
 # Dieselbe Anmelde-Benutzerliste wie der Konfigurator (build.py). Bewusst gespiegelt,
 # damit /vertrieb/ eigenständig funktioniert und den eingeloggten Vertriebler kennt.
@@ -472,11 +473,13 @@ create policy "crm all" on contacts
       <h3>E-Mail-Signatur</h3>
       <p style="font-size:13px;color:var(--muted);margin-bottom:10px">Wird automatisch unter jede <b>„Mail raus"</b> gesetzt (Outlook gibt die Signatur leider nicht automatisch heraus – einmal hier einfügen). Tipp: in Outlook unter <i>Einstellungen → E-Mail → Signaturen</i> deine Signatur markieren, kopieren und hier einfügen.</p>
       <div class="fg"><label>Deine Signatur</label><textarea class="field" id="sigText" style="min-height:120px" placeholder="z. B.&#10;Mit freundlichen Grüßen&#10;Martin Alzinger&#10;Alzinger Maschinenbau GmbH&#10;Tel. +49 …&#10;www.alzinger-maschinenbau.de"></textarea></div>
-      <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;align-items:center">
+      <div style="display:flex;gap:14px;margin-top:10px;flex-wrap:wrap;align-items:center">
         <button class="btn primary" id="sigSave" type="button">Speichern</button>
         <label class="chk" style="margin:0"><input type="checkbox" id="sigAuto" checked> Automatisch anhängen</label>
+        <label class="chk" style="margin:0"><input type="checkbox" id="sigLogo" checked> Firmenlogo mitsenden</label>
         <span id="sigState" style="font-size:12px;color:var(--muted)"></span>
       </div>
+      <div style="margin-top:10px"><img src="%%MAILLOGO%%" alt="Logo-Vorschau" style="height:38px"><div style="font-size:11px;color:var(--faint);margin-top:3px">↑ Dieses Logo wird unter deine Mails gesetzt (als HTML-Mail).</div></div>
     </div>
     <div class="card">
       <h3>Sichern &amp; Übertragen</h3>
@@ -719,10 +722,13 @@ var USERS=%%USERS%%;
  var TOKEN=""; try{TOKEN=localStorage.getItem(TKEY)||"";}catch(e){}
  var SB=null; try{SB=JSON.parse(localStorage.getItem(SBKEY)||"null");}catch(e){}
  var AISECRET=""; try{AISECRET=localStorage.getItem(AIKEY)||"";}catch(e){}
+ // Firmenlogo (für HTML-Mails, als Inline-Anhang via CID eingebettet).
+ var MAIL_LOGO="%%MAILLOGO%%";
  // E-Mail-Signatur (pro Gerät/Vertriebler). Wird automatisch an "Mail raus" angehängt.
- var SIGKEY="amb_crm_sig",SIGAUTOKEY="amb_crm_sig_auto";
+ var SIGKEY="amb_crm_sig",SIGAUTOKEY="amb_crm_sig_auto",SIGLOGOKEY="amb_crm_sig_logo";
  var SIG=""; try{SIG=localStorage.getItem(SIGKEY)||"";}catch(e){}
  var SIGAUTO=true; try{var _sa=localStorage.getItem(SIGAUTOKEY);SIGAUTO=(_sa===null?true:_sa==="1");}catch(e){}
+ var SIGLOGO=true; try{var _sl=localStorage.getItem(SIGLOGOKEY);SIGLOGO=(_sl===null?true:_sl==="1");}catch(e){}
  // Signatur an einen Mailtext anhängen (nur wenn aktiviert, vorhanden und noch nicht enthalten).
  function withSig(body){body=body||"";if(!SIGAUTO||!SIG)return body;if(body.indexOf(SIG)>=0)return body;return body.replace(/\s+$/,"")+"\n\n"+SIG;}
  // Einrichtungs-Link (#s=...) fuer Team-Rollout: Cloud-Zugang automatisch uebernehmen, dann aus der URL entfernen.
@@ -1026,17 +1032,23 @@ var USERS=%%USERS%%;
    function page(u){return gfetch(u,{headers:{Authorization:"Bearer "+token,Prefer:'outlook.body-content-type="text"'}}).then(function(r){if(!r.ok)throw new Error("msg "+r.status);return r.json();}).then(function(j){(j.value||[]).forEach(function(m){out.push(m);});var nx=j["@odata.nextLink"];if(nx&&out.length<maxN&&!_msStop)return page(nx);return out;});}
    return page(url);
  }
- // Antwort senden (Graph Mail.Send) -> liegt danach im "Gesendet"-Ordner. attach=[{name,dataUri}] optional.
- function graphSendMail(token,to,subject,bodyText,attach){
-   var msg={message:{subject:subject,body:{contentType:"Text",content:bodyText},toRecipients:[{emailAddress:{address:to}}]},saveToSentItems:true};
+ // Antwort senden (Graph Mail.Send) -> liegt danach im "Gesendet"-Ordner.
+ // attach=[{name,dataUri,contentType,inline,contentId}] optional; htmlBody gesetzt -> HTML-Mail (sonst Text).
+ function graphSendMail(token,to,subject,bodyText,attach,htmlBody){
+   var body=htmlBody?{contentType:"HTML",content:htmlBody}:{contentType:"Text",content:bodyText};
+   var msg={message:{subject:subject,body:body,toRecipients:[{emailAddress:{address:to}}]},saveToSentItems:true};
    if(attach&&attach.length){
      msg.message.attachments=attach.map(function(f){
        var b64=String(f.dataUri||"").replace(/^data:[^,]*,/,"");
-       return {"@odata.type":"#microsoft.graph.fileAttachment",name:f.name||"Anhang.pdf",contentType:f.contentType||"application/pdf",contentBytes:b64};
+       var o={"@odata.type":"#microsoft.graph.fileAttachment",name:f.name||"Anhang.pdf",contentType:f.contentType||"application/pdf",contentBytes:b64};
+       if(f.inline){o.isInline=true;o.contentId=f.contentId||f.name;}
+       return o;
      });
    }
    return fetch("https://graph.microsoft.com/v1.0/me/sendMail",{method:"POST",headers:{Authorization:"Bearer "+token,"Content-Type":"application/json"},body:JSON.stringify(msg)}).then(function(r){if(!r.ok)throw new Error("send "+r.status);return true;});
  }
+ // Reinen Text -> einfaches HTML (Zeilenumbrüche -> <br>, HTML-Sonderzeichen escapen).
+ function textToHtml(t){return String(t==null?"":t).replace(/[&<>]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;"}[c];}).replace(/\r?\n/g,"<br>");}
  // E-Mails aus dem eigenen Postfach abrufen und passenden Kontakten als Aktivitaet (mailin/mailout) zuordnen. Dedup ueber msgId.
  var MAIL_SINCE_KEY="amb_crm_mail_since";
  function importEmails(interactive){
@@ -2385,9 +2397,15 @@ var USERS=%%USERS%%;
      if(!to){alert("Bitte eine Empfänger-Adresse eintragen.");return;}
      if(!bodyTxt){alert("Bitte einen E-Mail-Text eingeben (das Notizfeld ist der Mailtext).");return;}
      sb.disabled=true;sb.textContent="Sende E-Mail…";
+     // Logo anhängen -> HTML-Mail mit eingebettetem Logo (CID). Sonst reine Textmail.
+     var att=(_mailAttach?_mailAttach.slice():[]),html=null;
+     if(SIGAUTO&&SIGLOGO&&MAIL_LOGO){
+       html=textToHtml(bodyTxt)+'<br><br><img src="cid:amblogo" alt="Alzinger Maschinenbau" style="height:64px;border:0">';
+       att.push({name:"alzinger-logo.png",contentType:"image/png",dataUri:MAIL_LOGO,inline:true,contentId:"amblogo"});
+     }
      msMailToken(true).then(function(tok){
        if(!tok)throw new Error("Kein Mail-Zugriff – bitte im Microsoft-Login der Berechtigung Mail.Send zustimmen.");
-       return graphSendMail(tok,to,subj,bodyTxt,_mailAttach);
+       return graphSendMail(tok,to,subj,bodyTxt,att.length?att:null,html);
      }).then(function(){
        a.note=(subj?("Betreff: "+subj+"\n"):"")+bodyTxt;a.mailTo=to;a.mailSent=true;
        if(_mailAttach&&_mailAttach.length)a.mailAtt=_mailAttach[0].name;
@@ -2828,6 +2846,7 @@ var USERS=%%USERS%%;
    var ai=document.getElementById("aiSecret");if(ai&&document.activeElement!==ai)ai.value=AISECRET||"";
    var sg=document.getElementById("sigText");if(sg&&document.activeElement!==sg)sg.value=SIG||"";
    var sga=document.getElementById("sigAuto");if(sga)sga.checked=SIGAUTO;
+   var sgl=document.getElementById("sigLogo");if(sgl)sgl.checked=SIGLOGO;
    var aiSt=document.getElementById("aiState");
    if(aiSt){aiSt.textContent=aiReady()?"✓ KI-Suche aktiv":(SB&&SB.url&&SB.key?"Schlüssel fehlt – KI-Suche aus":"erst Cloud-Datenbank verbinden");aiSt.style.color=aiReady()?"var(--pos)":"var(--muted)";}
  }
@@ -2857,7 +2876,8 @@ var USERS=%%USERS%%;
  document.getElementById("sigSave").onclick=function(){
    SIG=document.getElementById("sigText").value.replace(/\s+$/,"");
    SIGAUTO=document.getElementById("sigAuto").checked;
-   try{localStorage.setItem(SIGKEY,SIG);localStorage.setItem(SIGAUTOKEY,SIGAUTO?"1":"0");}catch(e){}
+   SIGLOGO=document.getElementById("sigLogo").checked;
+   try{localStorage.setItem(SIGKEY,SIG);localStorage.setItem(SIGAUTOKEY,SIGAUTO?"1":"0");localStorage.setItem(SIGLOGOKEY,SIGLOGO?"1":"0");}catch(e){}
    var st=document.getElementById("sigState");if(st){st.textContent="✓ gespeichert";st.style.color="var(--pos)";setTimeout(function(){st.textContent="";},2500);}
  };
 
@@ -2885,7 +2905,7 @@ var USERS=%%USERS%%;
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v119";
+ var APP_VER="v120";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
@@ -2930,7 +2950,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v119";
+const CACHE="vertrieb-v120";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png","./icon-32.png","./favicon.ico",
   "./vendor/leaflet.js","./vendor/leaflet.css","./vendor/msal-browser.min.js",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
@@ -3081,9 +3101,10 @@ HTACCESS_DATA = "Require all denied\nDeny from all\n"
 out=TPL
 out=out.replace("%%RED%%",RED).replace("%%RED2%%",RED2)
 out=out.replace("%%LOGOL%%",LOGO_L).replace("%%LOGOD%%",LOGO_D)
+out=out.replace("%%MAILLOGO%%",MAIL_LOGO)
 out=out.replace("%%USERS%%",USERS_JS)
 
-for tok in ["%%RED%%","%%RED2%%","%%LOGOL%%","%%LOGOD%%","%%USERS%%"]:
+for tok in ["%%RED%%","%%RED2%%","%%LOGOL%%","%%LOGOD%%","%%MAILLOGO%%","%%USERS%%"]:
     assert tok not in out, "Token übrig: "+tok
 for need in ['id="gateForm"','id="clist"','id="actModal"','renderDashboard','amb_lepton_crm','amb_lepton_configs','checkReminders','initBackend','api.php','id="connState"','id="osmSearch"','overpass-api.de','osmToContact','id="osmMap"','ensureLeaflet','arcgisonline','addSat','id="sbUrl"','sbUpsert','supabase.co','id="cMap"','showContactsMap','id="actBetrag"','flagIcon','id="detMap"','contactLatLon','leadSearch','apiAi','aiPost','id="aiSecret"','/functions/v1/']:
     assert need in out, "Pflicht-Markierung fehlt: "+need
