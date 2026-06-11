@@ -105,6 +105,7 @@ h2.vh{font-size:20px;font-weight:800;letter-spacing:-.01em;margin-bottom:2px}
 .stat.s-lead{background:#fff3e0;border-color:#ffe2bd}.stat.s-lead .n{color:var(--warn)}
 .stat.s-angebot{background:#e7f0ff;border-color:#cfe0ff}.stat.s-angebot .n{color:#1d4ed8}
 .stat.s-kunde{background:#e6f4ea;border-color:#c2e6cd}.stat.s-kunde .n{color:var(--pos)}
+.stat.s-haendler{background:#f1ecfb;border-color:#ddd0f5}.stat.s-haendler .n{color:#6d28d9}
 
 .card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:12px}
 .card h3{font-size:13px;font-family:var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;display:flex;align-items:center;gap:8px}
@@ -136,6 +137,7 @@ select.filter{width:auto;min-width:120px;flex:0 0 auto}
 .pill.interessent{background:#fff3e0;color:var(--warn)}
 .pill.angebot{background:#e7f0ff;color:#1d4ed8}
 .pill.kunde{background:#e6f4ea;color:var(--pos)}
+.pill.haendler{background:#f1ecfb;color:#6d28d9}
 .pill.verloren{background:#f3eceb;color:#8a8a8a}
 
 .due{font-family:var(--mono);font-size:10px;font-weight:600;padding:3px 8px;border-radius:20px;white-space:nowrap}
@@ -192,6 +194,7 @@ textarea.field{min-height:74px;resize:vertical;line-height:1.5}
 .av.av-interessent{background:#d97706}
 .av.av-angebot{background:#1d4ed8}
 .av.av-kunde{background:#15803d}
+.av.av-haendler{background:#6d28d9}
 .av.av-verloren{background:#9aa0a6}
 .detail-head h2{font-size:21px;font-weight:800;letter-spacing:-.01em}
 .detail-head .who{color:var(--muted);font-size:13px;margin-top:2px}
@@ -662,7 +665,7 @@ var USERS=%%USERS%%;
  /* ---------- Konstanten ---------- */
  var KEY="amb_lepton_crm";
  var CFG_KEY="amb_lepton_configs"; // gespeicherte Angebote des Konfigurators (gleicher Origin)
- var STATUS=[["lead","Lead"],["interessent","Interessent"],["angebot","Angebot offen"],["kunde","Kunde"],["verloren","Verloren"]];
+ var STATUS=[["lead","Lead"],["interessent","Interessent"],["angebot","Angebot offen"],["kunde","Kunde"],["haendler","Händler"],["verloren","Verloren"]];
  var LANDS=[["DE","Deutschland"],["AT","Österreich"],["CH","Schweiz"],["IT","Italien"],["FR","Frankreich"],["PL","Polen"],["NL","Niederlande"],["BE","Belgien"],["LU","Luxemburg"],["CZ","Tschechien"],["DK","Dänemark"],["SE","Schweden"],["NO","Norwegen"],["FI","Finnland"],["ES","Spanien"],["PT","Portugal"],["GB","Großbritannien"],["IE","Irland"],["SK","Slowakei"],["SI","Slowenien"],["HU","Ungarn"],["HR","Kroatien"],["RO","Rumänien"],["GR","Griechenland"],["US","USA"],["CA","Kanada"],["XX","Sonstige"]];
  var ACT=[["anruf","Anruf"],["mailout","E-Mail (raus)"],["mailin","E-Mail (rein)"],["angebot","Angebot gesendet"],["besuch","Besuch"],["notiz","Notiz"]];
  function statusLabel(s){for(var i=0;i<STATUS.length;i++)if(STATUS[i][0]===s)return STATUS[i][1];return "Lead";}
@@ -1230,7 +1233,7 @@ var USERS=%%USERS%%;
  function renderDashboard(){
    var name=(CUR&&CUR.n)?CUR.n.split(" ")[0]:"";
    document.getElementById("greet").textContent=name?("Servus, "+name+"!"):"Übersicht";
-   var st={lead:0,interessent:0,angebot:0,kunde:0,verloren:0};
+   var st={lead:0,interessent:0,angebot:0,kunde:0,haendler:0,verloren:0};
    DB.contacts.forEach(function(c){if(st[c.status]!=null)st[c.status]++;});
    var fu=dueFollowups(),od=overdueOrToday();
    var stats=document.getElementById("stats");
@@ -1239,7 +1242,8 @@ var USERS=%%USERS%%;
      '<div class="stat" data-go="all" style="cursor:pointer" title="Alle Kontakte"><div class="n">'+DB.contacts.length+'</div><div class="l">Kontakte</div></div>'+
      '<div class="stat s-lead" data-go="lead" style="cursor:pointer" title="Offene Leads"><div class="n">'+(st.lead+st.interessent)+'</div><div class="l">Offene Leads</div></div>'+
      '<div class="stat s-angebot" data-go="angebot" style="cursor:pointer" title="Offene Angebote"><div class="n">'+st.angebot+'</div><div class="l">Angebote offen</div></div>'+
-     '<div class="stat s-kunde" data-go="kunde" style="cursor:pointer" title="Kunden"><div class="n">'+st.kunde+'</div><div class="l">Kunden</div></div>';
+     '<div class="stat s-kunde" data-go="kunde" style="cursor:pointer" title="Kunden"><div class="n">'+st.kunde+'</div><div class="l">Kunden</div></div>'+
+     '<div class="stat s-haendler" data-go="haendler" style="cursor:pointer" title="Händlerkontakte"><div class="n">'+st.haendler+'</div><div class="l">Händler</div></div>';
    // Wiedervorlagen
    document.getElementById("fuCnt").textContent=fu.length;
    var fl=document.getElementById("fuList");
@@ -2619,7 +2623,7 @@ var USERS=%%USERS%%;
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v111";
+ var APP_VER="v112";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
@@ -2664,7 +2668,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v111";
+const CACHE="vertrieb-v112";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png","./icon-32.png","./favicon.ico",
   "./vendor/leaflet.js","./vendor/leaflet.css","./vendor/msal-browser.min.js",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
