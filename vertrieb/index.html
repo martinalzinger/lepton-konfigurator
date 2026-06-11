@@ -278,8 +278,12 @@ textarea.field{min-height:74px;resize:vertical;line-height:1.5}
 
   <!-- ÜBERSICHT -->
   <section class="view active" id="view-dashboard">
-    <h2 class="vh" id="greet">Übersicht</h2>
-    <div class="sub" id="greetSub">Dein Vertriebs-Cockpit</div>
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap">
+      <div><h2 class="vh" id="greet">Übersicht</h2>
+      <div class="sub" id="greetSub">Dein Vertriebs-Cockpit</div></div>
+      <div style="text-align:right"><button class="btn sm" id="mailSyncBtn" type="button" title="Deine Outlook-E-Mails (rein/raus) den Kontakten zuordnen"><svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.7"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>E-Mails abrufen</button>
+      <div id="mailSyncMsg" style="font-size:12px;color:var(--muted);margin-top:4px"></div></div>
+    </div>
 
     <div class="stats" id="stats"></div>
 
@@ -616,6 +620,16 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
    var p=(MODE==="local")?initBackend():syncFromServer();
    Promise.resolve(p).catch(function(){}).then(function(){setTimeout(function(){b.classList.remove("spin");},500);});
  });
+ var _mailBusy=false;
+ document.getElementById("mailSyncBtn").addEventListener("click",function(){
+   if(_mailBusy)return;_mailBusy=true;var b=this;b.disabled=true;
+   var msg=document.getElementById("mailSyncMsg");msg.style.color="var(--muted)";msg.textContent="Verbinde mit Microsoft …";
+   importEmails(true).then(function(res){
+     msg.style.color="var(--pos)";msg.textContent=res.added?("✓ "+res.added+" E-Mail(s) zu "+res.contacts+" Kontakt(en) zugeordnet."):"Keine neuen E-Mails für vorhandene Kontakte gefunden.";
+     if(res.added)renderDashboard();
+   }).catch(function(e){msg.style.color="#b91c1c";msg.textContent=String((e&&e.message)||e);})
+     .then(function(){b.disabled=false;_mailBusy=false;});
+ });
 
  /* ---------- Konstanten ---------- */
  var KEY="amb_lepton_crm";
@@ -885,6 +899,66 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
  function msSitesToken(){
    // forceRefresh: gecachte Tokens stammen evtl. von VOR der Admin-Freigabe (ohne Sites-Scope) -> frisch holen.
    return ensureMsal().then(msalApp).then(function(app){var acc=app.getAllAccounts()[0];if(!acc)return null;return app.acquireTokenSilent({scopes:["Sites.Read.All"],account:acc,forceRefresh:true}).then(function(r){return r.accessToken;}).catch(function(){return null;});}).catch(function(){return null;});
+ }
+ /* ===== E-Mail-Anbindung (Microsoft 365 / Graph) ===== */
+ var MS_MAIL_SCOPES=["Mail.Read","Mail.Send","User.Read"];
+ // Mail-Token holen (eigenes Postfach lesen + Antworten senden). interactive=true -> Pop-up erlaubt (erstmalige Zustimmung).
+ function msMailToken(interactive){
+   return ensureMsal().then(msalApp).then(function(app){
+     var acc=app.getAllAccounts()[0];
+     var req={scopes:MS_MAIL_SCOPES,account:acc};
+     return app.acquireTokenSilent(req).then(function(r){return r.accessToken;}).catch(function(){
+       if(interactive)return app.acquireTokenPopup({scopes:MS_MAIL_SCOPES}).then(function(r){return r.accessToken;});
+       return null;
+     });
+   });
+ }
+ function graphMe(token){return gfetch("https://graph.microsoft.com/v1.0/me?$select=mail,userPrincipalName,displayName",{headers:{Authorization:"Bearer "+token}}).then(function(r){if(!r.ok)throw new Error("me "+r.status);return r.json();}).then(function(j){return ((j.mail||j.userPrincipalName||"")+"").toLowerCase();});}
+ // Letzte Nachrichten (Posteingang + Gesendet) holen, ab Datum sinceISO (optional). Bis ~maxN.
+ function graphMessages(token,sinceISO,maxN){
+   maxN=maxN||300;var out=[];
+   var sel="id,subject,from,toRecipients,ccRecipients,receivedDateTime,sentDateTime,bodyPreview,isDraft,conversationId,webLink";
+   var url="https://graph.microsoft.com/v1.0/me/messages?$top=50&$select="+sel+"&$orderby=receivedDateTime%20desc";
+   if(sinceISO)url+="&$filter=receivedDateTime%20ge%20"+encodeURIComponent(sinceISO);
+   function page(u){return gfetch(u,{headers:{Authorization:"Bearer "+token,Prefer:'outlook.body-content-type="text"'}}).then(function(r){if(!r.ok)throw new Error("msg "+r.status);return r.json();}).then(function(j){(j.value||[]).forEach(function(m){out.push(m);});var nx=j["@odata.nextLink"];if(nx&&out.length<maxN&&!_msStop)return page(nx);return out;});}
+   return page(url);
+ }
+ // Antwort senden (Graph Mail.Send) -> liegt danach im "Gesendet"-Ordner.
+ function graphSendMail(token,to,subject,bodyText){
+   var msg={message:{subject:subject,body:{contentType:"Text",content:bodyText},toRecipients:[{emailAddress:{address:to}}]},saveToSentItems:true};
+   return fetch("https://graph.microsoft.com/v1.0/me/sendMail",{method:"POST",headers:{Authorization:"Bearer "+token,"Content-Type":"application/json"},body:JSON.stringify(msg)}).then(function(r){if(!r.ok)throw new Error("send "+r.status);return true;});
+ }
+ // E-Mails aus dem eigenen Postfach abrufen und passenden Kontakten als Aktivitaet (mailin/mailout) zuordnen. Dedup ueber msgId.
+ var MAIL_SINCE_KEY="amb_crm_mail_since";
+ function importEmails(interactive){
+   return msMailToken(interactive).then(function(tok){
+     if(!tok)throw new Error("Kein Mail-Zugriff – bitte im Microsoft-Login der Berechtigung Mail.Read zustimmen.");
+     return graphMe(tok).then(function(myEmail){
+       var since=localStorage.getItem(MAIL_SINCE_KEY)||new Date(Date.now()-60*86400000).toISOString();
+       return graphMessages(tok,since).then(function(msgs){
+         var byEmail={};DB.contacts.forEach(function(c){if(c.mail)byEmail[String(c.mail).toLowerCase().trim()]=c;});
+         var seenMsg={};DB.contacts.forEach(function(c){(c.activities||[]).forEach(function(a){if(a&&a.msgId)seenMsg[a.msgId]=1;});});
+         var added=0,changed={};
+         (msgs||[]).forEach(function(m){
+           if(!m||m.isDraft)return;if(m.id&&seenMsg[m.id])return;
+           var fromAddr=((m.from&&m.from.emailAddress&&m.from.emailAddress.address)||"").toLowerCase();
+           var outgoing=(fromAddr===myEmail);var partner=null;
+           if(outgoing){(m.toRecipients||[]).some(function(r){var a=((r.emailAddress&&r.emailAddress.address)||"").toLowerCase();if(byEmail[a]){partner=byEmail[a];return true;}return false;});}
+           else{partner=byEmail[fromAddr];}
+           if(!partner)return;
+           var date=new Date(outgoing?(m.sentDateTime||m.receivedDateTime):m.receivedDateTime).getTime()||Date.now();
+           var note=(m.subject?("Betreff: "+m.subject+"\n"):"")+((m.bodyPreview||"").trim());
+           partner.activities=partner.activities||[];
+           partner.activities.push({id:uid(),type:outgoing?"mailout":"mailin",date:date,note:note,by:(CUR&&CUR.n)||"",msgId:m.id||"",mailWeb:m.webLink||""});
+           partner.activities.sort(function(x,y){return (x.date||0)-(y.date||0);});
+           if(m.id)seenMsg[m.id]=1;changed[partner.id]=partner;added++;
+         });
+         Object.keys(changed).forEach(function(id){changed[id].updated=Date.now();saveContact(changed[id]);});
+         try{localStorage.setItem(MAIL_SINCE_KEY,new Date(Date.now()-2*86400000).toISOString());}catch(e){} // 2 Tage Ueberlappung beim naechsten Mal
+         return {scanned:(msgs||[]).length,added:added,contacts:Object.keys(changed).length};
+       });
+     });
+   });
  }
  // Seiteninhalt (HTML) -> reiner Text + Bilder als {pre, full}. preAuthenticated=true.
  function graphPageContent(token,page){
@@ -2517,7 +2591,7 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v108";
+ var APP_VER="v109";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
