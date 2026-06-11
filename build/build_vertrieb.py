@@ -313,8 +313,7 @@ textarea.field{min-height:74px;resize:vertical;line-height:1.5}
     <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap">
       <div><h2 class="vh" id="greet">Übersicht</h2>
       <div class="sub" id="greetSub">Dein Vertriebs-Cockpit</div></div>
-      <div style="text-align:right"><button class="btn sm" id="mailSyncBtn" type="button" title="Deine Outlook-E-Mails (rein/raus) den Kontakten zuordnen"><svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.7"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>E-Mails abrufen</button>
-      <div id="mailSyncMsg" style="font-size:12px;color:var(--muted);margin-top:4px"></div></div>
+      <div id="mailSyncMsg" style="font-size:12px;color:var(--muted);margin-top:4px;text-align:right"></div>
     </div>
 
     <div class="stats" id="stats"></div>
@@ -688,16 +687,23 @@ var USERS=%%USERS%%;
    var p=(MODE==="local")?initBackend():syncFromServer();
    Promise.resolve(p).catch(function(){}).then(function(){setTimeout(function(){b.classList.remove("spin");},500);});
  });
- var _mailBusy=false;
- document.getElementById("mailSyncBtn").addEventListener("click",function(){
-   if(_mailBusy)return;_mailBusy=true;var b=this;b.disabled=true;
-   var msg=document.getElementById("mailSyncMsg");msg.style.color="var(--muted)";msg.textContent="Verbinde mit Microsoft …";
-   importEmails(true).then(function(res){
-     msg.style.color="var(--pos)";msg.textContent=res.added?("✓ "+res.added+" E-Mail(s) zu "+res.contacts+" Kontakt(en) zugeordnet."):"Keine neuen E-Mails für vorhandene Kontakte gefunden.";
-     if(res.added)renderDashboard();
-   }).catch(function(e){msg.style.color="#b91c1c";msg.textContent=String((e&&e.message)||e);})
-     .then(function(){b.disabled=false;_mailBusy=false;});
- });
+ var _mailBusy=false,_mailLast=0;
+ // E-Mails automatisch im Hintergrund abrufen. interactive=true -> Pop-up erlaubt (erste Anmeldung), sonst still.
+ function autoMailSync(interactive){
+   if(_mailBusy)return Promise.resolve();
+   var now=Date.now();
+   if(!interactive&&now-_mailLast<120000)return Promise.resolve(); // höchstens alle 2 Min
+   _mailBusy=true;var msg=document.getElementById("mailSyncMsg");
+   if(interactive&&msg){msg.style.color="var(--muted)";msg.textContent="Verbinde mit Microsoft …";}
+   return importEmails(!!interactive).then(function(res){
+     _mailLast=Date.now();
+     if(res&&res.added){renderDashboard();}
+     if(interactive&&msg){msg.style.color="var(--pos)";msg.textContent=res&&res.added?("✓ "+res.added+" neue E-Mail(s) zugeordnet."):"Keine neuen E-Mails gefunden.";setTimeout(function(){msg.textContent="";},4000);}
+   }).catch(function(e){
+     _mailLast=Date.now();
+     if(interactive&&msg){msg.style.color="#b91c1c";msg.textContent=String((e&&e.message)||e);}
+   }).then(function(){_mailBusy=false;});
+ }
 
  /* ---------- Konstanten ---------- */
  var KEY="amb_lepton_crm";
@@ -1418,7 +1424,8 @@ var USERS=%%USERS%%;
    var ic=document.getElementById("inboxCard"),il=document.getElementById("inboxList");
    ic.style.display="";document.getElementById("inboxCnt").textContent=inbox.length;
    if(!inbox.length){
-     il.innerHTML='<div style="font-size:13px;color:var(--faint);padding:6px 0">Noch keine eingegangenen E-Mails. Tippe oben auf <b>„E-Mails abrufen"</b>, um deine Outlook-Mails zu laden.</div>';
+     il.innerHTML='<div style="font-size:13px;color:var(--faint);padding:6px 0">Noch keine eingegangenen E-Mails. Das CRM holt sie automatisch im Hintergrund. <button class="btn ghost sm" id="mailConnectBtn" type="button" style="margin-left:6px">Outlook jetzt verbinden</button></div>';
+     var mcb=document.getElementById("mailConnectBtn");if(mcb)mcb.onclick=function(){autoMailSync(true);};
    } else {
      il.innerHTML=inbox.slice(0,15).map(function(o){
        var subj="",m=(o.a.note||"").match(/^Betreff:\s*(.+)$/m);if(m)subj=m[1].trim();
@@ -2913,7 +2920,7 @@ var USERS=%%USERS%%;
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v123";
+ var APP_VER="v124";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
@@ -2923,9 +2930,10 @@ var USERS=%%USERS%%;
    checkOfferReturn();           // aus dem Konfigurator zurückgekommen? Angebot-Aktivität vorbereiten.
    setTimeout(checkPendingCall,1500); // offener Anruf von vorhin? -> kurz nachfragen
    checkReminders();
-   setInterval(function(){syncDelta();checkReminders();if(curView==="dashboard")updateBadge();},30*1000);
-   document.addEventListener("visibilitychange",function(){if(!document.hidden){syncDelta();checkReminders();}});
-   window.addEventListener("online",function(){if(MODE==="local")initBackend();else syncFromServer();});
+   setTimeout(function(){autoMailSync(false);},6000);   // kurz nach dem Start einmal E-Mails holen (still)
+   setInterval(function(){syncDelta();checkReminders();autoMailSync(false);if(curView==="dashboard")updateBadge();},30*1000);
+   document.addEventListener("visibilitychange",function(){if(!document.hidden){syncDelta();checkReminders();autoMailSync(false);}});
+   window.addEventListener("online",function(){if(MODE==="local")initBackend();else syncFromServer();autoMailSync(false);});
  }
 
  if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){});});}
@@ -2958,7 +2966,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v123";
+const CACHE="vertrieb-v124";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png","./icon-32.png","./favicon.ico",
   "./vendor/leaflet.js","./vendor/leaflet.css","./vendor/msal-browser.min.js",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
