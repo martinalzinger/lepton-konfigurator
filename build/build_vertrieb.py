@@ -469,6 +469,16 @@ create policy "crm all" on contacts
       <p style="font-size:11px;color:var(--faint);margin-top:10px;line-height:1.6">Kosten: pro Suche fallen bei Anthropic einige Cent an (KI + Web-Suche). KI-Treffer sind <b>Vorschläge zum Prüfen</b> – vor dem Kontaktieren verifizieren (DSGVO/UWG beachten). Ohne diesen Schlüssel nutzt die Suche automatisch die kostenlose Karten-Suche (OpenStreetMap).</p>
     </div>
     <div class="card">
+      <h3>E-Mail-Signatur</h3>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:10px">Wird automatisch unter jede <b>„Mail raus"</b> gesetzt (Outlook gibt die Signatur leider nicht automatisch heraus – einmal hier einfügen). Tipp: in Outlook unter <i>Einstellungen → E-Mail → Signaturen</i> deine Signatur markieren, kopieren und hier einfügen.</p>
+      <div class="fg"><label>Deine Signatur</label><textarea class="field" id="sigText" style="min-height:120px" placeholder="z. B.&#10;Mit freundlichen Grüßen&#10;Martin Alzinger&#10;Alzinger Maschinenbau GmbH&#10;Tel. +49 …&#10;www.alzinger-maschinenbau.de"></textarea></div>
+      <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;align-items:center">
+        <button class="btn primary" id="sigSave" type="button">Speichern</button>
+        <label class="chk" style="margin:0"><input type="checkbox" id="sigAuto" checked> Automatisch anhängen</label>
+        <span id="sigState" style="font-size:12px;color:var(--muted)"></span>
+      </div>
+    </div>
+    <div class="card">
       <h3>Sichern &amp; Übertragen</h3>
       <p style="font-size:13px;color:var(--muted);margin-bottom:12px">Exportiere alle Kontakte &amp; Aktivitäten als Datei – zur Sicherung oder um sie auf ein anderes Gerät / zu Kollegen zu übertragen.</p>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
@@ -709,6 +719,12 @@ var USERS=%%USERS%%;
  var TOKEN=""; try{TOKEN=localStorage.getItem(TKEY)||"";}catch(e){}
  var SB=null; try{SB=JSON.parse(localStorage.getItem(SBKEY)||"null");}catch(e){}
  var AISECRET=""; try{AISECRET=localStorage.getItem(AIKEY)||"";}catch(e){}
+ // E-Mail-Signatur (pro Gerät/Vertriebler). Wird automatisch an "Mail raus" angehängt.
+ var SIGKEY="amb_crm_sig",SIGAUTOKEY="amb_crm_sig_auto";
+ var SIG=""; try{SIG=localStorage.getItem(SIGKEY)||"";}catch(e){}
+ var SIGAUTO=true; try{var _sa=localStorage.getItem(SIGAUTOKEY);SIGAUTO=(_sa===null?true:_sa==="1");}catch(e){}
+ // Signatur an einen Mailtext anhängen (nur wenn aktiviert, vorhanden und noch nicht enthalten).
+ function withSig(body){body=body||"";if(!SIGAUTO||!SIG)return body;if(body.indexOf(SIG)>=0)return body;return body.replace(/\s+$/,"")+"\n\n"+SIG;}
  // Einrichtungs-Link (#s=...) fuer Team-Rollout: Cloud-Zugang automatisch uebernehmen, dann aus der URL entfernen.
  (function(){try{var m=(location.hash||"").match(/[#&]s=([^&]+)/);if(!m)return;var o=JSON.parse(decodeURIComponent(escape(atob(m[1].replace(/-/g,"+").replace(/_/g,"/")))));if(o&&o.u&&o.k){SB={url:o.u,key:o.k};try{localStorage.setItem(SBKEY,JSON.stringify(SB));}catch(e){}}if(o&&o.c){AISECRET=o.c;try{localStorage.setItem(AIKEY,AISECRET);}catch(e){}}history.replaceState(null,"",location.pathname+location.search);}catch(e){}})();
  function cacheRead(){try{var o=JSON.parse(localStorage.getItem(KEY)||"{}");if(!o.contacts)o.contacts=[];return o;}catch(e){return {contacts:[]};}}
@@ -2160,6 +2176,8 @@ var USERS=%%USERS%%;
        var c=byId(actForId)||{};
        var to=document.getElementById("actMailTo");if(to&&!to.value)to.value=c.mail||"";
        var su=document.getElementById("actMailSubj");if(su&&!su.value)su.value=c.firma?("Ihre Anfrage – "+c.firma):"";
+       // Signatur unten vorbelegen, falls das Notizfeld noch leer ist (Nutzer schreibt darüber).
+       var ta=document.getElementById("actNote");if(ta&&!ta.value&&SIGAUTO&&SIG)ta.value="\n\n"+SIG;
      }
    }
  }
@@ -2237,7 +2255,7 @@ var USERS=%%USERS%%;
      if(!document.getElementById("actMailSend").checked){document.getElementById("actMailSend").checked=true;document.getElementById("actMailFields").style.display="";}
      if(d.subject)document.getElementById("actMailSubj").value=d.subject;
      setNoteMode("text");
-     if(d.body)document.getElementById("actNote").value=d.body;
+     if(d.body)document.getElementById("actNote").value=withSig(d.body);
      var to=document.getElementById("actMailTo");if(to&&!to.value)to.value=c.mail||"";
    },function(e){btn.disabled=false;btn.innerHTML=old;alert("KI-Vorschlag fehlgeschlagen: "+(e&&e.message||e));});
  };
@@ -2275,7 +2293,8 @@ var USERS=%%USERS%%;
    var nt=document.getElementById("actNote");
    var anrede=c.nachname?("Sehr geehrte"+( (c.anrede||"").indexOf("Frau")>=0?" Frau ":(c.anrede||"").indexOf("Herr")>=0?"r Herr ":" Damen und Herren")):"Sehr geehrte Damen und Herren";
    var name=(c.anrede&&c.nachname)?(anrede+c.nachname):anrede;
-   nt.value=name+",\n\nvielen Dank für Ihr Interesse an der Sternsiebanlage Lepton 5100. Im Anhang finden Sie unser Angebot.\n\nFür Rückfragen stehe ich Ihnen gerne zur Verfügung.\n\nMit freundlichen Grüßen\n"+((CUR&&CUR.n)||"")+"\nAlzinger Maschinenbau GmbH";
+   var closeNm=SIG?"":("\n"+((CUR&&CUR.n)||"")+"\nAlzinger Maschinenbau GmbH");
+   nt.value=withSig(name+",\n\nvielen Dank für Ihr Interesse an der Sternsiebanlage Lepton 5100. Im Anhang finden Sie unser Angebot.\n\nFür Rückfragen stehe ich Ihnen gerne zur Verfügung.\n\nMit freundlichen Grüßen"+closeNm);
  }
  modal.addEventListener("click",function(e){if(e.target===modal)modal.classList.remove("open");});
 
@@ -2807,6 +2826,8 @@ var USERS=%%USERS%%;
    if(su&&document.activeElement!==su)su.value=(SB&&SB.url)||"";
    if(sk&&document.activeElement!==sk)sk.value=(SB&&SB.key)||"";
    var ai=document.getElementById("aiSecret");if(ai&&document.activeElement!==ai)ai.value=AISECRET||"";
+   var sg=document.getElementById("sigText");if(sg&&document.activeElement!==sg)sg.value=SIG||"";
+   var sga=document.getElementById("sigAuto");if(sga)sga.checked=SIGAUTO;
    var aiSt=document.getElementById("aiState");
    if(aiSt){aiSt.textContent=aiReady()?"✓ KI-Suche aktiv":(SB&&SB.url&&SB.key?"Schlüssel fehlt – KI-Suche aus":"erst Cloud-Datenbank verbinden");aiSt.style.color=aiReady()?"var(--pos)":"var(--muted)";}
  }
@@ -2833,6 +2854,12 @@ var USERS=%%USERS%%;
  document.getElementById("sbDisconnect").onclick=function(){SB=null;try{localStorage.removeItem(SBKEY);}catch(e){}MODE="local";setConn(false);renderDataConn();};
  document.getElementById("sbHelp").onclick=function(e){e.preventDefault();document.getElementById("sbHelpBox").classList.toggle("hidden");};
  document.getElementById("aiSave").onclick=function(){AISECRET=document.getElementById("aiSecret").value.trim();try{localStorage.setItem(AIKEY,AISECRET);}catch(e){}renderDataConn();};
+ document.getElementById("sigSave").onclick=function(){
+   SIG=document.getElementById("sigText").value.replace(/\s+$/,"");
+   SIGAUTO=document.getElementById("sigAuto").checked;
+   try{localStorage.setItem(SIGKEY,SIG);localStorage.setItem(SIGAUTOKEY,SIGAUTO?"1":"0");}catch(e){}
+   var st=document.getElementById("sigState");if(st){st.textContent="✓ gespeichert";st.style.color="var(--pos)";setTimeout(function(){st.textContent="";},2500);}
+ };
 
  /* ---------- Erinnerungen (Browser-Benachrichtigungen) ---------- */
  var NKEY="amb_crm_notified";
@@ -2858,7 +2885,7 @@ var USERS=%%USERS%%;
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v118";
+ var APP_VER="v119";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
@@ -2903,7 +2930,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v118";
+const CACHE="vertrieb-v119";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png","./icon-32.png","./favicon.ico",
   "./vendor/leaflet.js","./vendor/leaflet.css","./vendor/msal-browser.min.js",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
