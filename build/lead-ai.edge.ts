@@ -195,6 +195,50 @@ async function parseNote(apiKey: string, notiz: string): Promise<Response> {
   return json({ contact: obj.contact || {}, activities: Array.isArray(obj.activities) ? obj.activities : [] });
 }
 
+/* ============================ D) KI-ANTWORTVORSCHLAG (E-Mail) ============================ */
+// Entwirft eine höfliche, vertriebliche Antwort auf eine eingegangene E-Mail.
+const REPLY_PROMPT =
+`Du bist Vertriebsmitarbeiter der Alzinger Maschinenbau GmbH und verkaufst die
+Sternsiebanlage "Lepton 5100". Entwirf eine freundliche, professionelle, KURZE
+Antwort-E-Mail auf die eingegangene Nachricht. Schreibe in der Sprache der
+eingegangenen Mail (Standard: Deutsch), per Sie, sachlich und verbindlich.
+Gib AUSSCHLIESSLICH ein JSON-Objekt zurück (kein Fließtext, kein Markdown, keine \`\`\`):
+{"subject":"","body":""}
+Regeln:
+- subject: passender Betreff. Wenn ein Originalbetreff gegeben ist, "Re: ..." nutzen.
+- body: vollständiger E-Mail-Text inkl. Anrede und Grußformel ("Mit freundlichen Grüßen").
+  Verwende echte Zeilenumbrüche (\\n). Keine Platzhalter wie [Name] – wenn der Name
+  des Empfängers bekannt ist, nutze ihn, sonst neutral ("Sehr geehrte Damen und Herren").
+- Nichts erfinden (keine Preise/Termine zusagen, die nicht genannt wurden). Bei Fragen
+  freundlich anbieten, Details zu klären / Unterlagen zu senden.`;
+async function draftReply(apiKey: string, p: any): Promise<Response> {
+  const ctx = [
+    p?.firma ? "Firma: " + p.firma : "",
+    p?.name ? "Ansprechpartner: " + p.name : "",
+    p?.subject ? "Original-Betreff: " + p.subject : "",
+    "--- EINGEGANGENE NACHRICHT ---",
+    String(p?.text || "").slice(0, 8000),
+  ].filter(Boolean).join("\n");
+  const r = await fetch(ANTHROPIC_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01" },
+    body: JSON.stringify({
+      model: MODEL, max_tokens: 2000,
+      messages: [{ role: "user", content: REPLY_PROMPT + "\n\n" + ctx }],
+    }),
+  });
+  if (!r.ok) { const t = await r.text(); return json({ error: "anthropic " + r.status, detail: t.slice(0, 300) }, 502); }
+  const data: any = await r.json();
+  let text = (data?.content || []).filter((b: any) => b.type === "text").map((b: any) => b.text).join("\n").trim()
+    .replace(/```json/gi, "").replace(/```/g, "");
+  let obj: any = null;
+  const mm = text.match(/\{[\s\S]*\}/);
+  if (mm) { try { obj = JSON.parse(mm[0]); } catch (_) { /* weiter */ } }
+  if (!obj) { try { obj = JSON.parse(text); } catch (_) { /* weiter */ } }
+  if (!obj || typeof obj !== "object") return json({ subject: "", body: "", debug: { sample: text.slice(0, 400) } });
+  return json({ subject: String(obj.subject || ""), body: String(obj.body || "") });
+}
+
 /* ============================ HINTERGRUND-JOB (für strenge Proxies) ============================ */
 // Schreibt das Ergebnis in die Tabelle public.ai_jobs (per Service-Role-Key). Die App holt es
 // dann per normaler DB-Abfrage ab -> funktioniert auch hinter Proxies, die lange Antworten kappen.
@@ -237,6 +281,12 @@ Deno.serve(async (req: Request) => {
   // C) Notiz/OneNote -> Kontakt + Verlauf.
   if (body && typeof body.notiz === "string" && body.notiz.trim()) {
     try { return await parseNote(apiKey, body.notiz); }
+    catch (e) { return json({ error: String((e as Error)?.message || e) }, 500); }
+  }
+
+  // D) KI-Antwortvorschlag auf eine eingegangene E-Mail.
+  if (body && body.mailReply && typeof body.mailReply === "object") {
+    try { return await draftReply(apiKey, body.mailReply); }
     catch (e) { return json({ error: String((e as Error)?.message || e) }, 500); }
   }
 

@@ -577,6 +577,17 @@ create policy "crm all" on contacts
         <div class="fg" style="flex:1"><label>Betrag (€)</label><input class="field" id="actBetrag" inputmode="decimal" placeholder="z. B. 340300"></div>
       </div>
     </div>
+    <div id="actMailWrap" style="display:none;margin-bottom:10px;border:1px solid var(--line-strong);border-radius:11px;padding:11px;background:#fafafa">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px">
+        <label class="chk" style="margin:0"><input type="checkbox" id="actMailSend"> <b>E-Mail jetzt über Microsoft 365 senden</b></label>
+        <button type="button" class="btn ghost sm" id="actMailAI" title="KI entwirft eine Antwort"><svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.7"><path d="M12 3l2 5 5 2-5 2-2 5-2-5-5-2 5-2z"/></svg>KI-Vorschlag</button>
+      </div>
+      <div id="actMailFields" style="display:none">
+        <div class="fg" style="margin-bottom:8px"><label>An</label><input class="field" id="actMailTo" type="email" placeholder="empfaenger@firma.de"></div>
+        <div class="fg" style="margin-bottom:8px"><label>Betreff</label><input class="field" id="actMailSubj" placeholder="Betreff"></div>
+        <div id="actMailHint" style="font-size:12px;color:var(--muted);margin-top:2px">Der Text unten wird als E-Mail gesendet <b>und</b> im Verlauf gespeichert.</div>
+      </div>
+    </div>
     <div class="fg" style="margin-bottom:6px">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px">
         <label style="margin:0">Notiz</label>
@@ -831,6 +842,20 @@ var USERS=%%USERS%%;
      var ctl=("AbortController" in window)?new AbortController():null;var to=ctl?setTimeout(function(){try{ctl.abort();}catch(_){}} ,120000):0;
      return fetch(url,{method:"POST",headers:headers,body:body,signal:ctl?ctl.signal:undefined})
        .then(function(r){return r.text().then(function(t){if(to)clearTimeout(to);var d;try{d=JSON.parse((t||"").trim()||"{}");}catch(_){d={};}if(!r.ok){var e=new Error("note "+r.status+(d&&d.error?(": "+d.error):""));e.status=r.status;throw e;}return d;});},function(e){if(to)clearTimeout(to);throw e;});
+   }
+   return call("lead-ai",false).catch(function(e){if(e&&e.status===404)return call("lead-ai-",false);throw e;})
+     .catch(function(){return call("lead-ai",true).catch(function(e){if(e&&e.status===404)return call("lead-ai-",true);throw e;});})
+     .then(function(d){return d||{};});
+ }
+ // KI-Antwortvorschlag auf eine eingegangene E-Mail -> {subject,body}. Klassisch zuerst (iPhone), sonst einfacher Aufruf.
+ function apiMailReply(payload){
+   function call(name,simple){
+     var url=SB.url.replace(/\/+$/,"")+"/functions/v1/"+name+(simple?("?apikey="+encodeURIComponent(SB.key)):"");
+     var headers=simple?{"Content-Type":"text/plain;charset=UTF-8"}:{"Authorization":"Bearer "+SB.key,"apikey":SB.key,"Content-Type":"application/json","x-crm-secret":AISECRET};
+     var bodyObj=simple?{mailReply:payload,secret:AISECRET}:{mailReply:payload};
+     var ctl=("AbortController" in window)?new AbortController():null;var to=ctl?setTimeout(function(){try{ctl.abort();}catch(_){}} ,90000):0;
+     return fetch(url,{method:"POST",headers:headers,body:JSON.stringify(bodyObj),signal:ctl?ctl.signal:undefined})
+       .then(function(r){return r.text().then(function(t){if(to)clearTimeout(to);var d;try{d=JSON.parse((t||"").trim()||"{}");}catch(_){d={};}if(!r.ok){var e=new Error("reply "+r.status+(d&&d.error?(": "+d.error):""));e.status=r.status;throw e;}return d;});},function(e){if(to)clearTimeout(to);throw e;});
    }
    return call("lead-ai",false).catch(function(e){if(e&&e.status===404)return call("lead-ai-",false);throw e;})
      .catch(function(){return call("lead-ai",true).catch(function(e){if(e&&e.status===404)return call("lead-ai-",true);throw e;});})
@@ -1982,6 +2007,8 @@ var USERS=%%USERS%%;
      if(_pdfActive[curId+"/"+a.id])offer+='<span class="tl-offer" style="cursor:default;opacity:.7">'+_psvg+'PDF wird erstellt …</span>';
      else offer+='<button class="tl-offer" data-makepdf="'+a.id+'" title="PDF jetzt erzeugen und hier ablegen">'+_psvg+'PDF erstellen</button>';
    }
+   if(a.mailWeb)offer+='<a class="tl-offer" href="'+esc(a.mailWeb)+'" target="_blank" rel="noopener" style="background:#fff7e0;color:#8a6d00" title="Mail in Outlook öffnen"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>In Outlook</a>';
+   if(a.type==="mailin")offer+='<button class="tl-offer" data-mailreply="'+a.id+'" style="background:#eafaf0;color:#0a7d3a" title="KI entwirft eine Antwort, du sendest sie"><svg viewBox="0 0 24 24"><path d="M12 3l2 5 5 2-5 2-2 5-2-5-5-2 5-2z"/></svg>KI-Antwort</button>';
    return '<div class="tl-item '+cls+'">'+
      '<div class="tl-dot"><svg viewBox="0 0 24 24">'+icon+'</svg></div>'+
      '<div class="tl-top"><span class="tl-type">'+esc(actLabel(a.type))+'</span>'+
@@ -2002,6 +2029,7 @@ var USERS=%%USERS%%;
    var ib=e.target.closest("[data-bild]");if(ib){e.preventDefault();var bc=byId(curId);var bi=parseInt(ib.getAttribute("data-bild"),10);if(bc&&bc.bilder&&bc.bilder[bi])openImage(bc.bilder[bi]);return;}
    var pb=e.target.closest("[data-pdfact]");if(pb){e.preventDefault();var pid=pb.getAttribute("data-pdfact");var pc=byId(curId);var pa=pc&&(pc.activities||[]).filter(function(x){return x.id===pid;})[0];if(pa&&pa.pdf)openPdfUri(pa.pdf);return;}
    var mb=e.target.closest("[data-makepdf]");if(mb){e.preventDefault();var mid=mb.getAttribute("data-makepdf");if(navigator.onLine===false){alert("Zum Erstellen des PDFs bitte einmal online gehen.");return;}queuePdfGen(curId,mid,true);return;}
+   var mr=e.target.closest("[data-mailreply]");if(mr){e.preventDefault();startMailReply(mr.getAttribute("data-mailreply"));return;}
    var lo=e.target.closest("[data-actid]");if(lo){var aid=lo.getAttribute("data-actid");var cc=byId(curId);var act=cc&&(cc.activities||[]).filter(function(x){return x.id===aid;})[0];try{if(act&&act.config)localStorage.setItem("amb_lepton_loadoffer_data",JSON.stringify(act.config));else if(act&&act.offer)localStorage.setItem("amb_lepton_loadoffer",act.offer);}catch(_){}return;} // Link navigiert selbst zum Konfigurator
    var d=e.target.closest(".tl-del");if(!d)return;var aid=d.getAttribute("data-act");var c=byId(curId);if(!c)return;
    c.activities=(c.activities||[]).filter(function(x){return x.id!==aid;});c.updated=Date.now();saveContact(c);openDetail(curId);
@@ -2011,7 +2039,19 @@ var USERS=%%USERS%%;
  var actType="anruf",actForId=null,_offerReturnState=null,_offerReturnPdf=null;
  var modal=document.getElementById("actModal");
  document.getElementById("actSeg").addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;actType=b.getAttribute("data-t");var bs=this.querySelectorAll("button");for(var i=0;i<bs.length;i++)bs[i].classList.toggle("on",bs[i]===b);toggleOfferField();});
- function toggleOfferField(){document.getElementById("actOfferWrap").style.display=(actType==="angebot")?"":"none";}
+ function toggleOfferField(){
+   document.getElementById("actOfferWrap").style.display=(actType==="angebot")?"":"none";
+   var mw=document.getElementById("actMailWrap");
+   if(mw){
+     var isMail=(actType==="mailout");
+     mw.style.display=isMail?"":"none";
+     if(isMail){
+       var c=byId(actForId)||{};
+       var to=document.getElementById("actMailTo");if(to&&!to.value)to.value=c.mail||"";
+       var su=document.getElementById("actMailSubj");if(su&&!su.value)su.value=c.firma?("Ihre Anfrage – "+c.firma):"";
+     }
+   }
+ }
  function openActModal(id){
    actForId=id;actType="anruf";_offerReturnState=null;_offerReturnPdf=null;
    var bs=document.querySelectorAll("#actSeg button");for(var i=0;i<bs.length;i++)bs[i].classList.toggle("on",bs[i].getAttribute("data-t")==="anruf");
@@ -2019,6 +2059,11 @@ var USERS=%%USERS%%;
    document.getElementById("actNote").value="";
    document.getElementById("actOfferNr").value="";document.getElementById("actBetrag").value="";
    document.getElementById("actFu").checked=true;document.getElementById("actFuDays").value=7;
+   var ms=document.getElementById("actMailSend");if(ms)ms.checked=false;
+   var mf=document.getElementById("actMailFields");if(mf)mf.style.display="none";
+   var mt=document.getElementById("actMailTo");if(mt)mt.value="";
+   var msu=document.getElementById("actMailSubj");if(msu)msu.value="";
+   _mailReplyCtx=null;
    // Angebote aus Konfigurator füllen
    var offers=loadOffers();var sel=document.getElementById("actOffer");
    var names=Object.keys(offers).sort();
@@ -2060,6 +2105,47 @@ var USERS=%%USERS%%;
  document.getElementById("actPadClear").onclick=function(){padClear();};
  document.getElementById("actCancel").onclick=function(){modal.classList.remove("open");};
  document.getElementById("actCreateOffer").onclick=function(){var c=byId(actForId);if(c){modal.classList.remove("open");gotoConfigurator(c,true);}};
+ // Mail senden an/aus -> Adress-/Betreff-Felder zeigen
+ var _mailReplyCtx=null;
+ document.getElementById("actMailSend").onchange=function(){
+   document.getElementById("actMailFields").style.display=this.checked?"":"none";
+   if(this.checked){var c=byId(actForId)||{};var to=document.getElementById("actMailTo");if(to&&!to.value)to.value=c.mail||"";var su=document.getElementById("actMailSubj");if(su&&!su.value)su.value=c.firma?("Ihre Anfrage – "+c.firma):"";}
+ };
+ // KI-Antwortvorschlag -> entwirft Betreff + Text (nutzt ggf. die letzte eingegangene Mail als Kontext)
+ document.getElementById("actMailAI").onclick=function(){
+   var c=byId(actForId);if(!c)return;
+   if(!aiReady()){alert("Bitte zuerst den KI-Schlüssel (CRM_SECRET) unter Daten eintragen.");return;}
+   var btn=this;btn.disabled=true;var old=btn.innerHTML;btn.textContent="KI denkt…";
+   // Kontext: letzte eingegangene Mail (falls per „KI-Antwort" gestartet) ODER aktueller Notiztext
+   var ctx=_mailReplyCtx;
+   var payload={firma:c.firma||"",name:displayName(c),subject:ctx?(ctx.subject||""):(document.getElementById("actMailSubj").value||""),text:ctx?(ctx.text||""):(document.getElementById("actNote").value||"(keine eingegangene Nachricht – formuliere eine freundliche Erstkontakt-/Nachfass-Mail)")};
+   apiMailReply(payload).then(function(d){
+     btn.disabled=false;btn.innerHTML=old;
+     if(d&&d.error){alert("KI-Fehler: "+d.error);return;}
+     if(!document.getElementById("actMailSend").checked){document.getElementById("actMailSend").checked=true;document.getElementById("actMailFields").style.display="";}
+     if(d.subject)document.getElementById("actMailSubj").value=d.subject;
+     setNoteMode("text");
+     if(d.body)document.getElementById("actNote").value=d.body;
+     var to=document.getElementById("actMailTo");if(to&&!to.value)to.value=c.mail||"";
+   },function(e){btn.disabled=false;btn.innerHTML=old;alert("KI-Vorschlag fehlgeschlagen: "+(e&&e.message||e));});
+ };
+ // „KI-Antwort" auf eine eingegangene Mail -> Modal als „Mail raus" öffnen, Kontext setzen, KI-Vorschlag starten.
+ function startMailReply(actId){
+   var c=byId(curId);if(!c)return;
+   var src=(c.activities||[]).filter(function(x){return x.id===actId;})[0];if(!src)return;
+   if(!aiReady()){alert("Bitte zuerst den KI-Schlüssel (CRM_SECRET) unter Daten eintragen.");return;}
+   openActModal(curId);
+   // auf „Mail raus" umschalten
+   actType="mailout";var bs=document.querySelectorAll("#actSeg button");for(var i=0;i<bs.length;i++)bs[i].classList.toggle("on",bs[i].getAttribute("data-t")==="mailout");
+   toggleOfferField();
+   document.getElementById("actMailSend").checked=true;document.getElementById("actMailFields").style.display="";
+   document.getElementById("actMailTo").value=c.mail||"";
+   var orig=src.note||"";var m=orig.match(/^Betreff:\s*(.+)$/m);
+   document.getElementById("actMailSubj").value=m?("Re: "+m[1].trim()):(c.firma?("Re: "+c.firma):"Re:");
+   _mailReplyCtx={subject:m?m[1].trim():"",text:orig};
+   // KI gleich starten
+   document.getElementById("actMailAI").click();
+ }
  modal.addEventListener("click",function(e){if(e.target===modal)modal.classList.remove("open");});
 
  /* ---------- Anruf-Protokoll: tel:-Klick merken, nach Rueckkehr kurz nachfragen ----------
@@ -2140,6 +2226,23 @@ var USERS=%%USERS%%;
        c.followup={due:due,note:note,done:false};
      }
      c.updated=Date.now();saveContact(c);sb.disabled=false;sb.textContent="Speichern";modal.classList.remove("open");openDetail(actForId);
+   }
+   // Mail raus + „jetzt senden" angehakt -> E-Mail über Microsoft 365 verschicken, dann als Aktivität ablegen.
+   if(actType==="mailout"&&document.getElementById("actMailSend").checked){
+     var to=(document.getElementById("actMailTo").value||"").trim();
+     var subj=(document.getElementById("actMailSubj").value||"").trim();
+     var bodyTxt=document.getElementById("actNote").value.trim();
+     if(!to){alert("Bitte eine Empfänger-Adresse eintragen.");return;}
+     if(!bodyTxt){alert("Bitte einen E-Mail-Text eingeben (das Notizfeld ist der Mailtext).");return;}
+     sb.disabled=true;sb.textContent="Sende E-Mail…";
+     msMailToken(true).then(function(tok){
+       if(!tok)throw new Error("Kein Mail-Zugriff – bitte im Microsoft-Login der Berechtigung Mail.Send zustimmen.");
+       return graphSendMail(tok,to,subj,bodyTxt);
+     }).then(function(){
+       a.note=(subj?("Betreff: "+subj+"\n"):"")+bodyTxt;a.mailTo=to;a.mailSent=true;
+       finish();
+     },function(e){sb.disabled=false;sb.textContent="Speichern";alert("E-Mail konnte nicht gesendet werden: "+(e&&e.message||e)+"\n\nDie Aktivität wurde NICHT gespeichert.");});
+     return;
    }
    // Handschrift-Notiz -> Bild in den Cloud-Speicher laden, URL an der Aktivität ablegen
    if(noteMode==="draw"&&_pad.ink){
@@ -2623,7 +2726,7 @@ var USERS=%%USERS%%;
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v112";
+ var APP_VER="v113";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
@@ -2668,7 +2771,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v112";
+const CACHE="vertrieb-v113";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png","./icon-32.png","./favicon.ico",
   "./vendor/leaflet.js","./vendor/leaflet.css","./vendor/msal-browser.min.js",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
