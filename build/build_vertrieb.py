@@ -1879,9 +1879,9 @@ var USERS=%%USERS%%;
    document.getElementById("offerBtn").onclick=function(){gotoConfigurator(c,false);};
    var enb=document.getElementById("enrichBtn");if(enb)enb.onclick=function(){enrichContactAI(c,this);};
    var eab=document.getElementById("emptyAddAct");if(eab)eab.onclick=function(){openActModal(curId);};
-   document.getElementById("dStatus").onchange=function(){c.status=this.value;c.updated=Date.now();saveContact(c);openDetail(curId);};
-   document.getElementById("fuSet").onclick=function(){var d=document.getElementById("fuDate").value;if(!d){alert("Bitte ein Datum wählen.");return;}c.followup={due:new Date(d+"T09:00").getTime(),note:document.getElementById("fuNote").value.trim(),done:false};c.updated=Date.now();saveContact(c);openDetail(curId);};
-   var fd=document.getElementById("fuDone");if(fd)fd.onclick=function(){if(c.followup)c.followup.done=true;c.updated=Date.now();saveContact(c);openDetail(curId);};
+   document.getElementById("dStatus").onchange=function(){var cc=byId(curId)||c;cc.status=this.value;cc.updated=Date.now();saveContact(cc);openDetail(curId);};
+   document.getElementById("fuSet").onclick=function(){var d=document.getElementById("fuDate").value;if(!d){alert("Bitte ein Datum wählen.");return;}var cc=byId(curId)||c;cc.followup={due:new Date(d+"T09:00").getTime(),note:document.getElementById("fuNote").value.trim(),done:false};cc.updated=Date.now();saveContact(cc);openDetail(curId);};
+   var fd=document.getElementById("fuDone");if(fd)fd.onclick=function(){var cc=byId(curId)||c;if(cc.followup)cc.followup.done=true;cc.updated=Date.now();saveContact(cc);openDetail(curId);};
    var mb2=document.getElementById("mailBtn");if(mb2)mb2.href=buildMailto(c); // Outlook vorausgefüllt (Anrede + Signatur)
    var ib=document.getElementById("icsBtn");if(ib)ib.onclick=function(){icsDownload(c,c.followup);};
    document.getElementById("delBtn").onclick=function(){if(confirm("Diesen Kontakt mit gesamtem Verlauf endgültig löschen?")){removeContact(curId);renderList();show("list");}};
@@ -2619,7 +2619,7 @@ var USERS=%%USERS%%;
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v110";
+ var APP_VER="v111";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
@@ -2664,7 +2664,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v110";
+const CACHE="vertrieb-v111";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png","./icon-32.png","./favicon.ico",
   "./vendor/leaflet.js","./vendor/leaflet.css","./vendor/msal-browser.min.js",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
