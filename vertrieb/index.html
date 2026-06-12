@@ -331,7 +331,7 @@ textarea.field{min-height:74px;resize:vertical;line-height:1.5}
     <div class="toolbar">
       <select class="filter" id="fStatus"><option value="">Alle Status</option></select>
       <select class="filter" id="fLand"><option value="">Alle Länder</option></select>
-      <select class="filter" id="fBL"><option value="">Alle Bundesländer</option></select>
+      <select class="filter" id="fBL"><option value="">Alle Regionen</option></select>
       <select class="filter" id="fOwner"><option value="">Alle Vertriebler</option></select>
       <select class="filter" id="fSort"><option value="updated">Zuletzt aktiv</option><option value="name">Name A–Z</option><option value="created">Neueste</option><option value="due">Wiedervorlage</option></select>
       <button class="btn sm" id="mapToggle" type="button"><svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.7"><path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"/><path d="M9 4v14M15 6v14"/></svg>Karte</button>
@@ -1728,12 +1728,22 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
  function blFromText(t){t=String(t||"");for(var i=0;i<BLM.length;i++){if(t.indexOf(BLM[i])>=0)return BLM[i];}return "";}
  function contactBundesland(c){return (c&&c.bundesland)||blFromText(c&&c.notiz)||"";}
  function blOpts(){var seen={};DB.contacts.forEach(function(c){var b=contactBundesland(c);if(b)seen[b]=1;});return BL.filter(function(b){return seen[b];}).map(function(b){return [b,b];});}
+ // Region-Filter: alle tatsächlich vorhandenen Regionen, gruppiert nach Land (DE → Bundesländer, CH → Kantone, …).
+ function fillRegionFilter(){
+   var s=document.getElementById("fBL");if(!s)return;var cur=s.value;
+   var byLand={},landSeen={};
+   DB.contacts.forEach(function(c){var r=contactBundesland(c);if(!r)return;var code=(c.land||"").toUpperCase()||"XX";var lab=landLabel(code)||code;landSeen[lab]=code;(byLand[lab]=byLand[lab]||{})[r]=1;});
+   var lands=Object.keys(byLand).sort(function(a,b){if(a==="Deutschland")return -1;if(b==="Deutschland")return 1;return a.localeCompare(b,"de");});
+   var html='<option value="">Alle Regionen</option>';
+   lands.forEach(function(l){var regs=Object.keys(byLand[l]).sort(function(a,b){return a.localeCompare(b,"de");});html+='<optgroup label="'+esc(l)+'">'+regs.map(function(r){return '<option value="'+esc(r)+'">'+esc(r)+'</option>';}).join("")+'</optgroup>';});
+   s.innerHTML=html;if(cur)s.value=cur;
+ }
  // Auswahl bewahren, damit initFilters() jederzeit erneut laufen kann (nach Import/Cloud-Sync).
  function refillSel(id,opts,all){var s=document.getElementById(id);if(!s)return;var cur=s.value;fillSelect(s,opts,all);if(cur)s.value=cur;}
  function initFilters(){
    refillSel("fStatus",STATUS,"Alle Status");
    refillSel("fLand",landOpts(),"Alle Länder");
-   refillSel("fBL",blOpts(),"Alle Bundesländer");
+   fillRegionFilter();
    refillSel("fOwner",ownerOpts(),"Alle Vertriebler");
    refillSel("fLeadLand",landOpts(),"Alle Länder");
  }
@@ -3207,7 +3217,7 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v135";
+ var APP_VER="v136";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
