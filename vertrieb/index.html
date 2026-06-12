@@ -1822,17 +1822,22 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
  /* ---------- Kontakte-Karte (Standorte mit Fahnen-Markern) ---------- */
  var lastListArr=[],cMapOpen=false,_cmap=null,_cmarkers=null,_geoBusy=false;
  // SVG-Fahne (kein Emoji/PNG) -> rendert identisch auf Windows, Mac, iPhone.
- function flagIcon(L){return L.divIcon({className:"flag-mark",html:'<svg width="22" height="27" viewBox="0 0 22 27" style="filter:drop-shadow(0 1px 1.5px rgba(0,0,0,.45))"><line x1="3" y1="1" x2="3" y2="26" stroke="#2b2b2b" stroke-width="2.2"/><path d="M3 1.5 H19 L15 6.5 L19 11.5 H3 Z" fill="#c00000"/></svg>',iconSize:[22,27],iconAnchor:[3,26],popupAnchor:[8,-22]});}
+ // Status-Farben (gleich wie die Avatar-Kästchen): lead/interessent/angebot/kunde/haendler/verloren.
+ var STATUS_COL={lead:"#64748b",interessent:"#d97706",angebot:"#1d4ed8",kunde:"#15803d",haendler:"#6d28d9",verloren:"#9aa0a6"};
+ function statusColor(s){return STATUS_COL[s]||STATUS_COL.lead;}
+ function flagIcon(L,col){col=col||"#c00000";return L.divIcon({className:"flag-mark",html:'<svg width="22" height="27" viewBox="0 0 22 27" style="filter:drop-shadow(0 1px 1.5px rgba(0,0,0,.45))"><line x1="3" y1="1" x2="3" y2="26" stroke="#2b2b2b" stroke-width="2.2"/><path d="M3 1.5 H19 L15 6.5 L19 11.5 H3 Z" fill="'+col+'"/></svg>',iconSize:[22,27],iconAnchor:[3,26],popupAnchor:[8,-22]});}
  function addContactMarker(L,c){
    if(!_cmarkers||c.lat==null||c.lon==null)return;
    var loc=[c.plz,c.ort].filter(Boolean).join(" ");
    var gmq=(c.lat!=null&&c.lon!=null)?(c.lat+","+c.lon):encodeURIComponent([c.strasse,[c.plz,c.ort].filter(Boolean).join(" "),landLabel(c.land)].filter(Boolean).join(", "));
+   var sc=statusColor(c.status);
    var pop='<b>'+esc(displayName(c))+'</b>'+(loc?'<br>'+esc(loc):'')+(c.land?' ('+esc(c.land)+')':'')+
+     '<div style="margin-top:4px"><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:'+sc+';vertical-align:middle;margin-right:5px"></span><span style="font:600 12px sans-serif;color:'+sc+'">'+esc(statusLabel(c.status))+'</span></div>'+
      '<div style="margin-top:7px;display:flex;gap:6px;flex-wrap:wrap">'+
        '<button data-cid="'+c.id+'" style="border:0;background:#c00000;color:#fff;border-radius:6px;padding:5px 9px;font:600 12px sans-serif;cursor:pointer">Öffnen</button>'+
        '<a href="https://www.google.com/maps?q='+gmq+'" target="_blank" rel="noopener" style="border:1px solid #c00000;color:#c00000;border-radius:6px;padding:5px 9px;font:600 12px sans-serif;text-decoration:none">In Google Maps</a>'+
      '</div>';
-   L.marker([c.lat,c.lon],{icon:flagIcon(L)}).addTo(_cmarkers).bindPopup(pop);
+   L.marker([c.lat,c.lon],{icon:flagIcon(L,sc)}).addTo(_cmarkers).bindPopup(pop);
  }
  // Nominatim-Abfrage mit Wiederholung bei Drosselung (429) / Netz-Aussetzern.
  function nomFetch(q,tries){
@@ -1865,7 +1870,11 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
  function showContactsMap(){
    var div=document.getElementById("cMap");
    ensureLeaflet().then(function(L){
-     if(!_cmap){_cmap=L.map(div).setView([47.5,9],5);addSat(L,_cmap);}
+     if(!_cmap){_cmap=L.map(div).setView([47.5,9],5);addSat(L,_cmap);
+       var lg=L.control({position:"bottomright"});
+       lg.onAdd=function(){var d=L.DomUtil.create("div");d.style.cssText="background:rgba(255,255,255,.92);padding:6px 8px;border-radius:8px;font:600 11px sans-serif;box-shadow:0 1px 4px rgba(0,0,0,.35);line-height:1.55;color:#16181a";d.innerHTML=STATUS.map(function(s){return '<div><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:'+statusColor(s[0])+';margin-right:5px;vertical-align:-1px"></span>'+esc(s[1])+'</div>';}).join("");return d;};
+       lg.addTo(_cmap);
+     }
      if(_cmarkers)_cmarkers.remove();
      _cmarkers=L.layerGroup().addTo(_cmap);
      var bounds=[],pending=[];
@@ -2069,7 +2078,7 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
    var el=document.getElementById("detMap");if(!el)return;
    function draw(L,lat,lon){
      try{if(_detmap){_detmap.remove();_detmap=null;}}catch(e){}
-     try{_detmap=L.map(el,{attributionControl:false}).setView([lat,lon],16);addSat(L,_detmap);L.marker([lat,lon],{icon:flagIcon(L)}).addTo(_detmap);
+     try{_detmap=L.map(el,{attributionControl:false}).setView([lat,lon],16);addSat(L,_detmap);L.marker([lat,lon],{icon:flagIcon(L,statusColor((byId(curId)||{}).status))}).addTo(_detmap);
        setTimeout(function(){try{_detmap.invalidateSize();}catch(e){}},150);}catch(e){el.style.display="none";}
    }
    var ll=contactLatLon(c);
@@ -2381,7 +2390,7 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
      if(_detMap){try{_detMap.remove();}catch(e){}_detMap=null;}
      _detMap=L.map(div,{scrollWheelZoom:false}).setView([ll.lat,ll.lon],14);
      addSat(L,_detMap);
-     L.marker([ll.lat,ll.lon],{icon:flagIcon(L)}).addTo(_detMap);
+     L.marker([ll.lat,ll.lon],{icon:flagIcon(L,statusColor((byId(curId)||{}).status))}).addTo(_detMap);
      setTimeout(function(){try{_detMap.invalidateSize();}catch(e){}},150);
    }).catch(function(){});
  }
@@ -3230,7 +3239,7 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v139";
+ var APP_VER="v140";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
