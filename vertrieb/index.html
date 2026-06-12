@@ -2905,7 +2905,8 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
        var opts=team.map(function(u){var sel=((CUR&&CUR.n)===u.n)?' selected':'';return '<option'+sel+'>'+esc(u.n)+'</option>';}).join("");
        return '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'+
          '<label style="flex:1;min-width:160px;display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer"><input type="checkbox" class="msBk" data-i="'+i+'" checked> '+esc(n.name)+cnt+'</label>'+
-         '<select class="field msOwn" data-i="'+i+'" title="Welcher Vertriebler betreut dieses Land?" style="width:auto;padding:4px 8px;font-size:13px">'+opts+'</select></div>';
+         '<select class="field msOwn" data-i="'+i+'" title="Welcher Vertriebler betreut dieses Land?" style="width:auto;padding:4px 8px;font-size:13px">'+opts+'</select>'+
+         '<span class="msStat" data-i="'+i+'" style="font-size:12px;font-weight:700;min-width:74px;text-align:right;color:var(--pos)"></span></div>';
      }).join("");
      booksBox.style.display="block";prog.style.display="none";btn.textContent="Erneut anmelden";
    }
@@ -2927,9 +2928,13 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
    document.getElementById("msNone").onclick=function(){bookList.querySelectorAll(".msBk").forEach(function(c){c.checked=false;});};
    // 2) Import der gewaehlten Notizbuecher
    goBtn.onclick=function(){
-     var chosen=[],names=[],ownerByBook={};
-     bookList.querySelectorAll(".msBk").forEach(function(c){if(c.checked){var i=+c.getAttribute("data-i"),b=_books[i];chosen.push(b);names.push(b.name);var os=bookList.querySelector('.msOwn[data-i="'+i+'"]');ownerByBook[b.name]=(os&&os.value)||((CUR&&CUR.n)||"");}});
+     var chosen=[],names=[],ownerByBook={},idxByBook={},countByBook={};
+     bookList.querySelectorAll(".msBk").forEach(function(c){if(c.checked){var i=+c.getAttribute("data-i"),b=_books[i];chosen.push(b);names.push(b.name);var os=bookList.querySelector('.msOwn[data-i="'+i+'"]');ownerByBook[b.name]=(os&&os.value)||((CUR&&CUR.n)||"");idxByBook[b.name]=i;countByBook[b.name]={added:0,skip:0};}});
      if(!names.length){say("Bitte mindestens ein Notizbuch auswählen.","#b91c1c");return;}
+     // Status-Anzeige je Land zurücksetzen (nur die ausgewählten zeigen "…")
+     bookList.querySelectorAll(".msStat").forEach(function(sp){sp.textContent="";});
+     Object.keys(idxByBook).forEach(function(bk){var sp=bookList.querySelector('.msStat[data-i="'+idxByBook[bk]+'"]');if(sp){sp.style.color="var(--muted)";sp.textContent="…";}});
+     function bookStat(book){var i=idxByBook[book];if(i==null)return;var sp=bookList.querySelector('.msStat[data-i="'+i+'"]');if(!sp)return;var ct=countByBook[book]||{};sp.style.color="var(--pos)";sp.innerHTML="✓ "+(ct.added||0)+(ct.skip?(' <span style="color:var(--muted);font-weight:400">+'+ct.skip+' vorh.</span>'):"");}
      _msStop=false;goBtn.disabled=true;btn.disabled=true;stopBtn.classList.remove("hidden");setBar(0,1);
      say("Öffne "+names.length+" Notizbuch(ern) … ("+esc(names.join(", "))+")");
      var added=[],fail=0,skip=0,token=_token,pages=[],dbg=[],imgFound=0,imgLoaded=0,imgRaw=0,imgSample="",imgAdded=0,sitesToken=null,savedUpto=0;
@@ -2968,10 +2973,10 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
                  var exC=byId(ex[dk]),chg=false;
                  if(exC&&!exC.owner&&ownerByBook[p.book]){exC.owner=ownerByBook[p.book];chg=true;}
                  if(exC&&!(exC.bilder&&exC.bilder.length)&&pc.imgs&&pc.imgs.length){
-                   return loadImgs(pc).then(function(bl){if(bl.length){exC.bilder=bl;imgAdded++;chg=true;}if(chg){exC.updated=Date.now();saveContact(exC);}skip++;});
+                   return loadImgs(pc).then(function(bl){if(bl.length){exC.bilder=bl;imgAdded++;chg=true;}if(chg){exC.updated=Date.now();saveContact(exC);}skip++;if(countByBook[p.book]){countByBook[p.book].skip++;bookStat(p.book);}});
                  }
                  if(chg){exC.updated=Date.now();saveContact(exC);}
-                 skip++;return null;
+                 skip++;if(countByBook[p.book]){countByBook[p.book].skip++;bookStat(p.book);}return null;
                }
                return loadImgs(pc).then(function(bilder){
                  // Land: zuerst aus der ADRESSE (KI), Notizbuchname nur als Fallback (z. B. Muenchner Kontakt im Afrika-Buch -> DE).
@@ -2987,6 +2992,7 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
                  if(bilder.length)rec.bilder=bilder;
                  rec.quelle="OneNote-Import"+(p.book?(" ("+p.book+")"):"");
                  DB.contacts.push(rec);added.push(rec);ex[dk]=rec.id;
+                 if(countByBook[p.book]){countByBook[p.book].added++;bookStat(p.book);}
                  if(added.length-savedUpto>=8){bulkSave(added.slice(savedUpto),false);savedUpto=added.length;} // nur die NEUEN sichern (nicht kumulativ)
                });
              });
@@ -3201,7 +3207,7 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v134";
+ var APP_VER="v135";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
