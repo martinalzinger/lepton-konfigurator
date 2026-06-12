@@ -1331,6 +1331,41 @@ var USERS=%%USERS%%;
    var a=document.createElement("a");a.href=url;a.download=(who.replace(/[^0-9A-Za-zÄÖÜäöüß]+/g,"_")||"Termin")+".ics";document.body.appendChild(a);a.click();a.remove();
    setTimeout(function(){URL.revokeObjectURL(url);},15000);
  }
+ // Kontakt als vCard (.vcf) ins Telefon-Adressbuch übernehmen. iPhone/Android bieten beim Öffnen "Kontakt hinzufügen" an.
+ function vcEsc(s){return String(s||"").replace(/\\/g,"\\\\").replace(/\n/g,"\\n").replace(/,/g,"\\,").replace(/;/g,"\\;");}
+ function saveVCard(c){
+   if(!c)return;
+   var L=["BEGIN:VCARD","VERSION:3.0"];
+   L.push("N:"+vcEsc(c.nachname||"")+";"+vcEsc(c.vorname||"")+";;"+vcEsc(c.anrede||"")+";");
+   L.push("FN:"+vcEsc(fullName(c)||c.firma||displayName(c)));
+   var org=c.firma||"";if(c.firma2)org+=";"+c.firma2;if(org)L.push("ORG:"+vcEsc(org));
+   if(c.position)L.push("TITLE:"+vcEsc(c.position));
+   if(c.mobil)L.push("TEL;TYPE=CELL:"+vcEsc(c.mobil));
+   if(c.tel)L.push("TEL;TYPE=WORK,VOICE:"+vcEsc(c.tel));
+   if(c.mail)L.push("EMAIL;TYPE=WORK:"+vcEsc(c.mail));
+   if(c.web)L.push("URL:"+vcEsc(c.web));
+   if(c.strasse||c.plz||c.ort)L.push("ADR;TYPE=WORK:;;"+vcEsc(c.strasse||"")+";"+vcEsc(c.ort||"")+";"+vcEsc(contactBundesland(c)||"")+";"+vcEsc(c.plz||"")+";"+vcEsc(landLabel(c.land)||""));
+   if(c.notiz)L.push("NOTE:"+vcEsc(c.notiz));
+   L.push("END:VCARD");
+   var vcf=L.join("\r\n");
+   var fn=((displayName(c)||"Kontakt").replace(/[^0-9A-Za-zÄÖÜäöüß]+/g,"_")||"Kontakt")+".vcf";
+   function downloadVcf(){
+     try{
+       var blob=new Blob([vcf],{type:"text/vcard;charset=utf-8"}),url=URL.createObjectURL(blob);
+       var a=document.createElement("a");a.href=url;a.download=fn;a.rel="noopener";document.body.appendChild(a);a.click();a.remove();
+       setTimeout(function(){URL.revokeObjectURL(url);},20000);
+     }catch(e){try{location.href="data:text/vcard;charset=utf-8,"+encodeURIComponent(vcf);}catch(_){}}
+   }
+   // Am Smartphone: Teilen-Dialog mit der vCard -> "Zu Kontakten hinzufügen". Sonst Datei-Download.
+   try{
+     var file=new File([vcf],fn,{type:"text/vcard"});
+     if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
+       navigator.share({files:[file],title:displayName(c)}).catch(function(){downloadVcf();});
+       return;
+     }
+   }catch(e){}
+   downloadVcf();
+ }
  // Einzelne Firma per KI nachschlagen und fehlende Felder ergänzen (Straße, PLZ, Tel, GF …).
  // Überschreibt NICHTS – füllt nur leere Felder. Nutzt dieselbe KI-Suche wie die Lead-Suche.
  function enrichContactAI(c,btn){
@@ -2003,6 +2038,7 @@ var USERS=%%USERS%%;
      '<button class="btn sm primary" id="offerBtn"><svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/><path d="M14 3v5h5"/></svg>Angebot erstellen</button>'+
      '<button class="btn sm" id="addActBtn"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Aktivität</button>'+
      '<button class="btn sm" id="editBtn">Bearbeiten</button>'+
+     '<button class="btn sm" id="vcardBtn" title="Kontakt ins Telefon-Adressbuch übernehmen"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg>Im Telefon speichern</button>'+
      '<button class="btn sm" id="photoBtn" title="Foto aufnehmen oder aus der Galerie hinzufügen"><svg viewBox="0 0 24 24"><path d="M3 7h4l2-2h6l2 2h4v12H3z"/><circle cx="12" cy="13" r="3.5"/></svg>Foto</button>'+
      '<input type="file" id="photoIn" accept="image/*" capture="environment" multiple style="display:none">'+
      (aiReady()&&c.firma?'<button class="btn sm" id="enrichBtn" title="Fehlende Daten (Straße, PLZ, Telefon, Ansprechpartner …) per KI nachschlagen"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>Per KI ergänzen</button>':'')+
@@ -2061,6 +2097,7 @@ var USERS=%%USERS%%;
    document.getElementById("backBtn").onclick=function(){renderList();show("list");};
    document.getElementById("editBtn").onclick=function(){openForm(curId);};
    document.getElementById("addActBtn").onclick=function(){openActModal(curId);};
+   var vcb=document.getElementById("vcardBtn");if(vcb)vcb.onclick=function(){saveVCard(byId(curId)||c);};
    var pBtn=document.getElementById("photoBtn"),pIn=document.getElementById("photoIn");
    if(pBtn&&pIn){pBtn.onclick=function(){pIn.click();};
      pIn.onchange=function(){var files=Array.prototype.slice.call(pIn.files||[]);if(!files.length)return;pBtn.disabled=true;var old=pBtn.innerHTML;pBtn.textContent="…";
@@ -2934,7 +2971,7 @@ var USERS=%%USERS%%;
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v125";
+ var APP_VER="v126";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
@@ -2980,7 +3017,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v125";
+const CACHE="vertrieb-v126";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png","./icon-32.png","./favicon.ico",
   "./vendor/leaflet.js","./vendor/leaflet.css","./vendor/msal-browser.min.js",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
