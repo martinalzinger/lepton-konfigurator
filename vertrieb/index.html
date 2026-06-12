@@ -2957,7 +2957,7 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v128";
+ var APP_VER="v129";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
@@ -2973,7 +2973,28 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
    window.addEventListener("online",function(){if(MODE==="local")initBackend();else syncFromServer();autoMailSync(false);});
  }
 
- if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){});});}
+ // Service-Worker + AUTOMATISCHES Update: neue Version installiert sich und lädt die App selbst neu,
+ // damit nie ein Gerät auf einer alten Version hängen bleibt (wichtig für korrekten Sync).
+ var _swReg=null,_swRefreshing=false,_swHadCtrl=!!navigator.serviceWorker&&!!navigator.serviceWorker.controller;
+ if("serviceWorker" in navigator){
+   window.addEventListener("load",function(){
+     navigator.serviceWorker.register("sw.js").then(function(reg){
+       _swReg=reg;
+       try{reg.update();}catch(_){}
+       // regelmäßig auf neue Version prüfen (auch wenn die App lange offen bleibt, z. B. iPhone-PWA)
+       setInterval(function(){try{reg.update();}catch(_){}} ,60*1000);
+     }).catch(function(){});
+   });
+   navigator.serviceWorker.addEventListener("controllerchange",function(){
+     if(!_swHadCtrl){_swHadCtrl=true;return;} // allererste Inbesitznahme -> kein Reload
+     if(_swRefreshing)return;_swRefreshing=true;
+     // nicht mitten im Tippen/Senden neu laden -> warten, bis kein Dialog offen ist
+     function doReload(){try{location.reload();}catch(_){}}
+     var m=document.getElementById("actModal");
+     if(m&&m.classList.contains("open")){var iv=setInterval(function(){if(!m.classList.contains("open")){clearInterval(iv);doReload();}},1500);}
+     else doReload();
+   });
+ }
 
  // Auto-Login: jetzt sind alle Konstanten/Funktionen definiert -> sicher boot() auslösen.
  try{var existing=findUser(localStorage.getItem(AKEY));if(existing)pass(existing);}catch(e){}
