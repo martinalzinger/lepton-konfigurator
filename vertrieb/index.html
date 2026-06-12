@@ -1728,14 +1728,26 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
  function blFromText(t){t=String(t||"");for(var i=0;i<BLM.length;i++){if(t.indexOf(BLM[i])>=0)return BLM[i];}return "";}
  function contactBundesland(c){return (c&&c.bundesland)||blFromText(c&&c.notiz)||"";}
  function blOpts(){var seen={};DB.contacts.forEach(function(c){var b=contactBundesland(c);if(b)seen[b]=1;});return BL.filter(function(b){return seen[b];}).map(function(b){return [b,b];});}
- // Region-Filter: alle tatsächlich vorhandenen Regionen, gruppiert nach Land (DE → Bundesländer, CH → Kantone, …).
+ // Vollständige Regionslisten je Land (für Länder ohne Liste: Fallback = die in den Kontakten vorhandenen Regionen).
+ var REGIONS={
+   DE:BL,
+   AT:["Burgenland","Kärnten","Niederösterreich","Oberösterreich","Salzburg","Steiermark","Tirol","Vorarlberg","Wien"],
+   CH:["Aargau","Appenzell Ausserrhoden","Appenzell Innerrhoden","Basel-Landschaft","Basel-Stadt","Bern","Freiburg","Genf","Glarus","Graubünden","Jura","Luzern","Neuenburg","Nidwalden","Obwalden","Schaffhausen","Schwyz","Solothurn","St. Gallen","Tessin","Thurgau","Uri","Waadt","Wallis","Zug","Zürich"]
+ };
+ // Region-Filter: für JEDES vorkommende Land ALLE seine Regionen, gruppiert nach Land.
  function fillRegionFilter(){
    var s=document.getElementById("fBL");if(!s)return;var cur=s.value;
-   var byLand={},landSeen={};
-   DB.contacts.forEach(function(c){var r=contactBundesland(c);if(!r)return;var code=(c.land||"").toUpperCase()||"XX";var lab=landLabel(code)||code;landSeen[lab]=code;(byLand[lab]=byLand[lab]||{})[r]=1;});
-   var lands=Object.keys(byLand).sort(function(a,b){if(a==="Deutschland")return -1;if(b==="Deutschland")return 1;return a.localeCompare(b,"de");});
+   var landSeen={},presentByLand={};
+   DB.contacts.forEach(function(c){var code=(c.land||"").toUpperCase();if(code)landSeen[code]=1;var r=contactBundesland(c);if(r){var k=code||"XX";(presentByLand[k]=presentByLand[k]||{})[r]=1;}});
+   var codes=Object.keys(landSeen).sort(function(a,b){if(a==="DE")return -1;if(b==="DE")return 1;return (landLabel(a)||a).localeCompare(landLabel(b)||b,"de");});
    var html='<option value="">Alle Regionen</option>';
-   lands.forEach(function(l){var regs=Object.keys(byLand[l]).sort(function(a,b){return a.localeCompare(b,"de");});html+='<optgroup label="'+esc(l)+'">'+regs.map(function(r){return '<option value="'+esc(r)+'">'+esc(r)+'</option>';}).join("")+'</optgroup>';});
+   codes.forEach(function(code){
+     var regs=REGIONS[code]?REGIONS[code].slice():[];
+     Object.keys(presentByLand[code]||{}).forEach(function(r){if(regs.indexOf(r)<0)regs.push(r);}); // vorhandene, nicht in der Standardliste, ergänzen
+     if(!regs.length)return;
+     if(!REGIONS[code])regs.sort(function(a,b){return a.localeCompare(b,"de");});
+     html+='<optgroup label="'+esc(landLabel(code)||code)+'">'+regs.map(function(r){return '<option value="'+esc(r)+'">'+esc(r)+'</option>';}).join("")+'</optgroup>';
+   });
    s.innerHTML=html;if(cur)s.value=cur;
  }
  // Auswahl bewahren, damit initFilters() jederzeit erneut laufen kann (nach Import/Cloud-Sync).
@@ -3217,7 +3229,7 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v136";
+ var APP_VER="v137";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
