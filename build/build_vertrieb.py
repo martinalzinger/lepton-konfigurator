@@ -1365,9 +1365,9 @@ var USERS=%%USERS%%;
    var blob=new Blob([vcf],{type:"text/vcard;charset=utf-8"}),url=URL.createObjectURL(blob);
    var isiOS=/iP(hone|ad|od)/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
    if(isiOS){
-     // iPhone/iPad: vCard ÖFFNEN -> iOS zeigt die Kontaktkarte mit "Neuen Kontakt erstellen".
-     // (Der Teilen-Dialog bietet KEIN "Zu Kontakten hinzufügen" -> deshalb öffnen statt teilen.)
-     var a=document.createElement("a");a.href=url;a.target="_blank";a.rel="noopener";document.body.appendChild(a);a.click();a.remove();
+     // iPhone/iPad: vCard im SELBEN Fenster öffnen -> iOS zeigt die Kontaktkarte mit "Neuen Kontakt erstellen".
+     // (Ein neuer Tab funktioniert nicht: dort ist die Blob-Datei nicht erreichbar -> leere Seite.)
+     try{location.href=url;}catch(e){var a0=document.createElement("a");a0.href=url;document.body.appendChild(a0);a0.click();a0.remove();}
    } else {
      // Desktop/Android: Datei herunterladen (.vcf) -> Doppelklick importiert in Outlook/Kontakte.
      var a=document.createElement("a");a.href=url;a.download=fn;a.rel="noopener";document.body.appendChild(a);a.click();a.remove();
@@ -2981,7 +2981,7 @@ var USERS=%%USERS%%;
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v130";
+ var APP_VER="v131";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
@@ -3048,7 +3048,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v130";
+const CACHE="vertrieb-v131";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png","./icon-32.png","./favicon.ico",
   "./vendor/leaflet.js","./vendor/leaflet.css","./vendor/msal-browser.min.js",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
