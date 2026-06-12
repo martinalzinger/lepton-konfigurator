@@ -1139,11 +1139,15 @@ var USERS=%%USERS%%;
    function justDeleted(id){return (now-(_recentDeletes[id]||0))<DELGRACE;} // gerade lokal geloescht?
    var pending={};queueRead().forEach(function(op){if(!op)return;if(op.op==="upsert"&&op.contact)pending[op.contact.id]=1;if(op.op==="delete"&&op.id)pending[op.id]=2;if(op.op==="bulk")(op.contacts||[]).forEach(function(c){if(c)pending[c.id]=1;});});
    var local={};(DB.contacts||[]).forEach(function(c){if(c)local[c.id]=c;});
-   var out=[],seen={};
+   var out=[],seen={},fixes=[];
    (list||[]).forEach(function(cc){if(!cc)return;seen[cc.id]=1;if(pending[cc.id]===2||justDeleted(cc.id))return; /* lokal geloescht -> nicht zurueckholen */ var lc=local[cc.id];var keepLocal=lc&&(pending[cc.id]===1||fresh(cc.id)||(lc.updated||0)>=(cc.updated||0));if(!keepLocal&&lc&&lc.lat!=null&&cc.lat==null){cc.lat=lc.lat;cc.lon=lc.lon;} /* lokal ermittelte Koordinaten erhalten */ var chosen=keepLocal?lc:cc;
-     // "Erledigt" ist klebrig: hat EINE Seite die Wiedervorlage (gleiches Fälligkeitsdatum) als erledigt markiert, bleibt sie erledigt -> kein Zurückspringen durch Uhren-Differenz zwischen Geräten.
-     if(lc&&cc&&lc.followup&&cc.followup&&lc.followup.due===cc.followup.due&&(lc.followup.done||cc.followup.done)&&chosen.followup)chosen.followup.done=true;
+     // "Erledigt" ist klebrig: hat EINE Seite die Wiedervorlage (gleiches Fälligkeitsdatum) als erledigt markiert, bleibt sie erledigt.
+     if(lc&&cc&&lc.followup&&cc.followup&&lc.followup.due===cc.followup.due&&(lc.followup.done||cc.followup.done)){
+       if(chosen.followup)chosen.followup.done=true;
+       if(!cc.followup.done&&chosen.followup){chosen.updated=now;fixes.push(chosen);} // Cloud kennt die Erledigung noch nicht -> zurückschreiben, damit alle Geräte zusammenlaufen
+     }
      out.push(chosen);});
+   stickyPush(fixes);
    // lokal angelegte/geänderte Kontakte, die (noch) nicht in der Cloud sind -> behalten, wenn ausstehend oder gerade bearbeitet
    (DB.contacts||[]).forEach(function(c){if(c&&!seen[c.id]&&(pending[c.id]===1||fresh(c.id)))out.push(c);});
    return out;
@@ -1157,7 +1161,7 @@ var USERS=%%USERS%%;
    function justDeleted(id){return (now-(_recentDeletes[id]||0))<DELGRACE;}
    var pending={};queueRead().forEach(function(op){if(!op)return;if(op.op==="upsert"&&op.contact)pending[op.contact.id]=1;if(op.op==="delete"&&op.id)pending[op.id]=2;if(op.op==="bulk")(op.contacts||[]).forEach(function(c){if(c)pending[c.id]=1;});});
    var idx={};(DB.contacts||[]).forEach(function(c,i){if(c)idx[c.id]=i;});
-   var changed=false;
+   var changed=false,fixDelta=[];
    rows.forEach(function(d){
      if(!d||!d.id)return;var id=d.id;
      if(d._deleted){ // Löschung von einem anderen Gerät
@@ -1168,17 +1172,24 @@ var USERS=%%USERS%%;
      if(pending[id]===2||justDeleted(id))return; // lokal gelöscht -> nicht zurückholen
      var lc=(idx[id]!=null)?DB.contacts[idx[id]]:null;
      var keepLocal=lc&&(pending[id]===1||fresh(id)||(lc.updated||0)>=(d.updated||0));
-     if(lc&&lc.followup&&d.followup&&lc.followup.due===d.followup.due&&(lc.followup.done||d.followup.done))d.followup.done=true; // "Erledigt" klebrig
+     // "Erledigt" klebrig + Korrektur in die Cloud zurückschreiben, damit alle Geräte zusammenlaufen.
+     if(lc&&lc.followup&&d.followup&&lc.followup.due===d.followup.due&&(lc.followup.done||d.followup.done)){
+       var cloudDone=!!d.followup.done;d.followup.done=true;
+       if(!cloudDone){var fx=keepLocal?lc:d;if(fx.followup)fx.followup.done=true;fx.updated=now;fixDelta.push(fx);}
+     }
      if(keepLocal)return;
      if(lc&&lc.lat!=null&&d.lat==null){d.lat=lc.lat;d.lon=lc.lon;} // lokale Koordinaten erhalten
      if(idx[id]!=null)DB.contacts[idx[id]]=d;else{DB.contacts.push(d);idx[id]=DB.contacts.length-1;}
      changed=true;
    });
    if(changed)DB.contacts=DB.contacts.filter(function(c){return c;});
+   stickyPush(fixDelta);
    return changed;
  }
  function queueWrite(q){try{localStorage.setItem(QKEY,JSON.stringify(q));}catch(e){}}
  function enqueue(op){var q=queueRead();q.push(op);queueWrite(q);}
+ // Erledigt-Korrekturen aus dem Merge in die Cloud zurückschreiben (einmalig -> danach kennt die Cloud die Erledigung, kein erneutes Pushen).
+ function stickyPush(list){if(!list||!list.length||MODE==="local")return;var seen={};list.forEach(function(c){if(c&&!seen[c.id]){seen[c.id]=1;_recentEdits[c.id]=Date.now();enqueue({op:"upsert",contact:c});}});cacheSave();flush();}
  var _flushing=false,_flushAgain=false;
  function flush(){
    if(MODE==="local")return Promise.resolve();
@@ -1404,6 +1415,7 @@ var USERS=%%USERS%%;
        '<div class="meta">'+(d.note?'<span>'+esc(d.note)+'</span>':'<span>Wiedervorlage</span>')+(c.tel?'<span class="flag">'+esc(c.tel)+'</span>':'')+'</div></div>'+
        '<div class="right"><span class="due '+dueClass(d.due)+'">'+dueLabel(d.due)+'</span>'+
        (c.tel?'<a class="btn sm" href="tel:'+esc(c.tel)+'" onclick="event.stopPropagation()">Anrufen</a>':'')+
+       '<button class="btn sm" data-fudone="'+c.id+'" title="Wiedervorlage als erledigt markieren" style="background:#eafaf0;color:#0a7d3a">✓ Erledigt</button>'+
        '</div></div>';
    }).join("");}
    // letzte Aktivitäten
@@ -1946,6 +1958,8 @@ var USERS=%%USERS%%;
  function markInboxSeen(cid,aid){var c=byId(cid);if(!c)return;var a=(c.activities||[]).filter(function(x){return x.id===aid;})[0];if(a&&!a.seen){a.seen=true;c.updated=Date.now();saveContact(c);}}
  document.body.addEventListener("click",function(e){
    if(e.target.closest("a"))return;
+   var fd=e.target.closest("[data-fudone]");
+   if(fd){e.preventDefault();e.stopPropagation();var fc=byId(fd.getAttribute("data-fudone"));if(fc&&fc.followup){fc.followup.done=true;fc.updated=Date.now();saveContact(fc);}renderDashboard();return;}
    var is=e.target.closest("[data-inboxseen]");
    if(is){e.preventDefault();e.stopPropagation();var sp=is.getAttribute("data-inboxseen").split("|");markInboxSeen(sp[0],sp[1]);renderDashboard();return;}
    var ir=e.target.closest("[data-inboxreply]");
@@ -2920,7 +2934,7 @@ var USERS=%%USERS%%;
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v124";
+ var APP_VER="v125";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
@@ -2966,7 +2980,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v124";
+const CACHE="vertrieb-v125";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png","./icon-32.png","./favicon.ico",
   "./vendor/leaflet.js","./vendor/leaflet.css","./vendor/msal-browser.min.js",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
