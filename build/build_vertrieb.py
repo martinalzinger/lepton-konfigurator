@@ -2036,21 +2036,22 @@ var USERS=%%USERS%%;
  function osmHave(ex,key,name,ort){return ex[key]||ex[((name||"")+"|"+(ort||"")).toLowerCase()]||ex["dk:"+dedupKey(name,ort)];}
  function osmToContact(el){
    var t=el.tags||{},a=osmAddr(t);var lat=el.lat||(el.center&&el.center.lat),lon=el.lon||(el.center&&el.center.lon);
+   var nz=[t._info||"",t.operator?("Betreiber: "+t.operator):"",t._gf?("GF: "+t._gf):"",t._bl?("Betriebsleiter: "+t._bl):"",t._menge?("Jahresmenge: "+t._menge):"",t._sieb?("Siebtechnik: "+t._sieb):""].filter(Boolean).join("\n");
    return {id:uid(),created:Date.now(),updated:Date.now(),status:"lead",
-     firma:t.name||"",firma2:t.operator||"",anrede:"",vorname:"",nachname:"",
+     firma:t.name||"",firma2:t.operator||t._position||"",anrede:t._anrede||"",vorname:t._vorname||"",nachname:t._nachname||"",
      lat:(lat!=null?+lat:null),lon:(lon!=null?+lon:null),
      strasse:a.strasse,plz:a.plz,ort:a.ort,land:(t._land||searchLand),
-     tel:t["contact:phone"]||t.phone||"",mobil:"",mail:t["contact:email"]||t.email||"",
-     web:t["contact:website"]||t.website||"",ustid:"",owner:(CUR&&CUR.n)||"",
+     tel:t["contact:phone"]||t.phone||"",mobil:t._apmobil||"",mail:t["contact:email"]||t.email||t._apmail||"",
+     web:t["contact:website"]||t.website||"",ustid:t._ustid||"",owner:(CUR&&CUR.n)||"",
      gf:t._gf||"",bl:t._bl||"",menge:t._menge||"",sieb:t._sieb||"",news:t._news||"",
      quelle:(el.type==="ai"?"KI-Suche: ":"Karten-Suche: ")+lastQuery+(t._quelle?(" – "+t._quelle):""),
-     notiz:(t.operator?("Betreiber: "+t.operator):""),
+     notiz:nz,
      activities:[],_osm:(el.type+"/"+el.id)};
  }
  // KI-Treffer in dieselbe Element-Form bringen wie OSM (damit Karten/Übernahme identisch funktionieren)
  function aiSlug(o,i){var b=((o.firma||o.name||"")+"-"+(o.ort||"")).toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"");return b||("lead-"+i);}
  function aiToEl(o,i){return {type:"ai",id:aiSlug(o,i),lat:(o.lat!=null?+o.lat:null),lon:(o.lon!=null?+o.lon:null),
-   tags:{name:o.firma||o.name||"","addr:street":o.strasse||"","addr:postcode":o.plz||"","addr:city":o.ort||"","contact:phone":o.tel||"","contact:email":o.email||"",website:o.web||"",_land:(o.land||searchLand||"DE"),_quelle:o.quelle||"",_gf:o.geschaeftsfuehrer||"",_bl:o.betriebsleiter||"",_menge:o.jahresmenge||"",_sieb:o.siebtechnik||"",_news:o.news||""}};}
+   tags:{name:o.firma||o.name||"","addr:street":o.strasse||"","addr:postcode":o.plz||"","addr:city":o.ort||"","contact:phone":o.tel||"","contact:email":o.email||"",website:o.web||"",_land:(o.land||searchLand||"DE"),_quelle:o.quelle||"",_gf:o.geschaeftsfuehrer||"",_bl:o.betriebsleiter||"",_menge:o.jahresmenge||"",_sieb:o.siebtechnik||"",_news:o.news||"",_ustid:o.ustid||"",_anrede:o.anrede||"",_vorname:o.vorname||"",_nachname:o.nachname||"",_position:o.position||"",_apmail:o.ap_mail||"",_apmobil:o.ap_mobil||"",_info:o.info||""}};}
  function guessLand(wo){var t=(wo||"").toLowerCase();if(/schweiz|switzerland|\bch\b/.test(t))return "CH";if(/österreich|oesterreich|austria|\bat\b/.test(t))return "AT";if(/italien|italy|südtirol|suedtirol/.test(t))return "IT";if(/frankreich|france/.test(t))return "FR";if(/polen|poland/.test(t))return "PL";if(/niederlande|holland/.test(t))return "NL";return "DE";}
  function osmMake(key){var el=osmLast[key];if(!el)return null;
    // Dubletten-Schutz: gibt es den Kontakt schon, den vorhandenen zurueckgeben (NICHT neu anlegen).
@@ -3304,7 +3305,7 @@ var USERS=%%USERS%%;
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v141";
+ var APP_VER="v142";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
@@ -3372,7 +3373,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v141";
+const CACHE="vertrieb-v142";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png","./icon-32.png","./favicon.ico",
   "./vendor/leaflet.js","./vendor/leaflet.css","./vendor/msal-browser.min.js",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];

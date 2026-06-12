@@ -51,29 +51,25 @@ async function research(apiKey: string, was: string, wo: string): Promise<unknow
 Sternsiebanlage Lepton 5100 – ideale Kunden sind Betriebe in Kompostierung, Recycling/
 Entsorgung, Erden-/Substratwerke, Steinbruch/Schotter, Garten-/Landschaftsbau, Biogas.
 
-Suche im Web nach REALEN Firmen, die zu "${was}" in der Region "${wo}" passen,
-und ermittle die wichtigsten Eckdaten pro Firma (Website/Impressum, ggf. Presse).
-WICHTIG – arbeite ZÜGIG: nutze nur WENIGE, gezielte Web-Suchen (max. ~4) und antworte
-schnell. Die App ruft dich automatisch mehrfach auf und sammelt weitere Firmen –
-EINE Runde muss daher nur die besten Treffer liefern, NICHT alles auf einmal.
+Finde im Web REALE Firmen, die zu "${was}" in der Region "${wo}" passen. Für JEDE gefundene Firma
+rufe ihre offizielle WEBSITE auf und LIES sie aus – vor allem "Impressum", "Kontakt", "Über uns" –
+und trage die ECHTEN Daten zusammen (Adresse, Telefon, E-Mail, USt-IdNr., einen Ansprechpartner, Kurzinfo).
+Lieber 4–6 Firmen mit VOLLSTÄNDIGEN, geprüften Daten als viele halbe. Die App ruft dich mehrfach auf
+und sammelt weitere Firmen – jede Runde liefert die nächsten besten Treffer (keine Dubletten).
 Antworte AUSSCHLIESSLICH mit einem JSON-Array (kein Fließtext, kein Markdown, keine \`\`\`).
 Jedes Element exakt so:
-{"firma":"","strasse":"","plz":"","ort":"","land":"DE","web":"","tel":"","email":"","geschaeftsfuehrer":"","betriebsleiter":"","jahresmenge":"","siebtechnik":"","news":"","quelle":""}
-- land als Ländercode (DE/AT/CH/...).
-- ort und plz sind WICHTIG: ort (Stadt/Gemeinde) IMMER ausfüllen; plz möglichst immer mitliefern.
-- email: allgemeine Kontakt-/Info-Adresse, wenn auffindbar (z.B. aus dem Impressum).
-- geschaeftsfuehrer / betriebsleiter: Namen, wenn auffindbar.
-- jahresmenge: verarbeitete Menge pro Jahr mit Einheit, falls öffentlich, sonst "".
-- siebtechnik: NUR "Trommelsieb" oder "Sternsieb", wenn klar erkennbar; sonst "" (nicht raten!).
-- news: ein relevanter aktueller Punkt mit Jahr, sonst "".
-- quelle: kurz, woher die Infos stammen.
-- WICHTIG: Unbekannte Felder als leerer String "". Nichts erfinden – lieber leer lassen.
-- 6–8 Firmen pro Antwort genügen. Nur echte, im Web auffindbare Betriebe (keine Dubletten).`;
+{"firma":"","strasse":"","plz":"","ort":"","land":"DE","web":"","tel":"","email":"","ustid":"","anrede":"","vorname":"","nachname":"","position":"","ap_mail":"","ap_mobil":"","geschaeftsfuehrer":"","betriebsleiter":"","jahresmenge":"","siebtechnik":"","info":"","news":"","quelle":""}
+- land als Ländercode (DE/AT/CH/...). web ohne "https://". ort und plz IMMER ausfüllen, wenn auffindbar.
+- email = allgemeine Kontakt-/Info-Adresse (Impressum). ustid = USt-IdNr./MwSt-Nr., falls genannt.
+- anrede/vorname/nachname/position/ap_mail/ap_mobil = EIN konkreter Ansprechpartner (GF oder Vertrieb), falls auffindbar.
+- geschaeftsfuehrer/betriebsleiter: Namen, wenn genannt. siebtechnik: NUR "Trommelsieb"/"Sternsieb" wenn klar, sonst "".
+- info: 1–2 kurze Sätze, was die Firma macht. news: aktueller Punkt mit Jahr, sonst "". quelle: kurz, woher.
+- Unbekannte Felder als leerer String "". Nichts erfinden – lieber leer lassen. Nur echte, auffindbare Betriebe.`;
 
   const base = {
     model: MODEL,
     max_tokens: 9000,
-    tools: [{ type: "web_search_20260209", name: "web_search", max_uses: 5 }],
+    tools: [{ type: "web_search_20260209", name: "web_search", max_uses: 10 }],
   };
 
   let messages: unknown[] = [{ role: "user", content: prompt }];
