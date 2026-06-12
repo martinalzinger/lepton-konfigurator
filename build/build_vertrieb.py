@@ -1181,10 +1181,14 @@ var USERS=%%USERS%%;
      if(pending[id]===2||justDeleted(id))return; // lokal gelöscht -> nicht zurückholen
      var lc=(idx[id]!=null)?DB.contacts[idx[id]]:null;
      var keepLocal=lc&&(pending[id]===1||fresh(id)||(lc.updated||0)>=(d.updated||0));
-     // "Erledigt" klebrig + Korrektur in die Cloud zurückschreiben, damit alle Geräte zusammenlaufen.
+     // "Erledigt" ist klebrig: sobald EINE Seite (gleiches Fälligkeitsdatum) erledigt ist, wird BEIDES erledigt –
+     // auch die lokale Wiedervorlage, selbst wenn die lokale Version sonst "gewinnt" (keepLocal). Sonst blieb das
+     // andere Gerät hängen. Cloud kennt die Erledigung noch nicht -> zurückschreiben.
      if(lc&&lc.followup&&d.followup&&lc.followup.due===d.followup.due&&(lc.followup.done||d.followup.done)){
-       var cloudDone=!!d.followup.done;d.followup.done=true;
-       if(!cloudDone){var fx=keepLocal?lc:d;if(fx.followup)fx.followup.done=true;fx.updated=now;fixDelta.push(fx);}
+       var localDone=!!lc.followup.done,cloudDone=!!d.followup.done;
+       d.followup.done=true;
+       if(!localDone){lc.followup.done=true;changed=true;}        // lokale Wiedervorlage IMMER auf erledigt
+       if(!cloudDone){lc.followup.done=true;lc.updated=now;fixDelta.push(lc);} // Cloud nachziehen
      }
      if(keepLocal)return;
      if(lc&&lc.lat!=null&&d.lat==null){d.lat=lc.lat;d.lon=lc.lon;} // lokale Koordinaten erhalten
@@ -2982,7 +2986,7 @@ var USERS=%%USERS%%;
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v127";
+ var APP_VER="v128";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
@@ -3028,7 +3032,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v127";
+const CACHE="vertrieb-v128";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png","./icon-32.png","./favicon.ico",
   "./vendor/leaflet.js","./vendor/leaflet.css","./vendor/msal-browser.min.js",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
