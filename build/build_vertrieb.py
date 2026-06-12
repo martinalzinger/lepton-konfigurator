@@ -1008,13 +1008,36 @@ var USERS=%%USERS%%;
    return loadScript("vendor/msal-browser.min.js").catch(function(){return loadScript("https://alcdn.msauth.net/browser/3.27.0/js/msal-browser.min.js");})
      .then(function(){if(!(window.msal&&window.msal.PublicClientApplication))throw new Error("MSAL konnte nicht geladen werden.");});
  }
- function msalApp(){if(_msal)return Promise.resolve(_msal);_msal=new msal.PublicClientApplication({auth:{clientId:MS_CLIENT_ID,authority:"https://login.microsoftonline.com/"+MS_TENANT_ID,redirectUri:MS_REDIRECT},cache:{cacheLocation:"localStorage"}});return _msal.initialize().then(function(){return _msal;});}
+ function msalApp(){if(_msal)return Promise.resolve(_msal);_msal=new msal.PublicClientApplication({auth:{clientId:MS_CLIENT_ID,authority:"https://login.microsoftonline.com/"+MS_TENANT_ID,redirectUri:MS_REDIRECT},cache:{cacheLocation:"localStorage"}});return _msal.initialize().then(function(){return _msal.handleRedirectPromise().catch(function(){return null;}).then(function(res){if(res&&res.account){try{_msal.setActiveAccount(res.account);}catch(e){}}return _msal;});});}
+ // Pop-ups sind in der iPhone-/iPad-Home-Bildschirm-App unzuverlässig -> dort per WEITERLEITUNG anmelden (Seite springt zu Microsoft und zurück).
+ function msStandalone(){try{return (navigator.standalone===true)||(window.matchMedia&&window.matchMedia("(display-mode: standalone)").matches);}catch(e){return false;}}
+ var MSREDIR_KEY="amb_ms_redir";
+ function acquireInteractive(app,scopes,action){
+   if(msStandalone()){
+     try{localStorage.setItem(MSREDIR_KEY,action||"1");}catch(e){}
+     app.acquireTokenRedirect({scopes:scopes}); // Seite leitet um -> Promise löst absichtlich nie auf
+     return new Promise(function(){});
+   }
+   return app.acquireTokenPopup({scopes:scopes}).then(function(r){return r.accessToken;});
+ }
+ // Nach Rückkehr von der Microsoft-Weiterleitung: kurz bestätigen und die ausgelöste Aktion fortsetzen.
+ function msHandleReturn(){
+   var act;try{act=localStorage.getItem(MSREDIR_KEY);}catch(e){act=null;}
+   if(!act)return;
+   ensureMsal().then(msalApp).then(function(app){
+     if(!app.getAllAccounts()[0])return; // Anmeldung nicht abgeschlossen
+     try{localStorage.removeItem(MSREDIR_KEY);}catch(e){}
+     try{if(typeof autoMailSync==="function")autoMailSync(false);}catch(e){}
+     try{if(act==="cal"&&curView==="cal"&&typeof renderCal==="function")renderCal();}catch(e){}
+     try{var msg=document.getElementById("mailSyncMsg");if(msg){msg.style.color="var(--pos)";msg.textContent="✓ Microsoft verbunden";setTimeout(function(){msg.textContent="";},4000);}}catch(e){}
+   }).catch(function(){});
+ }
  function msToken(){
    return ensureMsal().then(msalApp).then(function(app){
      var acc=app.getAllAccounts()[0];
      var req={scopes:MS_SCOPES,account:acc};
-     if(acc)return app.acquireTokenSilent(req).then(function(r){return r.accessToken;}).catch(function(){return app.acquireTokenPopup({scopes:MS_SCOPES}).then(function(r){return r.accessToken;});});
-     return app.loginPopup({scopes:MS_SCOPES}).then(function(r){return r.accessToken;});
+     if(acc)return app.acquireTokenSilent(req).then(function(r){return r.accessToken;}).catch(function(){return acquireInteractive(app,MS_SCOPES,"onenote");});
+     return acquireInteractive(app,MS_SCOPES,"onenote");
    });
  }
  // Graph-Fetch mit automatischer Wiederholung bei Drosselung (429) und kurzen Server-Fehlern (503/504).
@@ -1098,7 +1121,7 @@ var USERS=%%USERS%%;
      var acc=app.getAllAccounts()[0];
      var req={scopes:MS_MAIL_SCOPES,account:acc};
      return app.acquireTokenSilent(req).then(function(r){return r.accessToken;}).catch(function(){
-       if(interactive)return app.acquireTokenPopup({scopes:MS_MAIL_SCOPES}).then(function(r){return r.accessToken;});
+       if(interactive)return acquireInteractive(app,MS_MAIL_SCOPES,"mail");
        return null;
      });
    });
@@ -1110,7 +1133,7 @@ var USERS=%%USERS%%;
    return ensureMsal().then(msalApp).then(function(app){
      var acc=app.getAllAccounts()[0];var req={scopes:MS_CAL_SCOPES,account:acc};
      return app.acquireTokenSilent(req).then(function(r){return r.accessToken;}).catch(function(){
-       if(interactive)return app.acquireTokenPopup({scopes:MS_CAL_SCOPES}).then(function(r){return r.accessToken;});
+       if(interactive)return acquireInteractive(app,MS_CAL_SCOPES,"cal");
        return null;
      });
    });
@@ -3207,7 +3230,7 @@ var USERS=%%USERS%%;
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v133";
+ var APP_VER="v134";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
@@ -3217,6 +3240,7 @@ var USERS=%%USERS%%;
    checkOfferReturn();           // aus dem Konfigurator zurückgekommen? Angebot-Aktivität vorbereiten.
    setTimeout(checkPendingCall,1500); // offener Anruf von vorhin? -> kurz nachfragen
    checkReminders();
+   try{msHandleReturn();}catch(e){}                       // Rückkehr von Microsoft-Anmeldung (Weiterleitung) verarbeiten
    setTimeout(function(){autoMailSync(false);},6000);   // kurz nach dem Start einmal E-Mails holen (still)
    setInterval(function(){syncDelta();checkReminders();autoMailSync(false);if(curView==="dashboard")updateBadge();},30*1000);
    document.addEventListener("visibilitychange",function(){if(!document.hidden){syncDelta();checkReminders();autoMailSync(false);}});
@@ -3274,7 +3298,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v133";
+const CACHE="vertrieb-v134";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png","./icon-32.png","./favicon.ico",
   "./vendor/leaflet.js","./vendor/leaflet.css","./vendor/msal-browser.min.js",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
