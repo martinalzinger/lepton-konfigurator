@@ -453,6 +453,16 @@ textarea.field{min-height:74px;resize:vertical;line-height:1.5}
 );
 alter table contacts enable row level security;
 create policy "crm all" on contacts
+  for all using (true) with check (true);
+
+-- Für den geteilten Team-Kalender (Termine/Vorführungen):
+create table if not exists cal_events (
+  id text primary key,
+  data jsonb,
+  updated_at timestamptz default now()
+);
+alter table cal_events enable row level security;
+create policy "cal all" on cal_events
   for all using (true) with check (true);</pre>
         3. Links <b>Project Settings → API</b>: <b>Project URL</b> und den <b>anon public</b> Key kopieren und oben eintragen → <b>Verbinden</b>.<br>
         4. Auf jedem weiteren Gerät dieselbe URL + denselben Key eintragen → fertig, alle teilen sich die Daten.<br>
@@ -562,12 +572,17 @@ create policy "crm all" on contacts
       <button class="btn sm primary" id="calNewBtn" type="button"><svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.8"><path d="M12 5v14M5 12h14"/></svg>Neuer Termin</button>
     </div>
     <div id="calConn" style="font-size:12px;color:var(--muted);margin-bottom:10px"></div>
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap">
-      <button class="btn sm" id="calPrev" type="button">← Zurück</button>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+      <div class="seg" id="calViewSeg" style="flex:0 0 auto">
+        <button data-v="month" class="on" type="button"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg>Monat</button>
+        <button data-v="list" type="button"><svg viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>Liste</button>
+      </div>
+      <button class="btn sm" id="calPrev" type="button">←</button>
       <button class="btn sm" id="calToday" type="button">Heute</button>
-      <button class="btn sm" id="calNext" type="button">Weiter →</button>
-      <span id="calRange" style="font-family:var(--mono);font-size:12px;color:var(--muted);margin-left:auto"></span>
+      <button class="btn sm" id="calNext" type="button">→</button>
+      <span id="calRange" style="font-weight:700;font-size:14px;margin-left:auto"></span>
     </div>
+    <div id="calLegend" style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px;font-size:12px"></div>
     <div id="calList"></div>
   </section>
 
@@ -677,7 +692,7 @@ create policy "crm all" on contacts
     <div class="fg" style="margin-bottom:10px"><label>Kontakt / Firma (optional)</label><input class="field" id="calContact" list="calContactList" placeholder="Firma oder Person"><datalist id="calContactList"></datalist></div>
     <div class="fg" style="margin-bottom:10px"><label>Notiz</label><textarea class="field" id="calNote" placeholder="Details, Vereinbarungen …"></textarea></div>
     <div class="form-actions">
-      <button class="btn primary block" id="calSave" type="button">In Outlook speichern</button>
+      <button class="btn primary block" id="calSave" type="button">Speichern</button>
       <button class="btn danger block" id="calDelete" type="button" style="display:none">Termin löschen</button>
       <button class="btn ghost block" id="calCancel" type="button">Abbrechen</button>
     </div>
@@ -1485,111 +1500,146 @@ var USERS=%%USERS%%;
  }
  document.getElementById("nav").addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;var v=b.getAttribute("data-view");if(v){if(v==="dashboard")renderDashboard();if(v==="list")renderList();if(v==="leads")renderLeads();if(v==="data")renderAuswertung();if(v==="cal")renderCal();show(v);}});
 
- /* ================= KALENDER (Outlook) ================= */
- var _calStart=startOfDay(Date.now()),_calEvents=[],_calEditId=null,calType="Vorführung";
+ /* ================= KALENDER (geteilt + Outlook) =================
+    Termine liegen in der geteilten Cloud-Tabelle cal_events -> ALLE Vertriebler sehen alle.
+    Zusätzlich wird jeder Termin ins Outlook des Erstellers gespiegelt (Erinnerungen/Handy). */
+ var _calCursor=Date.now(),_calView="month",_calEvents=[],_calEditId=null,_calEditEv=null,calType="Vorführung";
  var _calModal=document.getElementById("calModal");
- var CAL_COLORS={"Vorführung":"#c00000","Termin":"#1d4ed8","Besuch":"#0a7d3a","Telefontermin":"#b45309","Planung":"#6b7280"};
- function calTypeOf(ev){var cs=ev.categories||[];for(var i=0;i<cs.length;i++)if(CAL_COLORS[cs[i]])return cs[i];return "Termin";}
- function evMs(o){return o&&o.dateTime?new Date(o.dateTime.replace(/(\.\d+)?$/,"")+(/(Z|[+-]\d\d:?\d\d)$/.test(o.dateTime)?"":"")).getTime():0;}
- function calBuildContactList(){
-   var dl=document.getElementById("calContactList");if(!dl)return;
-   var names=[];(DB.contacts||[]).forEach(function(c){var n=c.firma||fullName(c);if(n)names.push(n);});
-   names.sort();dl.innerHTML=names.slice(0,400).map(function(n){return '<option value="'+esc(n)+'">';}).join("");
+ var CAL_PALETTE=["#c00000","#1d4ed8","#0a7d3a","#b45309","#7c3aed","#0891b2","#be185d","#475569"];
+ function ownerColor(n){n=n||"";var h=0;for(var i=0;i<n.length;i++)h=(h*31+n.charCodeAt(i))>>>0;return CAL_PALETTE[h%CAL_PALETTE.length];}
+ function evBase(){return SB.url.replace(/\/+$/,"")+"/rest/v1/cal_events";}
+ var EVLOCAL="amb_crm_calevents";
+ function evReadLocal(){try{return JSON.parse(localStorage.getItem(EVLOCAL)||"[]");}catch(e){return [];}}
+ function evWriteLocal(a){try{localStorage.setItem(EVLOCAL,JSON.stringify(a));}catch(e){}}
+ function evGetAll(){
+   if(!sbReady())return Promise.resolve(evReadLocal());
+   return fetch(evBase()+"?select=data",{cache:"no-store",headers:sbHeaders()}).then(function(r){if(!r.ok){var e=new Error("cal "+r.status);e.status=r.status;throw e;}return r.json();}).then(function(rows){return (rows||[]).map(function(x){return x.data;}).filter(Boolean);});
  }
+ function evUpsert(ev){if(!sbReady()){var a=evReadLocal().filter(function(x){return x.id!==ev.id;});a.push(ev);evWriteLocal(a);return Promise.resolve();}return fetch(evBase(),{method:"POST",headers:sbHeaders({"Prefer":"resolution=merge-duplicates,return=minimal"}),body:JSON.stringify([{id:ev.id,data:ev}])}).then(function(r){if(!r.ok)throw new Error("cal "+r.status);});}
+ function evDelete(id){if(!sbReady()){evWriteLocal(evReadLocal().filter(function(x){return x.id!==id;}));return Promise.resolve();}return fetch(evBase()+"?id=eq."+encodeURIComponent(id),{method:"DELETE",headers:sbHeaders({"Prefer":"return=minimal"})}).then(function(r){if(!r.ok)throw new Error("cal "+r.status);});}
+ function calBuildContactList(){var dl=document.getElementById("calContactList");if(!dl)return;var names=[];(DB.contacts||[]).forEach(function(c){var n=c.firma||fullName(c);if(n)names.push(n);});names.sort();dl.innerHTML=names.slice(0,400).map(function(n){return '<option value="'+esc(n)+'">';}).join("");}
+ var MONN=["Januar","Februar","März","April","Mai","Juni","Juli","August","September","Oktober","November","Dezember"];
+ var WDN=["Mo","Di","Mi","Do","Fr","Sa","So"],WDL=["So","Mo","Di","Mi","Do","Fr","Sa"];
  function renderCal(){
    calBuildContactList();
-   var s=new Date(_calStart),e=new Date(_calStart+21*86400000);
-   document.getElementById("calRange").textContent=fmtDate(s.getTime())+" – "+fmtDate(e.getTime()-1);
-   var conn=document.getElementById("calConn"),list=document.getElementById("calList");
-   conn.style.color="var(--muted)";conn.textContent="Lade Outlook-Kalender …";
-   msCalToken(false).then(function(tok){
-     if(!tok){conn.innerHTML='<span style="color:var(--muted)">Mit Outlook verbinden, um Termine zu sehen &amp; zu speichern.</span> <button class="btn ghost sm" id="calConnBtn" type="button">Outlook verbinden</button>';var cb=document.getElementById("calConnBtn");if(cb)cb.onclick=function(){this.textContent="Verbinde …";msCalToken(true).then(function(){renderCal();},function(e){conn.textContent="Verbindung fehlgeschlagen: "+((e&&e.message)||e);});};list.innerHTML="";return;}
-     return graphListEvents(tok,s.toISOString(),e.toISOString()).then(function(evs){
-       _calEvents=evs||[];conn.style.color="var(--pos)";conn.innerHTML='<span style="color:var(--pos)">● Outlook verbunden</span>';
-       renderCalList();
+   var conn=document.getElementById("calConn");conn.style.color="var(--muted)";conn.textContent="Lade Termine …";
+   evGetAll().then(function(evs){
+     _calEvents=evs||[];renderLegend();
+     if(_calView==="month")renderMonth();else renderAgenda();
+     msCalToken(false).then(function(tok){
+       var base=sbReady()?'<span style="color:var(--pos)">● Team-Kalender – alle Vertriebler</span>':'<span style="color:var(--warn)">Lokal – ohne Cloud nur auf diesem Gerät</span>';
+       if(tok){conn.innerHTML=base+' · <span style="color:var(--muted)">mit deinem Outlook verknüpft</span>';}
+       else{conn.innerHTML=base+' · <button class="btn ghost sm" id="calOutlookBtn" type="button">mit Outlook verknüpfen</button>';var ob=document.getElementById("calOutlookBtn");if(ob)ob.onclick=function(){var b=this;b.textContent="Verbinde …";msCalToken(true).then(function(){renderCal();},function(e){alert("Outlook-Verbindung fehlgeschlagen: "+((e&&e.message)||e));renderCal();});};}
      });
-   }).catch(function(err){conn.style.color="#b91c1c";conn.textContent="Kalender-Fehler: "+((err&&err.message)||err);});
+   }).catch(function(err){
+     conn.style.color="#b91c1c";
+     if(err&&(err.status===404||err.status===400))conn.innerHTML="Kalender-Tabelle fehlt – bitte einmal anlegen (Daten-Reiter → Anleitung, Block <span class='mono'>cal_events</span>).";
+     else conn.textContent="Kalender-Fehler: "+((err&&err.message)||err);
+   });
  }
- function renderCalList(){
+ function renderLegend(){var owners={};(_calEvents||[]).forEach(function(ev){if(ev.owner)owners[ev.owner]=1;});var ks=Object.keys(owners).sort();document.getElementById("calLegend").innerHTML=ks.map(function(o){return '<span style="display:inline-flex;align-items:center;gap:5px"><span style="width:11px;height:11px;border-radius:3px;background:'+ownerColor(o)+';display:inline-block"></span>'+esc(o)+'</span>';}).join("");}
+ function eventsOnDay(dayMs){return (_calEvents||[]).filter(function(ev){return dayMs>=startOfDay(ev.start)&&dayMs<=startOfDay(ev.end-1);});}
+ function evTimeLabel(ev){if(ev.allday)return "ganztägig";var d=new Date(ev.start),d2=new Date(ev.end);return pad(d.getHours())+":"+pad(d.getMinutes())+"–"+pad(d2.getHours())+":"+pad(d2.getMinutes());}
+ function toLocalInput(d){return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())+"T"+pad(d.getHours())+":"+pad(d.getMinutes());}
+ function renderMonth(){
+   var ref=new Date(_calCursor),y=ref.getFullYear(),m=ref.getMonth();
+   document.getElementById("calRange").textContent=MONN[m]+" "+y;
+   var first=new Date(y,m,1),startDow=(first.getDay()+6)%7,gridStart=startOfDay(new Date(y,m,1-startDow).getTime()),todayMs=startOfDay(Date.now());
+   var head='<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:4px">'+WDN.map(function(w){return '<div style="text-align:center;font-size:11px;font-weight:700;color:var(--muted)">'+w+'</div>';}).join("")+'</div>';
+   var cells="";
+   for(var i=0;i<42;i++){
+     var dayMs=gridStart+i*86400000,day=new Date(dayMs),inMonth=day.getMonth()===m,isToday=dayMs===todayMs,evs=eventsOnDay(dayMs);
+     var chips=evs.slice(0,3).map(function(ev){return '<div data-evid="'+esc(ev.id)+'" style="background:'+ownerColor(ev.owner)+';color:#fff;border-radius:4px;padding:1px 4px;font-size:10px;line-height:1.35;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer">'+(ev.allday?"":esc(pad(new Date(ev.start).getHours())+":"+pad(new Date(ev.start).getMinutes())+" "))+esc(ev.title||"")+'</div>';}).join("");
+     var more=evs.length>3?'<div style="font-size:9px;color:var(--muted);margin-top:1px">+'+(evs.length-3)+' mehr</div>':"";
+     cells+='<div data-day="'+dayMs+'" style="min-height:66px;border:1px solid var(--line);border-radius:8px;padding:3px 4px;background:'+(inMonth?"#fff":"#f4f4f3")+';cursor:pointer;overflow:hidden">'+
+       '<div style="font-size:11px;font-weight:'+(isToday?"800":"600")+';color:'+(isToday?"#fff":(inMonth?"var(--ink)":"var(--faint)"))+';'+(isToday?"background:var(--red);border-radius:50%;width:18px;height:18px;display:flex;align-items:center;justify-content:center":"")+'">'+day.getDate()+'</div>'+chips+more+'</div>';
+   }
+   document.getElementById("calList").innerHTML=head+'<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px">'+cells+'</div>';
+ }
+ function renderAgenda(){
+   var from=startOfDay(_calCursor),to=from+28*86400000;
+   document.getElementById("calRange").textContent=fmtDate(from)+" – "+fmtDate(to-1);
+   var evs=(_calEvents||[]).filter(function(ev){return ev.end>from&&ev.start<to;}).sort(function(a,b){return a.start-b.start;});
    var list=document.getElementById("calList");
-   var evs=(_calEvents||[]).slice().sort(function(a,b){return new Date(a.start.dateTime)-new Date(b.start.dateTime);});
-   if(!evs.length){list.innerHTML='<div class="card" style="text-align:center;color:var(--faint)">Keine Termine in diesem Zeitraum.<br><button class="btn sm primary" id="calEmptyNew" type="button" style="margin-top:10px">Neuen Termin anlegen</button></div>';var en=document.getElementById("calEmptyNew");if(en)en.onclick=function(){openCalModal(null);};return;}
+   if(!evs.length){list.innerHTML='<div class="card" style="text-align:center;color:var(--faint)">Keine Termine in den nächsten 4 Wochen.<br><button class="btn sm primary" id="calEmptyNew" type="button" style="margin-top:10px">Neuen Termin anlegen</button></div>';var en=document.getElementById("calEmptyNew");if(en)en.onclick=function(){openCalModal(null);};return;}
    var byDay={},order=[];
-   evs.forEach(function(ev){var d=new Date(ev.start.dateTime);var key=d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());if(!byDay[key]){byDay[key]=[];order.push({key:key,ts:startOfDay(d.getTime())});}byDay[key].push(ev);});
-   var WD=["So","Mo","Di","Mi","Do","Fr","Sa"];
-   list.innerHTML=order.map(function(o){
-     var d=new Date(o.ts),head=WD[d.getDay()]+", "+fmtDate(o.ts);var today=startOfDay(Date.now())===o.ts;
-     var rows=byDay[o.key].map(function(ev){
-       var t=calTypeOf(ev),col=CAL_COLORS[t]||"#6b7280";
-       var time=ev.isAllDay?"ganztägig":(pad(new Date(ev.start.dateTime).getHours())+":"+pad(new Date(ev.start.dateTime).getMinutes())+"–"+pad(new Date(ev.end.dateTime).getHours())+":"+pad(new Date(ev.end.dateTime).getMinutes()));
-       var loc=(ev.location&&ev.location.displayName)||"";
+   evs.forEach(function(ev){var key=startOfDay(ev.start);if(!byDay[key]){byDay[key]=[];order.push(key);}byDay[key].push(ev);});
+   list.innerHTML=order.map(function(k){
+     var d=new Date(k),today=startOfDay(Date.now())===k;
+     var rows=byDay[k].map(function(ev){var col=ownerColor(ev.owner);
        return '<div class="crow" data-evid="'+esc(ev.id)+'" style="margin-bottom:8px;padding:11px 12px;border-left:4px solid '+col+'">'+
-         '<div class="mid"><div class="nm" style="font-size:14px">'+esc(ev.subject||"(ohne Titel)")+'</div>'+
-         '<div class="meta"><span class="mono">'+esc(time)+'</span><span style="color:'+col+';font-weight:600">'+esc(t)+'</span>'+(loc?'<span>'+esc(loc)+'</span>':'')+'</div></div></div>';
+         '<div class="mid"><div class="nm" style="font-size:14px">'+esc(ev.title||"(ohne Titel)")+'</div>'+
+         '<div class="meta"><span class="mono">'+esc(evTimeLabel(ev))+'</span><span style="font-weight:600">'+esc(ev.type||"Termin")+'</span>'+(ev.loc?'<span>'+esc(ev.loc)+'</span>':'')+(ev.owner?'<span style="color:'+col+';font-weight:600">'+esc(ev.owner)+'</span>':'')+'</div></div></div>';
      }).join("");
-     return '<div style="margin-bottom:14px"><div style="font-weight:700;font-size:13px;color:'+(today?"var(--red)":"var(--ink)")+';margin:0 0 7px 2px">'+esc(head)+(today?" · heute":"")+'</div>'+rows+'</div>';
+     return '<div style="margin-bottom:14px"><div style="font-weight:700;font-size:13px;color:'+(today?"var(--red)":"var(--ink)")+';margin:0 0 7px 2px">'+WDL[d.getDay()]+", "+fmtDate(k)+(today?" · heute":"")+'</div>'+rows+'</div>';
    }).join("");
  }
- // datetime-local-Wert -> Graph dateTime (lokale Zeit, Zeitzone Europe/Berlin)
- function localInputToGraph(v,allday){if(!v)return null;if(allday)return v.slice(0,10)+"T00:00:00";return (v.length<=16?v+":00":v);}
- function graphToLocalInput(o,allday){if(!o||!o.dateTime)return "";var s=o.dateTime;return allday?s.slice(0,10):s.slice(0,16);}
- function calSetAllday(on){
-   var si=document.getElementById("calStartIn"),ei=document.getElementById("calEndIn");
-   si.type=on?"date":"datetime-local";ei.type=on?"date":"datetime-local";
- }
+ function calSetAllday(on){var si=document.getElementById("calStartIn"),ei=document.getElementById("calEndIn");si.type=on?"date":"datetime-local";ei.type=on?"date":"datetime-local";}
  function openCalModal(ev,prefill){
-   _calEditId=ev?ev.id:null;
-   document.getElementById("calModalTitle").textContent=ev?"Termin bearbeiten":"Neuer Termin";
-   document.getElementById("calDelete").style.display=ev?"":"none";
-   var t=ev?calTypeOf(ev):(prefill&&prefill.type||"Vorführung");calType=t;
+   _calEditId=ev?ev.id:null;_calEditEv=ev||null;
+   document.getElementById("calModalTitle").textContent=ev?"Termin"+( (ev.owner&&CUR&&ev.owner!==CUR.n)?(" von "+ev.owner):" bearbeiten"):"Neuer Termin";
+   var canEdit=!ev||!ev.owner||!(CUR&&CUR.n)||ev.owner===CUR.n; // fremde Termine nur ansehen
+   document.getElementById("calDelete").style.display=(ev&&canEdit)?"":"none";
+   document.getElementById("calSave").style.display=canEdit?"":"none";
+   var t=ev?(ev.type||"Termin"):((prefill&&prefill.type)||"Vorführung");calType=t;
    var segb=document.querySelectorAll("#calSeg button");for(var i=0;i<segb.length;i++)segb[i].classList.toggle("on",segb[i].getAttribute("data-t")===t);
-   var allday=ev?!!ev.isAllDay:false;document.getElementById("calAllday").checked=allday;calSetAllday(allday);
-   document.getElementById("calTitle").value=ev?(ev.subject||""):((prefill&&prefill.title)||"");
-   if(ev){document.getElementById("calStartIn").value=graphToLocalInput(ev.start,allday);document.getElementById("calEndIn").value=graphToLocalInput(ev.end,allday);}
-   else{var base=(prefill&&prefill.start)||(new Date(Math.max(_calStart,Date.now())));var d=new Date(base);d.setMinutes(0,0,0);if(d.getTime()<Date.now())d=new Date(Date.now()+3600000),d.setMinutes(0,0,0);
-     document.getElementById("calStartIn").value=toLocalInput(d);document.getElementById("calEndIn").value=toLocalInput(new Date(d.getTime()+3600000));}
-   document.getElementById("calLoc").value=ev?((ev.location&&ev.location.displayName)||""):((prefill&&prefill.loc)||"");
-   document.getElementById("calContact").value=(prefill&&prefill.contact)||"";
-   document.getElementById("calNote").value=ev?(ev.bodyPreview||""):((prefill&&prefill.note)||"");
+   var allday=ev?!!ev.allday:false;document.getElementById("calAllday").checked=allday;calSetAllday(allday);
+   document.getElementById("calTitle").value=ev?(ev.title||""):((prefill&&prefill.title)||"");
+   var sIn=document.getElementById("calStartIn"),eIn=document.getElementById("calEndIn");
+   if(ev){sIn.value=allday?toLocalInput(new Date(ev.start)).slice(0,10):toLocalInput(new Date(ev.start));eIn.value=allday?toLocalInput(new Date(ev.end-86400000)).slice(0,10):toLocalInput(new Date(ev.end));}
+   else{var base=(prefill&&prefill.day)?new Date(prefill.day):new Date(Math.max(_calCursor,Date.now()));base.setHours(9,0,0,0);if((!prefill||!prefill.day)&&base.getTime()<Date.now()){base=new Date(Date.now()+3600000);base.setMinutes(0,0,0);}sIn.value=toLocalInput(base);eIn.value=toLocalInput(new Date(base.getTime()+3600000));}
+   document.getElementById("calLoc").value=ev?(ev.loc||""):((prefill&&prefill.loc)||"");
+   document.getElementById("calContact").value=ev?(ev.contact||""):((prefill&&prefill.contact)||"");
+   document.getElementById("calNote").value=ev?(ev.note||""):((prefill&&prefill.note)||"");
    _calModal.classList.add("open");
  }
- function toLocalInput(d){return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())+"T"+pad(d.getHours())+":"+pad(d.getMinutes());}
- document.getElementById("calSeg").addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;calType=b.getAttribute("data-t");var bs=this.querySelectorAll("button");for(var i=0;i<bs.length;i++)bs[i].classList.toggle("on",bs[i]===b);if(!document.getElementById("calTitle").value){document.getElementById("calTitle").value=calType+(calType==="Vorführung"?" Lepton 5100":"");}});
+ document.getElementById("calSeg").addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;calType=b.getAttribute("data-t");var bs=this.querySelectorAll("button");for(var i=0;i<bs.length;i++)bs[i].classList.toggle("on",bs[i]===b);var ti=document.getElementById("calTitle");if(!ti.value)ti.value=calType+(calType==="Vorführung"?" Lepton 5100":"");});
  document.getElementById("calAllday").onchange=function(){calSetAllday(this.checked);};
  document.getElementById("calNewBtn").onclick=function(){openCalModal(null);};
  document.getElementById("calCancel").onclick=function(){_calModal.classList.remove("open");};
  _calModal.addEventListener("click",function(e){if(e.target===_calModal)_calModal.classList.remove("open");});
- document.getElementById("calPrev").onclick=function(){_calStart-=21*86400000;renderCal();};
- document.getElementById("calNext").onclick=function(){_calStart+=21*86400000;renderCal();};
- document.getElementById("calToday").onclick=function(){_calStart=startOfDay(Date.now());renderCal();};
- document.getElementById("view-cal").addEventListener("click",function(e){var r=e.target.closest("[data-evid]");if(!r)return;var id=r.getAttribute("data-evid");var ev=null;for(var i=0;i<_calEvents.length;i++)if(_calEvents[i].id===id){ev=_calEvents[i];break;}if(ev)openCalModal(ev);});
+ document.getElementById("calViewSeg").addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;_calView=b.getAttribute("data-v");var bs=this.querySelectorAll("button");for(var i=0;i<bs.length;i++)bs[i].classList.toggle("on",bs[i]===b);if(_calView==="month")renderMonth();else renderAgenda();});
+ document.getElementById("calPrev").onclick=function(){if(_calView==="month"){var d=new Date(_calCursor);d.setMonth(d.getMonth()-1);_calCursor=d.getTime();renderMonth();}else{_calCursor-=28*86400000;renderAgenda();}};
+ document.getElementById("calNext").onclick=function(){if(_calView==="month"){var d=new Date(_calCursor);d.setMonth(d.getMonth()+1);_calCursor=d.getTime();renderMonth();}else{_calCursor+=28*86400000;renderAgenda();}};
+ document.getElementById("calToday").onclick=function(){_calCursor=Date.now();if(_calView==="month")renderMonth();else renderAgenda();};
+ document.getElementById("view-cal").addEventListener("click",function(e){
+   var chip=e.target.closest("[data-evid]");
+   if(chip){var id=chip.getAttribute("data-evid"),ev=null;for(var i=0;i<_calEvents.length;i++)if(_calEvents[i].id===id){ev=_calEvents[i];break;}if(ev)openCalModal(ev);return;}
+   var cell=e.target.closest("[data-day]");if(cell){openCalModal(null,{day:parseInt(cell.getAttribute("data-day"),10)});return;}
+ });
+ // Termin ins Outlook des Erstellers spiegeln -> liefert Outlook-Event-ID (oder "").
+ function mirrorToOutlook(ev){
+   var sd=ev.allday?(toLocalInput(new Date(ev.start)).slice(0,10)+"T00:00:00"):(toLocalInput(new Date(ev.start))+":00");
+   var ed=ev.allday?(toLocalInput(new Date(ev.end)).slice(0,10)+"T00:00:00"):(toLocalInput(new Date(ev.end))+":00");
+   var g={subject:ev.title,categories:[ev.type],isAllDay:!!ev.allday,start:{dateTime:sd,timeZone:"Europe/Berlin"},end:{dateTime:ed,timeZone:"Europe/Berlin"},location:{displayName:ev.loc||""},body:{contentType:"Text",content:(ev.contact?("Kontakt: "+ev.contact+"\n\n"):"")+(ev.note||"")}};
+   return msCalToken(false).then(function(tok){if(!tok)return "";if(ev.outlookId)return graphUpdateEvent(tok,ev.outlookId,g).then(function(){return ev.outlookId;}).catch(function(){return "";});return graphCreateEvent(tok,g).then(function(r){return (r&&r.id)||"";}).catch(function(){return "";});});
+ }
  document.getElementById("calSave").onclick=function(){
-   var btn=this;var title=document.getElementById("calTitle").value.trim();
+   var btn=this,title=document.getElementById("calTitle").value.trim();
    if(!title){alert("Bitte einen Titel eingeben.");return;}
    var allday=document.getElementById("calAllday").checked;
    var sv=document.getElementById("calStartIn").value,evv=document.getElementById("calEndIn").value;
    if(!sv){alert("Bitte einen Beginn wählen.");return;}
-   var startG=localInputToGraph(sv,allday);
-   var endG=evv?localInputToGraph(evv,allday):null;
-   if(allday){var sd=new Date(sv.slice(0,10)+"T00:00:00");var ed=evv?new Date(evv.slice(0,10)+"T00:00:00"):sd;endG=toLocalInput(new Date(ed.getTime()+86400000)).slice(0,10)+"T00:00:00";}
-   else if(!endG||new Date(endG)<=new Date(startG)){endG=toLocalInput(new Date(new Date(startG).getTime()+3600000));}
-   var loc=document.getElementById("calLoc").value.trim();
-   var contact=document.getElementById("calContact").value.trim();
-   var note=document.getElementById("calNote").value.trim();
-   var bodyTxt=(contact?("Kontakt: "+contact+"\n\n"):"")+note;
-   var ev={subject:title,categories:[calType],isAllDay:allday,
-     start:{dateTime:startG,timeZone:"Europe/Berlin"},end:{dateTime:endG,timeZone:"Europe/Berlin"},
-     location:{displayName:loc},body:{contentType:"Text",content:bodyTxt}};
+   var startMs,endMs;
+   if(allday){startMs=startOfDay(new Date(sv.slice(0,10)+"T00:00:00").getTime());var ed=evv?new Date(evv.slice(0,10)+"T00:00:00").getTime():startMs;endMs=startOfDay(ed)+86400000;}
+   else{startMs=new Date(sv).getTime();endMs=evv?new Date(evv).getTime():0;if(!endMs||endMs<=startMs)endMs=startMs+3600000;}
+   var prev=_calEditEv||{};
+   var ev={id:_calEditId||("evt_"+uid()),title:title,type:calType,allday:allday,start:startMs,end:endMs,loc:document.getElementById("calLoc").value.trim(),contact:document.getElementById("calContact").value.trim(),note:document.getElementById("calNote").value.trim(),owner:(CUR&&CUR.n)||prev.owner||"",outlookId:prev.outlookId||"",updated:Date.now()};
    btn.disabled=true;btn.textContent="Speichere …";
-   msCalToken(true).then(function(tok){
-     if(!tok)throw new Error("Kein Kalender-Zugriff – bitte im Microsoft-Login zustimmen.");
-     return _calEditId?graphUpdateEvent(tok,_calEditId,ev):graphCreateEvent(tok,ev);
-   }).then(function(){btn.disabled=false;btn.textContent="In Outlook speichern";_calModal.classList.remove("open");renderCal();},
-     function(e){btn.disabled=false;btn.textContent="In Outlook speichern";alert("Termin konnte nicht gespeichert werden: "+((e&&e.message)||e));});
+   evUpsert(ev).then(function(){
+     return mirrorToOutlook(ev).then(function(oid){if(oid&&oid!==ev.outlookId){ev.outlookId=oid;return evUpsert(ev);}}).catch(function(){});
+   }).then(function(){
+     btn.disabled=false;btn.textContent="Speichern";_calModal.classList.remove("open");
+     var found=false;for(var i=0;i<_calEvents.length;i++)if(_calEvents[i].id===ev.id){_calEvents[i]=ev;found=true;}if(!found)_calEvents.push(ev);
+     renderLegend();if(_calView==="month")renderMonth();else renderAgenda();
+   },function(e){btn.disabled=false;btn.textContent="Speichern";alert("Termin konnte nicht gespeichert werden: "+((e&&e.message)||e));});
  };
  document.getElementById("calDelete").onclick=function(){
-   if(!_calEditId)return;if(!confirm("Diesen Termin in Outlook löschen?"))return;var btn=this;btn.disabled=true;
-   msCalToken(true).then(function(tok){return graphDeleteEvent(tok,_calEditId);}).then(function(){btn.disabled=false;_calModal.classList.remove("open");renderCal();},function(e){btn.disabled=false;alert("Löschen fehlgeschlagen: "+((e&&e.message)||e));});
+   if(!_calEditId)return;if(!confirm("Diesen Termin löschen (auch für das Team)?"))return;var btn=this;btn.disabled=true;
+   var oid=_calEditEv&&_calEditEv.outlookId;
+   evDelete(_calEditId).then(function(){if(oid)return msCalToken(false).then(function(tok){if(tok)return graphDeleteEvent(tok,oid);}).catch(function(){});}).then(function(){
+     _calEvents=_calEvents.filter(function(x){return x.id!==_calEditId;});btn.disabled=false;_calModal.classList.remove("open");renderLegend();if(_calView==="month")renderMonth();else renderAgenda();
+   },function(e){btn.disabled=false;alert("Löschen fehlgeschlagen: "+((e&&e.message)||e));});
  };
  // Dashboard-Kacheln klickbar -> direkt in die passende Kontaktliste springen.
  document.getElementById("stats").addEventListener("click",function(e){
@@ -3157,7 +3207,7 @@ var USERS=%%USERS%%;
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v132";
+ var APP_VER="v133";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
@@ -3224,7 +3274,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v132";
+const CACHE="vertrieb-v133";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png","./icon-32.png","./favicon.ico",
   "./vendor/leaflet.js","./vendor/leaflet.css","./vendor/msal-browser.min.js",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
