@@ -1391,8 +1391,17 @@ var USERS=%%USERS%%;
  // Backend erkennen: zuerst Cloud (Supabase), dann eigener PHP-Server, sonst lokal.
  function initBackend(){
    if(sbReady()){
+     MODE="cloud";setConn(true);
+     // Liegt schon ein lokaler Spiegel + Sync-Stand vor -> beim Start NUR die Änderungen laden (spart Egress massiv).
+     if(DB.contacts&&DB.contacts.length&&_lastUA){
+       flush().then(pullDelta).catch(function(){
+         // Fehlschlag -> einmal voll nachladen
+         sbGet().then(function(l){DB.contacts=mergeCloud(l);cacheSave();rerenderCurrent();}).catch(function(){});
+       });
+       return;
+     }
+     // Kein Cache/Stand -> einmal voll laden (Erstinbetriebnahme, danach immer inkrementell).
      sbGet().then(function(list){
-       MODE="cloud";setConn(true);
        if(!(list&&list.length)&&DB.contacts&&DB.contacts.length){enqueue({op:"bulk",contacts:DB.contacts,replace:false});}
        flush().then(sbGet).then(function(l){DB.contacts=mergeCloud(l);cacheSave();rerenderCurrent();}).catch(function(){});
      }).catch(function(){initPhp();});
@@ -3305,7 +3314,7 @@ var USERS=%%USERS%%;
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v142";
+ var APP_VER="v143";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
@@ -3373,7 +3382,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v142";
+const CACHE="vertrieb-v143";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png","./icon-32.png","./favicon.ico",
   "./vendor/leaflet.js","./vendor/leaflet.css","./vendor/msal-browser.min.js",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
