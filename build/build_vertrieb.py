@@ -470,8 +470,8 @@ create policy "crm all" on contacts
     </div>
     <div class="card">
       <h3>E-Mail-Signatur</h3>
-      <p style="font-size:13px;color:var(--muted);margin-bottom:10px">Wird automatisch unter jede <b>„Mail raus"</b> gesetzt (Outlook gibt die Signatur leider nicht automatisch heraus – einmal hier einfügen). Tipp: in Outlook unter <i>Einstellungen → E-Mail → Signaturen</i> deine Signatur markieren, kopieren und hier einfügen.</p>
-      <div class="fg"><label>Deine Signatur</label><textarea class="field" id="sigText" style="min-height:120px" placeholder="z. B.&#10;Mit freundlichen Grüßen&#10;Martin Alzinger&#10;Alzinger Maschinenbau GmbH&#10;Tel. +49 …&#10;www.alzinger-maschinenbau.de"></textarea></div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:10px">Gilt <b>pro Vertriebler</b> (an deiner Anmeldung, nicht am Gerät) – Richard, Tobias, Johannes usw. tragen jeweils ihre eigene ein. Wird automatisch unter jede <b>„Mail raus"</b> gesetzt (Outlook gibt die Signatur leider nicht automatisch heraus – einmal hier einfügen). Tipp: in Outlook unter <i>Einstellungen → E-Mail → Signaturen</i> deine Signatur markieren, kopieren und hier einfügen.</p>
+      <div class="fg"><label id="sigLabel">Deine Signatur</label><textarea class="field" id="sigText" style="min-height:120px" placeholder="z. B.&#10;Mit freundlichen Grüßen&#10;Martin Alzinger&#10;Alzinger Maschinenbau GmbH&#10;Tel. +49 …&#10;www.alzinger-maschinenbau.de"></textarea></div>
       <div style="display:flex;gap:14px;margin-top:10px;flex-wrap:wrap;align-items:center">
         <button class="btn primary" id="sigSave" type="button">Speichern</button>
         <label class="chk" style="margin:0"><input type="checkbox" id="sigAuto" checked> Automatisch anhängen</label>
@@ -673,7 +673,7 @@ var USERS=%%USERS%%;
  function setUser(u){CUR=u||{n:""};try{localStorage.setItem(UKEY,JSON.stringify({n:u.n||"",tel:u.tel||"",mail:u.mail||""}));}catch(_){}
    var un=document.getElementById("uName");if(un)un.textContent=u.n||"Vertrieb";
    var av=document.getElementById("uAv");if(av){av.textContent=initials(u.n||"?");av.title=u.n||"";}}
- function pass(u){setUser(u);applyRole();gate.classList.add("hidden");boot();}
+ function pass(u){setUser(u);loadUserSig();applyRole();gate.classList.add("hidden");boot();}
  // Auto-Login wird am ENDE der IIFE ausgelöst (erst dann sind alle Daten/Funktionen definiert).
  document.getElementById("gateForm").addEventListener("submit",function(ev){ev.preventDefault();
   var u=(document.getElementById("gu").value||"").trim().toLowerCase(),p=(document.getElementById("gp").value||"");
@@ -734,11 +734,20 @@ var USERS=%%USERS%%;
  var AISECRET=""; try{AISECRET=localStorage.getItem(AIKEY)||"";}catch(e){}
  // Firmenlogo (für HTML-Mails, als Inline-Anhang via CID eingebettet).
  var MAIL_LOGO="%%MAILLOGO%%";
- // E-Mail-Signatur (pro Gerät/Vertriebler). Wird automatisch an "Mail raus" angehängt.
- var SIGKEY="amb_crm_sig",SIGAUTOKEY="amb_crm_sig_auto",SIGLOGOKEY="amb_crm_sig_logo";
- var SIG=""; try{SIG=localStorage.getItem(SIGKEY)||"";}catch(e){}
- var SIGAUTO=true; try{var _sa=localStorage.getItem(SIGAUTOKEY);SIGAUTO=(_sa===null?true:_sa==="1");}catch(e){}
- var SIGLOGO=true; try{var _sl=localStorage.getItem(SIGLOGOKEY);SIGLOGO=(_sl===null?true:_sl==="1");}catch(e){}
+ // E-Mail-Signatur – PRO VERTRIEBLER (am angemeldeten Nutzer, nicht am Gerät). Wird automatisch an "Mail raus" angehängt.
+ var SIGKEY="amb_crm_sig",SIGAUTOKEY="amb_crm_sig_auto",SIGLOGOKEY="amb_crm_sig_logo"; // alte geräteweite Schlüssel = Fallback/Migration
+ function sigUser(){return (typeof CUR!=="undefined"&&CUR&&CUR.n)?CUR.n:"";}
+ var SIG="",SIGAUTO=true,SIGLOGO=true;
+ // Signatur des aktuell angemeldeten Vertrieblers laden (Fallback: alte geräteweite Signatur).
+ function loadUserSig(){
+   var u=sigUser();
+   try{
+     var s=localStorage.getItem(SIGKEY+":"+u);SIG=(s!=null)?s:(localStorage.getItem(SIGKEY)||"");
+     var a=localStorage.getItem(SIGAUTOKEY+":"+u);if(a===null)a=localStorage.getItem(SIGAUTOKEY);SIGAUTO=(a===null?true:a==="1");
+     var l=localStorage.getItem(SIGLOGOKEY+":"+u);if(l===null)l=localStorage.getItem(SIGLOGOKEY);SIGLOGO=(l===null?true:l==="1");
+   }catch(e){SIG="";SIGAUTO=true;SIGLOGO=true;}
+ }
+ loadUserSig();
  // Signatur an einen Mailtext anhängen (nur wenn aktiviert, vorhanden und noch nicht enthalten).
  function withSig(body){body=body||"";if(!SIGAUTO||!SIG)return body;if(body.indexOf(SIG)>=0)return body;return body.replace(/\s+$/,"")+"\n\n"+SIG;}
  // KI-/Angebots-Text sauber abschließen: Signatur anhängen – oder, falls keine gesetzt, eine schlichte Grußformel.
@@ -2911,6 +2920,7 @@ var USERS=%%USERS%%;
    if(sk&&document.activeElement!==sk)sk.value=(SB&&SB.key)||"";
    var ai=document.getElementById("aiSecret");if(ai&&document.activeElement!==ai)ai.value=AISECRET||"";
    var sg=document.getElementById("sigText");if(sg&&document.activeElement!==sg)sg.value=SIG||"";
+   var sgl2=document.getElementById("sigLabel");if(sgl2)sgl2.textContent=sigUser()?("Signatur von "+sigUser()):"Deine Signatur";
    var sga=document.getElementById("sigAuto");if(sga)sga.checked=SIGAUTO;
    var sgl=document.getElementById("sigLogo");if(sgl)sgl.checked=SIGLOGO;
    var aiSt=document.getElementById("aiState");
@@ -2943,8 +2953,9 @@ var USERS=%%USERS%%;
    SIG=document.getElementById("sigText").value.replace(/\s+$/,"");
    SIGAUTO=document.getElementById("sigAuto").checked;
    SIGLOGO=document.getElementById("sigLogo").checked;
-   try{localStorage.setItem(SIGKEY,SIG);localStorage.setItem(SIGAUTOKEY,SIGAUTO?"1":"0");localStorage.setItem(SIGLOGOKEY,SIGLOGO?"1":"0");}catch(e){}
-   var st=document.getElementById("sigState");if(st){st.textContent="✓ gespeichert";st.style.color="var(--pos)";setTimeout(function(){st.textContent="";},2500);}
+   var u=sigUser();
+   try{localStorage.setItem(SIGKEY+":"+u,SIG);localStorage.setItem(SIGAUTOKEY+":"+u,SIGAUTO?"1":"0");localStorage.setItem(SIGLOGOKEY+":"+u,SIGLOGO?"1":"0");}catch(e){}
+   var st=document.getElementById("sigState");if(st){st.textContent="✓ gespeichert für "+(u||"dich");st.style.color="var(--pos)";setTimeout(function(){st.textContent="";},2500);}
  };
 
  /* ---------- Erinnerungen (Browser-Benachrichtigungen) ---------- */
@@ -2971,7 +2982,7 @@ var USERS=%%USERS%%;
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v126";
+ var APP_VER="v127";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
@@ -3017,7 +3028,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v126";
+const CACHE="vertrieb-v127";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png","./icon-32.png","./favicon.ico",
   "./vendor/leaflet.js","./vendor/leaflet.css","./vendor/msal-browser.min.js",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
