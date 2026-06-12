@@ -1763,20 +1763,20 @@ var USERS=%%USERS%%;
    AT:["Burgenland","Kärnten","Niederösterreich","Oberösterreich","Salzburg","Steiermark","Tirol","Vorarlberg","Wien"],
    CH:["Aargau","Appenzell Ausserrhoden","Appenzell Innerrhoden","Basel-Landschaft","Basel-Stadt","Bern","Freiburg","Genf","Glarus","Graubünden","Jura","Luzern","Neuenburg","Nidwalden","Obwalden","Schaffhausen","Schwyz","Solothurn","St. Gallen","Tessin","Thurgau","Uri","Waadt","Wallis","Zug","Zürich"]
  };
- // Region-Filter: für JEDES vorkommende Land ALLE seine Regionen, gruppiert nach Land.
+ // Region-Filter: ist ein Land gewählt -> nur dessen Regionen; sonst alle vorkommenden Länder, gruppiert.
  function fillRegionFilter(){
    var s=document.getElementById("fBL");if(!s)return;var cur=s.value;
+   var selLand=((document.getElementById("fLand")||{}).value||"").toUpperCase();
    var landSeen={},presentByLand={};
    DB.contacts.forEach(function(c){var code=(c.land||"").toUpperCase();if(code)landSeen[code]=1;var r=contactBundesland(c);if(r){var k=code||"XX";(presentByLand[k]=presentByLand[k]||{})[r]=1;}});
-   var codes=Object.keys(landSeen).sort(function(a,b){if(a==="DE")return -1;if(b==="DE")return 1;return (landLabel(a)||a).localeCompare(landLabel(b)||b,"de");});
+   function regsFor(code){var regs=REGIONS[code]?REGIONS[code].slice():[];Object.keys(presentByLand[code]||{}).forEach(function(r){if(regs.indexOf(r)<0)regs.push(r);});if(!REGIONS[code])regs.sort(function(a,b){return a.localeCompare(b,"de");});return regs;}
    var html='<option value="">Alle Regionen</option>';
-   codes.forEach(function(code){
-     var regs=REGIONS[code]?REGIONS[code].slice():[];
-     Object.keys(presentByLand[code]||{}).forEach(function(r){if(regs.indexOf(r)<0)regs.push(r);}); // vorhandene, nicht in der Standardliste, ergänzen
-     if(!regs.length)return;
-     if(!REGIONS[code])regs.sort(function(a,b){return a.localeCompare(b,"de");});
-     html+='<optgroup label="'+esc(landLabel(code)||code)+'">'+regs.map(function(r){return '<option value="'+esc(r)+'">'+esc(r)+'</option>';}).join("")+'</optgroup>';
-   });
+   if(selLand){
+     regsFor(selLand).forEach(function(r){html+='<option value="'+esc(r)+'">'+esc(r)+'</option>';}); // nur das gewählte Land, flache Liste
+   } else {
+     var codes=Object.keys(landSeen).sort(function(a,b){if(a==="DE")return -1;if(b==="DE")return 1;return (landLabel(a)||a).localeCompare(landLabel(b)||b,"de");});
+     codes.forEach(function(code){var regs=regsFor(code);if(!regs.length)return;html+='<optgroup label="'+esc(landLabel(code)||code)+'">'+regs.map(function(r){return '<option value="'+esc(r)+'">'+esc(r)+'</option>';}).join("")+'</optgroup>';});
+   }
    s.innerHTML=html;if(cur)s.value=cur;
  }
  // Auswahl bewahren, damit initFilters() jederzeit erneut laufen kann (nach Import/Cloud-Sync).
@@ -2869,7 +2869,7 @@ var USERS=%%USERS%%;
 
  /* ---------- Suche/Filter Listener ---------- */
  ["q"].forEach(function(id){document.getElementById(id).addEventListener("input",renderList);});
- ["fStatus","fLand","fBL","fOwner","fSort"].forEach(function(id){document.getElementById(id).addEventListener("change",renderList);});
+ ["fStatus","fLand","fBL","fOwner","fSort"].forEach(function(id){document.getElementById(id).addEventListener("change",function(){if(id==="fLand"){var fb=document.getElementById("fBL");if(fb)fb.value="";fillRegionFilter();}renderList();});});
  document.getElementById("qLead").addEventListener("input",renderLeads);
  document.getElementById("fLeadLand").addEventListener("change",renderLeads);
 
@@ -3258,7 +3258,7 @@ var USERS=%%USERS%%;
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v137";
+ var APP_VER="v138";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
@@ -3326,7 +3326,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v137";
+const CACHE="vertrieb-v138";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png","./icon-32.png","./favicon.ico",
   "./vendor/leaflet.js","./vendor/leaflet.css","./vendor/msal-browser.min.js",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
