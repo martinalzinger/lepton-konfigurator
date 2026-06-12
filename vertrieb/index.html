@@ -273,6 +273,7 @@ textarea.field{min-height:74px;resize:vertical;line-height:1.5}
     <button data-view="dashboard" class="active"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Übersicht<span class="badge hidden" id="navBadge"></span></button>
     <button data-view="list"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 00-4-4H7a4 4 0 00-4 4v2"/><circle cx="9.5" cy="8" r="3.5"/><path d="M22 21v-2a4 4 0 00-3-3.87"/></svg>Kontakte</button>
     <button data-view="leads"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2"/></svg>Leads</button>
+    <button data-view="cal"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg>Kalender</button>
     <button data-view="data"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></svg>Daten</button>
   </div>
 </nav>
@@ -525,6 +526,22 @@ create policy "crm all" on contacts
     </div>
   </section>
 
+  <!-- KALENDER (mit Outlook verknüpft) -->
+  <section class="view" id="view-cal">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:8px">
+      <div><h2 class="vh">Kalender</h2><div class="sub">Termine, Vorführungen &amp; Planungen – mit deinem Outlook verknüpft</div></div>
+      <button class="btn sm primary" id="calNewBtn" type="button"><svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.8"><path d="M12 5v14M5 12h14"/></svg>Neuer Termin</button>
+    </div>
+    <div id="calConn" style="font-size:12px;color:var(--muted);margin-bottom:10px"></div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+      <button class="btn sm" id="calPrev" type="button">← Zurück</button>
+      <button class="btn sm" id="calToday" type="button">Heute</button>
+      <button class="btn sm" id="calNext" type="button">Weiter →</button>
+      <span id="calRange" style="font-family:var(--mono);font-size:12px;color:var(--muted);margin-left:auto"></span>
+    </div>
+    <div id="calList"></div>
+  </section>
+
   <!-- KONTAKT-DETAIL -->
   <section class="view" id="view-detail"></section>
 
@@ -606,6 +623,34 @@ create policy "crm all" on contacts
     <div class="form-actions">
       <button class="btn primary block" id="actSave" type="button">Speichern</button>
       <button class="btn ghost block" id="actCancel" type="button">Abbrechen</button>
+    </div>
+  </div>
+</div>
+
+<!-- Termin / Vorführung (Kalender -> Outlook) -->
+<div class="modal-bg" id="calModal">
+  <div class="modal">
+    <h3 id="calModalTitle">Neuer Termin</h3>
+    <div class="seg" id="calSeg">
+      <button data-t="Vorführung" class="on"><svg viewBox="0 0 24 24"><path d="M12 3l2.5 5 5.5.8-4 3.9.9 5.5L12 21l-4.9-2.8.9-5.5-4-3.9 5.5-.8z"/></svg>Vorführung</button>
+      <button data-t="Termin"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg>Termin</button>
+      <button data-t="Besuch"><svg viewBox="0 0 24 24"><path d="M12 21s-7-5.2-7-11a7 7 0 0114 0c0 5.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>Besuch</button>
+      <button data-t="Telefontermin"><svg viewBox="0 0 24 24"><path d="M5 4h4l2 5-3 2a13 13 0 006 6l2-3 5 2v4a2 2 0 01-2 2A17 17 0 013 6a2 2 0 012-2"/></svg>Telefon</button>
+      <button data-t="Planung"><svg viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h10"/></svg>Planung</button>
+    </div>
+    <div class="fg" style="margin-bottom:10px"><label>Titel</label><input class="field" id="calTitle" placeholder="z. B. Vorführung Lepton 5100"></div>
+    <label class="chk" style="margin-bottom:8px"><input type="checkbox" id="calAllday"> Ganztägig</label>
+    <div style="display:flex;gap:10px">
+      <div class="fg" style="flex:1"><label>Beginn</label><input class="field" type="datetime-local" id="calStartIn"></div>
+      <div class="fg" style="flex:1"><label>Ende</label><input class="field" type="datetime-local" id="calEndIn"></div>
+    </div>
+    <div class="fg" style="margin-bottom:10px"><label>Ort</label><input class="field" id="calLoc" placeholder="Adresse / Ort der Vorführung"></div>
+    <div class="fg" style="margin-bottom:10px"><label>Kontakt / Firma (optional)</label><input class="field" id="calContact" list="calContactList" placeholder="Firma oder Person"><datalist id="calContactList"></datalist></div>
+    <div class="fg" style="margin-bottom:10px"><label>Notiz</label><textarea class="field" id="calNote" placeholder="Details, Vereinbarungen …"></textarea></div>
+    <div class="form-actions">
+      <button class="btn primary block" id="calSave" type="button">In Outlook speichern</button>
+      <button class="btn danger block" id="calDelete" type="button" style="display:none">Termin löschen</button>
+      <button class="btn ghost block" id="calCancel" type="button">Abbrechen</button>
     </div>
   </div>
 </div>
@@ -1015,6 +1060,28 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
    });
  }
  function graphMe(token){return gfetch("https://graph.microsoft.com/v1.0/me?$select=mail,userPrincipalName,displayName",{headers:{Authorization:"Bearer "+token}}).then(function(r){if(!r.ok)throw new Error("me "+r.status);return r.json();}).then(function(j){return ((j.mail||j.userPrincipalName||"")+"").toLowerCase();});}
+ /* ===== Outlook-Kalender (Graph Calendars.ReadWrite) ===== */
+ var MS_CAL_SCOPES=["Calendars.ReadWrite","User.Read"];
+ function msCalToken(interactive){
+   return ensureMsal().then(msalApp).then(function(app){
+     var acc=app.getAllAccounts()[0];var req={scopes:MS_CAL_SCOPES,account:acc};
+     return app.acquireTokenSilent(req).then(function(r){return r.accessToken;}).catch(function(){
+       if(interactive)return app.acquireTokenPopup({scopes:MS_CAL_SCOPES}).then(function(r){return r.accessToken;});
+       return null;
+     });
+   });
+ }
+ // Termine zwischen startISO und endISO aus dem Outlook-Kalender holen.
+ function graphListEvents(token,startISO,endISO){
+   var sel="id,subject,bodyPreview,start,end,location,isAllDay,categories,webLink";
+   var url="https://graph.microsoft.com/v1.0/me/calendarView?startDateTime="+encodeURIComponent(startISO)+"&endDateTime="+encodeURIComponent(endISO)+"&$select="+sel+"&$orderby=start/dateTime&$top=100";
+   var out=[];
+   function page(u){return gfetch(u,{headers:{Authorization:"Bearer "+token,Prefer:'outlook.timezone="Europe/Berlin"'}}).then(function(r){if(!r.ok)throw new Error("cal "+r.status);return r.json();}).then(function(j){(j.value||[]).forEach(function(e){out.push(e);});var nx=j["@odata.nextLink"];if(nx&&out.length<400)return page(nx);return out;});}
+   return page(url);
+ }
+ function graphCreateEvent(token,ev){return fetch("https://graph.microsoft.com/v1.0/me/events",{method:"POST",headers:{Authorization:"Bearer "+token,"Content-Type":"application/json"},body:JSON.stringify(ev)}).then(function(r){if(!r.ok)return r.text().then(function(t){throw new Error("create "+r.status+" "+t.slice(0,160));});return r.json();});}
+ function graphUpdateEvent(token,id,ev){return fetch("https://graph.microsoft.com/v1.0/me/events/"+encodeURIComponent(id),{method:"PATCH",headers:{Authorization:"Bearer "+token,"Content-Type":"application/json"},body:JSON.stringify(ev)}).then(function(r){if(!r.ok)throw new Error("update "+r.status);return r.json();});}
+ function graphDeleteEvent(token,id){return fetch("https://graph.microsoft.com/v1.0/me/events/"+encodeURIComponent(id),{method:"DELETE",headers:{Authorization:"Bearer "+token}}).then(function(r){if(!r.ok&&r.status!==404)throw new Error("delete "+r.status);return true;});}
  // Letzte Nachrichten (Posteingang + Gesendet) holen, ab Datum sinceISO (optional). Bis ~maxN.
  function graphMessages(token,sinceISO,maxN){
    maxN=maxN||300;var out=[];
@@ -1387,7 +1454,114 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
    window.scrollTo(0,0);
    document.getElementById("fab").style.display=(view==="detail"||view==="form")?"none":"flex";
  }
- document.getElementById("nav").addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;var v=b.getAttribute("data-view");if(v){if(v==="dashboard")renderDashboard();if(v==="list")renderList();if(v==="leads")renderLeads();if(v==="data")renderAuswertung();show(v);}});
+ document.getElementById("nav").addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;var v=b.getAttribute("data-view");if(v){if(v==="dashboard")renderDashboard();if(v==="list")renderList();if(v==="leads")renderLeads();if(v==="data")renderAuswertung();if(v==="cal")renderCal();show(v);}});
+
+ /* ================= KALENDER (Outlook) ================= */
+ var _calStart=startOfDay(Date.now()),_calEvents=[],_calEditId=null,calType="Vorführung";
+ var _calModal=document.getElementById("calModal");
+ var CAL_COLORS={"Vorführung":"#c00000","Termin":"#1d4ed8","Besuch":"#0a7d3a","Telefontermin":"#b45309","Planung":"#6b7280"};
+ function calTypeOf(ev){var cs=ev.categories||[];for(var i=0;i<cs.length;i++)if(CAL_COLORS[cs[i]])return cs[i];return "Termin";}
+ function evMs(o){return o&&o.dateTime?new Date(o.dateTime.replace(/(\.\d+)?$/,"")+(/(Z|[+-]\d\d:?\d\d)$/.test(o.dateTime)?"":"")).getTime():0;}
+ function calBuildContactList(){
+   var dl=document.getElementById("calContactList");if(!dl)return;
+   var names=[];(DB.contacts||[]).forEach(function(c){var n=c.firma||fullName(c);if(n)names.push(n);});
+   names.sort();dl.innerHTML=names.slice(0,400).map(function(n){return '<option value="'+esc(n)+'">';}).join("");
+ }
+ function renderCal(){
+   calBuildContactList();
+   var s=new Date(_calStart),e=new Date(_calStart+21*86400000);
+   document.getElementById("calRange").textContent=fmtDate(s.getTime())+" – "+fmtDate(e.getTime()-1);
+   var conn=document.getElementById("calConn"),list=document.getElementById("calList");
+   conn.style.color="var(--muted)";conn.textContent="Lade Outlook-Kalender …";
+   msCalToken(false).then(function(tok){
+     if(!tok){conn.innerHTML='<span style="color:var(--muted)">Mit Outlook verbinden, um Termine zu sehen &amp; zu speichern.</span> <button class="btn ghost sm" id="calConnBtn" type="button">Outlook verbinden</button>';var cb=document.getElementById("calConnBtn");if(cb)cb.onclick=function(){this.textContent="Verbinde …";msCalToken(true).then(function(){renderCal();},function(e){conn.textContent="Verbindung fehlgeschlagen: "+((e&&e.message)||e);});};list.innerHTML="";return;}
+     return graphListEvents(tok,s.toISOString(),e.toISOString()).then(function(evs){
+       _calEvents=evs||[];conn.style.color="var(--pos)";conn.innerHTML='<span style="color:var(--pos)">● Outlook verbunden</span>';
+       renderCalList();
+     });
+   }).catch(function(err){conn.style.color="#b91c1c";conn.textContent="Kalender-Fehler: "+((err&&err.message)||err);});
+ }
+ function renderCalList(){
+   var list=document.getElementById("calList");
+   var evs=(_calEvents||[]).slice().sort(function(a,b){return new Date(a.start.dateTime)-new Date(b.start.dateTime);});
+   if(!evs.length){list.innerHTML='<div class="card" style="text-align:center;color:var(--faint)">Keine Termine in diesem Zeitraum.<br><button class="btn sm primary" id="calEmptyNew" type="button" style="margin-top:10px">Neuen Termin anlegen</button></div>';var en=document.getElementById("calEmptyNew");if(en)en.onclick=function(){openCalModal(null);};return;}
+   var byDay={},order=[];
+   evs.forEach(function(ev){var d=new Date(ev.start.dateTime);var key=d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());if(!byDay[key]){byDay[key]=[];order.push({key:key,ts:startOfDay(d.getTime())});}byDay[key].push(ev);});
+   var WD=["So","Mo","Di","Mi","Do","Fr","Sa"];
+   list.innerHTML=order.map(function(o){
+     var d=new Date(o.ts),head=WD[d.getDay()]+", "+fmtDate(o.ts);var today=startOfDay(Date.now())===o.ts;
+     var rows=byDay[o.key].map(function(ev){
+       var t=calTypeOf(ev),col=CAL_COLORS[t]||"#6b7280";
+       var time=ev.isAllDay?"ganztägig":(pad(new Date(ev.start.dateTime).getHours())+":"+pad(new Date(ev.start.dateTime).getMinutes())+"–"+pad(new Date(ev.end.dateTime).getHours())+":"+pad(new Date(ev.end.dateTime).getMinutes()));
+       var loc=(ev.location&&ev.location.displayName)||"";
+       return '<div class="crow" data-evid="'+esc(ev.id)+'" style="margin-bottom:8px;padding:11px 12px;border-left:4px solid '+col+'">'+
+         '<div class="mid"><div class="nm" style="font-size:14px">'+esc(ev.subject||"(ohne Titel)")+'</div>'+
+         '<div class="meta"><span class="mono">'+esc(time)+'</span><span style="color:'+col+';font-weight:600">'+esc(t)+'</span>'+(loc?'<span>'+esc(loc)+'</span>':'')+'</div></div></div>';
+     }).join("");
+     return '<div style="margin-bottom:14px"><div style="font-weight:700;font-size:13px;color:'+(today?"var(--red)":"var(--ink)")+';margin:0 0 7px 2px">'+esc(head)+(today?" · heute":"")+'</div>'+rows+'</div>';
+   }).join("");
+ }
+ // datetime-local-Wert -> Graph dateTime (lokale Zeit, Zeitzone Europe/Berlin)
+ function localInputToGraph(v,allday){if(!v)return null;if(allday)return v.slice(0,10)+"T00:00:00";return (v.length<=16?v+":00":v);}
+ function graphToLocalInput(o,allday){if(!o||!o.dateTime)return "";var s=o.dateTime;return allday?s.slice(0,10):s.slice(0,16);}
+ function calSetAllday(on){
+   var si=document.getElementById("calStartIn"),ei=document.getElementById("calEndIn");
+   si.type=on?"date":"datetime-local";ei.type=on?"date":"datetime-local";
+ }
+ function openCalModal(ev,prefill){
+   _calEditId=ev?ev.id:null;
+   document.getElementById("calModalTitle").textContent=ev?"Termin bearbeiten":"Neuer Termin";
+   document.getElementById("calDelete").style.display=ev?"":"none";
+   var t=ev?calTypeOf(ev):(prefill&&prefill.type||"Vorführung");calType=t;
+   var segb=document.querySelectorAll("#calSeg button");for(var i=0;i<segb.length;i++)segb[i].classList.toggle("on",segb[i].getAttribute("data-t")===t);
+   var allday=ev?!!ev.isAllDay:false;document.getElementById("calAllday").checked=allday;calSetAllday(allday);
+   document.getElementById("calTitle").value=ev?(ev.subject||""):((prefill&&prefill.title)||"");
+   if(ev){document.getElementById("calStartIn").value=graphToLocalInput(ev.start,allday);document.getElementById("calEndIn").value=graphToLocalInput(ev.end,allday);}
+   else{var base=(prefill&&prefill.start)||(new Date(Math.max(_calStart,Date.now())));var d=new Date(base);d.setMinutes(0,0,0);if(d.getTime()<Date.now())d=new Date(Date.now()+3600000),d.setMinutes(0,0,0);
+     document.getElementById("calStartIn").value=toLocalInput(d);document.getElementById("calEndIn").value=toLocalInput(new Date(d.getTime()+3600000));}
+   document.getElementById("calLoc").value=ev?((ev.location&&ev.location.displayName)||""):((prefill&&prefill.loc)||"");
+   document.getElementById("calContact").value=(prefill&&prefill.contact)||"";
+   document.getElementById("calNote").value=ev?(ev.bodyPreview||""):((prefill&&prefill.note)||"");
+   _calModal.classList.add("open");
+ }
+ function toLocalInput(d){return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())+"T"+pad(d.getHours())+":"+pad(d.getMinutes());}
+ document.getElementById("calSeg").addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;calType=b.getAttribute("data-t");var bs=this.querySelectorAll("button");for(var i=0;i<bs.length;i++)bs[i].classList.toggle("on",bs[i]===b);if(!document.getElementById("calTitle").value){document.getElementById("calTitle").value=calType+(calType==="Vorführung"?" Lepton 5100":"");}});
+ document.getElementById("calAllday").onchange=function(){calSetAllday(this.checked);};
+ document.getElementById("calNewBtn").onclick=function(){openCalModal(null);};
+ document.getElementById("calCancel").onclick=function(){_calModal.classList.remove("open");};
+ _calModal.addEventListener("click",function(e){if(e.target===_calModal)_calModal.classList.remove("open");});
+ document.getElementById("calPrev").onclick=function(){_calStart-=21*86400000;renderCal();};
+ document.getElementById("calNext").onclick=function(){_calStart+=21*86400000;renderCal();};
+ document.getElementById("calToday").onclick=function(){_calStart=startOfDay(Date.now());renderCal();};
+ document.getElementById("view-cal").addEventListener("click",function(e){var r=e.target.closest("[data-evid]");if(!r)return;var id=r.getAttribute("data-evid");var ev=null;for(var i=0;i<_calEvents.length;i++)if(_calEvents[i].id===id){ev=_calEvents[i];break;}if(ev)openCalModal(ev);});
+ document.getElementById("calSave").onclick=function(){
+   var btn=this;var title=document.getElementById("calTitle").value.trim();
+   if(!title){alert("Bitte einen Titel eingeben.");return;}
+   var allday=document.getElementById("calAllday").checked;
+   var sv=document.getElementById("calStartIn").value,evv=document.getElementById("calEndIn").value;
+   if(!sv){alert("Bitte einen Beginn wählen.");return;}
+   var startG=localInputToGraph(sv,allday);
+   var endG=evv?localInputToGraph(evv,allday):null;
+   if(allday){var sd=new Date(sv.slice(0,10)+"T00:00:00");var ed=evv?new Date(evv.slice(0,10)+"T00:00:00"):sd;endG=toLocalInput(new Date(ed.getTime()+86400000)).slice(0,10)+"T00:00:00";}
+   else if(!endG||new Date(endG)<=new Date(startG)){endG=toLocalInput(new Date(new Date(startG).getTime()+3600000));}
+   var loc=document.getElementById("calLoc").value.trim();
+   var contact=document.getElementById("calContact").value.trim();
+   var note=document.getElementById("calNote").value.trim();
+   var bodyTxt=(contact?("Kontakt: "+contact+"\n\n"):"")+note;
+   var ev={subject:title,categories:[calType],isAllDay:allday,
+     start:{dateTime:startG,timeZone:"Europe/Berlin"},end:{dateTime:endG,timeZone:"Europe/Berlin"},
+     location:{displayName:loc},body:{contentType:"Text",content:bodyTxt}};
+   btn.disabled=true;btn.textContent="Speichere …";
+   msCalToken(true).then(function(tok){
+     if(!tok)throw new Error("Kein Kalender-Zugriff – bitte im Microsoft-Login zustimmen.");
+     return _calEditId?graphUpdateEvent(tok,_calEditId,ev):graphCreateEvent(tok,ev);
+   }).then(function(){btn.disabled=false;btn.textContent="In Outlook speichern";_calModal.classList.remove("open");renderCal();},
+     function(e){btn.disabled=false;btn.textContent="In Outlook speichern";alert("Termin konnte nicht gespeichert werden: "+((e&&e.message)||e));});
+ };
+ document.getElementById("calDelete").onclick=function(){
+   if(!_calEditId)return;if(!confirm("Diesen Termin in Outlook löschen?"))return;var btn=this;btn.disabled=true;
+   msCalToken(true).then(function(tok){return graphDeleteEvent(tok,_calEditId);}).then(function(){btn.disabled=false;_calModal.classList.remove("open");renderCal();},function(e){btn.disabled=false;alert("Löschen fehlgeschlagen: "+((e&&e.message)||e));});
+ };
  // Dashboard-Kacheln klickbar -> direkt in die passende Kontaktliste springen.
  document.getElementById("stats").addEventListener("click",function(e){
    var s=e.target.closest("[data-go]");if(!s)return;var go=s.getAttribute("data-go");
@@ -2016,6 +2190,7 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
      (c.mail?'<a class="btn sm" id="mailBtn" href="mailto:'+esc(c.mail)+'" title="E-Mail in Outlook (vorausgefüllt)"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>E-Mail</a>':'')+
      '<button class="btn sm primary" id="offerBtn"><svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/><path d="M14 3v5h5"/></svg>Angebot erstellen</button>'+
      '<button class="btn sm" id="addActBtn"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Aktivität</button>'+
+     '<button class="btn sm" id="calPlanBtn" title="Termin/Vorführung planen (Outlook)"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg>Termin planen</button>'+
      '<button class="btn sm" id="editBtn">Bearbeiten</button>'+
      '<button class="btn sm" id="vcardBtn" title="Kontakt ins Telefon-Adressbuch übernehmen"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg>Im Telefon speichern</button>'+
      '<button class="btn sm" id="photoBtn" title="Foto aufnehmen oder aus der Galerie hinzufügen"><svg viewBox="0 0 24 24"><path d="M3 7h4l2-2h6l2 2h4v12H3z"/><circle cx="12" cy="13" r="3.5"/></svg>Foto</button>'+
@@ -2077,6 +2252,7 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
    document.getElementById("editBtn").onclick=function(){openForm(curId);};
    document.getElementById("addActBtn").onclick=function(){openActModal(curId);};
    var vcb=document.getElementById("vcardBtn");if(vcb)vcb.onclick=function(){saveVCard(byId(curId)||c);};
+   var cpb=document.getElementById("calPlanBtn");if(cpb)cpb.onclick=function(){var cc=byId(curId)||c;var firma=cc.firma||fullName(cc)||"";var ort=[cc.strasse,(cc.plz?cc.plz+" ":"")+(cc.ort||"")].filter(Boolean).join(", ");renderCal();show("cal");openCalModal(null,{type:"Vorführung",title:"Vorführung Lepton 5100 – "+firma,contact:firma,loc:ort});};
    var pBtn=document.getElementById("photoBtn"),pIn=document.getElementById("photoIn");
    if(pBtn&&pIn){pBtn.onclick=function(){pIn.click();};
      pIn.onchange=function(){var files=Array.prototype.slice.call(pIn.files||[]);if(!files.length)return;pBtn.disabled=true;var old=pBtn.innerHTML;pBtn.textContent="…";
@@ -2565,7 +2741,7 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
  }
 
  /* ---------- FAB ---------- */
- document.getElementById("fab").onclick=function(){openForm(null);};
+ document.getElementById("fab").onclick=function(){if(curView==="cal"){openCalModal(null);}else{openForm(null);}};
 
  /* ---------- Suche/Filter Listener ---------- */
  ["q"].forEach(function(id){document.getElementById(id).addEventListener("input",renderList);});
@@ -2952,7 +3128,7 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v131";
+ var APP_VER="v132";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
