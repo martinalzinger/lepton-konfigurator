@@ -195,6 +195,52 @@ async function parseNote(apiKey: string, notiz: string): Promise<Response> {
   return json({ contact: obj.contact || {}, activities: Array.isArray(obj.activities) ? obj.activities : [] });
 }
 
+/* ============================ E) FIRMA NACHSCHLAGEN (ein Kontakt ergänzen) ============================ */
+// Schlägt EINE bestimmte, bereits bekannte Firma im Web nach und liefert deren Kontaktdaten.
+async function enrichCompany(apiKey: string, p: any): Promise<Response> {
+  const prompt =
+`Du recherchierst die Daten EINER bestimmten, bereits bekannten Firma – das ist KEIN Branchen-Suchlauf.
+VORGEHEN: Finde die offizielle WEBSITE dieser Firma und LIES sie aus – vor allem die Seiten
+"Impressum", "Kontakt" und "Über uns". Trage ALLES Wichtige für einen Vertriebskontakt zusammen.
+Firma: "${p?.firma || ""}"${p?.ort ? `\nOrt: ${p.ort}` : ""}${p?.land ? `\nLand: ${p.land}` : ""}${p?.web ? `\nWebsite (Hinweis, bevorzugt zuerst aufrufen): ${p.web}` : ""}${p?.plz ? `\nPLZ: ${p.plz}` : ""}
+Antworte AUSSCHLIESSLICH mit EINEM JSON-Objekt (kein Fließtext, kein Markdown, keine \`\`\`):
+{"firma":"","strasse":"","plz":"","ort":"","land":"","web":"","tel":"","email":"","ustid":"",
+ "anrede":"","vorname":"","nachname":"","position":"","ap_mail":"","ap_mobil":"",
+ "geschaeftsfuehrer":"","betriebsleiter":"","jahresmenge":"","siebtechnik":"","info":"","quelle":"","confidence":""}
+Regeln:
+- NUR Daten DIESER Firma. Findest du sie nicht eindeutig, ALLE Felder leer und confidence:"keine".
+- land als Ländercode (DE/AT/CH/...). web ohne "https://". strasse mit Hausnummer; plz und ort getrennt.
+- tel = Festnetz/Zentrale, email = allgemeine Kontaktadresse (Impressum). ustid = USt-IdNr./MwSt-Nr., falls genannt.
+- anrede/vorname/nachname/position/ap_mail/ap_mobil = EIN konkreter Ansprechpartner (z. B. Geschäftsführer
+  oder Vertrieb), wenn auf der Website auffindbar – sonst leer.
+- geschaeftsfuehrer/betriebsleiter: Namen, wenn genannt. siebtechnik: nur "Trommelsieb"/"Sternsieb" wenn klar, sonst "".
+- info: 1–2 kurze Sätze, was die Firma macht (Branche/Tätigkeit) – für die Notiz.
+- quelle: kurz, woher (z. B. "Impressum berom.ch"). confidence: "hoch" (Website/Impressum gefunden) oder "niedrig".
+- Unbekannte Felder als "". Nichts erfinden.`;
+  const base = { model: MODEL, max_tokens: 3000, tools: [{ type: "web_search_20260209", name: "web_search", max_uses: 6 }] };
+  let messages: unknown[] = [{ role: "user", content: prompt }];
+  let data: any = null;
+  for (let i = 0; i < 8; i++) {
+    const r = await fetch(ANTHROPIC_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01" },
+      body: JSON.stringify({ ...base, messages }),
+    });
+    if (!r.ok) { const t = await r.text(); return json({ error: "anthropic " + r.status, detail: t.slice(0, 300) }, 502); }
+    data = await r.json();
+    if (data.stop_reason === "pause_turn") { messages = [...messages, { role: "assistant", content: data.content }]; continue; }
+    break;
+  }
+  let text = (data?.content || []).filter((b: any) => b.type === "text").map((b: any) => b.text).join("\n").trim()
+    .replace(/```json/gi, "").replace(/```/g, "");
+  let obj: any = null;
+  const mm = text.match(/\{[\s\S]*\}/);
+  if (mm) { try { obj = JSON.parse(mm[0]); } catch (_) { /* weiter */ } }
+  if (!obj) { try { obj = JSON.parse(text); } catch (_) { /* weiter */ } }
+  if (!obj || typeof obj !== "object") return json({ confidence: "keine", debug: { sample: text.slice(0, 400) } });
+  return json(obj);
+}
+
 /* ============================ D) KI-ANTWORTVORSCHLAG (E-Mail) ============================ */
 // Entwirft eine KURZE, bodenständige Antwort – im Ton eines Maschinenbauers, nicht geschwollen.
 const REPLY_PROMPT =
@@ -293,6 +339,12 @@ Deno.serve(async (req: Request) => {
   // D) KI-Antwortvorschlag auf eine eingegangene E-Mail.
   if (body && body.mailReply && typeof body.mailReply === "object") {
     try { return await draftReply(apiKey, body.mailReply); }
+    catch (e) { return json({ error: String((e as Error)?.message || e) }, 500); }
+  }
+
+  // E) Eine bestimmte Firma nachschlagen (Kontakt ergänzen).
+  if (body && body.enrich && typeof body.enrich === "object") {
+    try { return await enrichCompany(apiKey, body.enrich); }
     catch (e) { return json({ error: String((e as Error)?.message || e) }, 500); }
   }
 

@@ -966,6 +966,20 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
      .catch(function(){return call("lead-ai",true).catch(function(e){if(e&&e.status===404)return call("lead-ai-",true);throw e;});})
      .then(function(d){return d||{};});
  }
+ // Eine bestimmte Firma nachschlagen (Kontakt ergänzen) -> Datenobjekt. Klassisch zuerst, sonst einfacher Aufruf.
+ function apiEnrich(payload){
+   function call(name,simple){
+     var url=SB.url.replace(/\/+$/,"")+"/functions/v1/"+name+(simple?("?apikey="+encodeURIComponent(SB.key)):"");
+     var headers=simple?{"Content-Type":"text/plain;charset=UTF-8"}:{"Authorization":"Bearer "+SB.key,"apikey":SB.key,"Content-Type":"application/json","x-crm-secret":AISECRET};
+     var bodyObj=simple?{enrich:payload,secret:AISECRET}:{enrich:payload};
+     var ctl=("AbortController" in window)?new AbortController():null;var to=ctl?setTimeout(function(){try{ctl.abort();}catch(_){}} ,120000):0;
+     return fetch(url,{method:"POST",headers:headers,body:JSON.stringify(bodyObj),signal:ctl?ctl.signal:undefined})
+       .then(function(r){return r.text().then(function(t){if(to)clearTimeout(to);var d;try{d=JSON.parse((t||"").trim()||"{}");}catch(_){d={};}if(!r.ok){var e=new Error("enrich "+r.status+(d&&d.error?(": "+d.error):""));e.status=r.status;throw e;}return d;});},function(e){if(to)clearTimeout(to);throw e;});
+   }
+   return call("lead-ai",false).catch(function(e){if(e&&e.status===404)return call("lead-ai-",false);throw e;})
+     .catch(function(){return call("lead-ai",true).catch(function(e){if(e&&e.status===404)return call("lead-ai-",true);throw e;});})
+     .then(function(d){return d||{};});
+ }
  /* ===== OneNote-Massenimport via Microsoft 365 (Graph) ===== */
  var MS_CLIENT_ID="c4cd70b7-2bbe-41ed-ba3e-5621037c49ae";
  var MS_TENANT_ID="f4c543ca-6d4a-4beb-8f4f-90924543f46a";
@@ -1457,19 +1471,41 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
    if(!aiReady()||!c||!c.firma)return;
    var old=btn?btn.innerHTML:"";if(btn){btn.disabled=true;btn.textContent="KI sucht Details … (~1–2 Min)";}
    function restore(){if(btn){btn.disabled=false;btn.innerHTML=old;}}
-   var wo=[c.ort,landLabel(c.land)].filter(Boolean).join(", ")||c.land||"";
-   apiAi(c.firma,wo||c.firma).then(function(leads){
-     var nrm=function(s){return String(s||"").toLowerCase().replace(/[^a-z0-9]/g,"");};
-     var target=nrm(c.firma),best=null;
-     (leads||[]).forEach(function(l){if(best)return;var n=nrm(l.firma||l.name);if(n&&(n.indexOf(target)>=0||target.indexOf(n)>=0))best=l;});
-     if(!best&&leads&&leads.length)best=leads[0];
-     if(!best){restore();alert("Die KI hat zu „"+c.firma+"“ keine zusätzlichen Daten gefunden.");return;}
-     var map={strasse:best.strasse,plz:best.plz,ort:best.ort,tel:best.tel,mail:best.email,web:best.web,gf:best.geschaeftsfuehrer,bl:best.betriebsleiter,menge:best.jahresmenge,sieb:best.siebtechnik,news:best.news};
+   // Felder aus dem Treffer übernehmen (nur LEERE Felder füllen, vorhandene bleiben).
+   function apply(best){
+     if(!best||best.confidence==="keine"){restore();alert("Die KI hat zu „"+c.firma+"“ keine eindeutigen Daten gefunden.\n\nTipp: Wenn du eine Website oder den Ort einträgst, findet sie meist mehr.");return;}
+     // Adresse/Kontakt + Ansprechpartner: nur LEERE Felder füllen.
+     var map={strasse:best.strasse,plz:best.plz,ort:best.ort,tel:best.tel,mail:best.email,web:best.web,ustid:best.ustid,
+       anrede:best.anrede,vorname:best.vorname,nachname:best.nachname,mobil:best.ap_mobil};
+     if(best.position)map.firma2=best.position; // Position als Zusatz/Abteilung
+     if(best.ap_mail&&!best.email)map.mail=best.ap_mail; // falls keine allgemeine Adresse: die des Ansprechpartners
+     if(best.land){var lc=String(best.land).toUpperCase().slice(0,2);if(!c.land||c.land==="DE")map.land=lc;}
      var changed=[];Object.keys(map).forEach(function(k){var v=map[k]&&String(map[k]).trim();if(v&&!String(c[k]||"").trim()){c[k]=v;changed.push(k);}});
+     // Geschäftsführer/Betriebsleiter + Kurzinfo als Notiz anhängen (wenn noch nicht enthalten).
+     var add=[];if(best.info)add.push(String(best.info).trim());
+     if(best.geschaeftsfuehrer)add.push("GF: "+String(best.geschaeftsfuehrer).trim());
+     if(best.betriebsleiter)add.push("Betriebsleiter: "+String(best.betriebsleiter).trim());
+     if(best.jahresmenge)add.push("Jahresmenge: "+String(best.jahresmenge).trim());
+     if(best.siebtechnik)add.push("Siebtechnik: "+String(best.siebtechnik).trim());
+     var note=add.filter(function(x){return x&&String(c.notiz||"").indexOf(x)<0;}).join("\n");
+     if(note){c.notiz=(c.notiz?(c.notiz+"\n"):"")+note;changed.push("notiz");}
      if(!changed.length){restore();alert("Keine neuen Angaben gefunden – die vorhandenen Felder bleiben unverändert.");return;}
      c.lat=null;c.lon=null; // Adresse geändert -> Standort beim nächsten Kartenaufruf neu bestimmen
      c.updated=Date.now();saveContact(c);openDetail(c.id);
-   }).catch(function(e){restore();alert("KI-Abfrage fehlgeschlagen: "+String((e&&e.message)||e));});
+   }
+   // 1) gezieltes Firmen-Nachschlagen; 2) Fallback: alte Lead-Suche (falls Edge Function noch nicht aktualisiert)
+   apiEnrich({firma:c.firma,ort:c.ort||"",plz:c.plz||"",land:landLabel(c.land)||c.land||"",web:c.web||""})
+     .then(function(best){if(best&&Object.keys(best).some(function(k){return k!=="confidence"&&String(best[k]||"").trim();}))return best;return null;})
+     .then(function(best){
+       if(best){apply(best);return;}
+       // Fallback alte Methode
+       var wo=[c.ort,landLabel(c.land)].filter(Boolean).join(", ")||c.land||"";
+       apiAi(c.firma,wo||c.firma).then(function(leads){
+         var nrm=function(s){return String(s||"").toLowerCase().replace(/[^a-z0-9]/g,"");};var target=nrm(c.firma),b2=null;
+         (leads||[]).forEach(function(l){if(b2)return;var n=nrm(l.firma||l.name);if(n&&(n.indexOf(target)>=0||target.indexOf(n)>=0))b2=l;});
+         apply(b2);
+       }).catch(function(e){restore();alert("KI-Abfrage fehlgeschlagen: "+String((e&&e.message)||e));});
+     }).catch(function(e){restore();alert("KI-Abfrage fehlgeschlagen: "+String((e&&e.message)||e));});
  }
  function pad(n){return n<10?"0"+n:""+n;}
  function todayStr(){var d=new Date();return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());}
@@ -3239,7 +3275,7 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v140";
+ var APP_VER="v141";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
