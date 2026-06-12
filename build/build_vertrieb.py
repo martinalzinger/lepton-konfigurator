@@ -1254,7 +1254,7 @@ var USERS=%%USERS%%;
    var pending={};queueRead().forEach(function(op){if(!op)return;if(op.op==="upsert"&&op.contact)pending[op.contact.id]=1;if(op.op==="delete"&&op.id)pending[op.id]=2;if(op.op==="bulk")(op.contacts||[]).forEach(function(c){if(c)pending[c.id]=1;});});
    var local={};(DB.contacts||[]).forEach(function(c){if(c)local[c.id]=c;});
    var out=[],seen={},fixes=[];
-   (list||[]).forEach(function(cc){if(!cc)return;seen[cc.id]=1;if(pending[cc.id]===2||justDeleted(cc.id))return; /* lokal geloescht -> nicht zurueckholen */ var lc=local[cc.id];var keepLocal=lc&&(pending[cc.id]===1||fresh(cc.id)||(lc.updated||0)>=(cc.updated||0));if(!keepLocal&&lc&&lc.lat!=null&&cc.lat==null){cc.lat=lc.lat;cc.lon=lc.lon;} /* lokal ermittelte Koordinaten erhalten */ var chosen=keepLocal?lc:cc;
+   (list||[]).forEach(function(cc){if(!cc)return;seen[cc.id]=1;if(pending[cc.id]===2||justDeleted(cc.id))return; /* lokal geloescht -> nicht zurueckholen */ var lc=local[cc.id];var keepLocal=lc&&(pending[cc.id]===1||fresh(cc.id)||(lc.updated||0)>=(cc.updated||0));if(!keepLocal&&lc&&lc.lat!=null&&cc.lat==null){cc.lat=lc.lat;cc.lon=lc.lon;} /* lokal ermittelte Koordinaten erhalten */ if(!keepLocal&&lc&&lc.bundesland&&!cc.bundesland)cc.bundesland=lc.bundesland; /* lokal ermittelte Region erhalten */ var chosen=keepLocal?lc:cc;
      // "Erledigt" ist klebrig: hat EINE Seite die Wiedervorlage (gleiches Fälligkeitsdatum) als erledigt markiert, bleibt sie erledigt.
      if(lc&&cc&&lc.followup&&cc.followup&&lc.followup.due===cc.followup.due&&(lc.followup.done||cc.followup.done)){
        if(chosen.followup)chosen.followup.done=true;
@@ -1297,6 +1297,7 @@ var USERS=%%USERS%%;
      }
      if(keepLocal)return;
      if(lc&&lc.lat!=null&&d.lat==null){d.lat=lc.lat;d.lon=lc.lon;} // lokale Koordinaten erhalten
+     if(lc&&lc.bundesland&&!d.bundesland)d.bundesland=lc.bundesland; // lokal ermittelte Region erhalten
      if(idx[id]!=null)DB.contacts[idx[id]]=d;else{DB.contacts.push(d);idx[id]=DB.contacts.length-1;}
      changed=true;
    });
@@ -1865,7 +1866,7 @@ var USERS=%%USERS%%;
  // Nominatim-Abfrage mit Wiederholung bei Drosselung (429) / Netz-Aussetzern.
  function nomFetch(q,tries){
    tries=tries||0;
-   return fetch("https://nominatim.openstreetmap.org/search?format=json&limit=1&accept-language=de&q="+encodeURIComponent(q),{headers:{"Accept":"application/json"}})
+   return fetch("https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=1&accept-language=de&q="+encodeURIComponent(q),{headers:{"Accept":"application/json"}})
      .then(function(r){
        if((r.status===429||r.status===503)&&tries<3){return new Promise(function(res){setTimeout(res,1500*(tries+1));}).then(function(){return nomFetch(q,tries+1);});}
        if(!r.ok)throw new Error("nom "+r.status);return r.json();
@@ -1880,7 +1881,7 @@ var USERS=%%USERS%%;
    function tryQ(i){
      if(i>=qs.length)return Promise.reject();
      return nomFetch(qs[i])
-       .then(function(a){if(a&&a.length)return {lat:parseFloat(a[0].lat),lon:parseFloat(a[0].lon)};return tryQ(i+1);})
+       .then(function(a){if(a&&a.length){var ad=a[0].address||{};return {lat:parseFloat(a[0].lat),lon:parseFloat(a[0].lon),region:ad.state||ad.county||ad.region||""};}return tryQ(i+1);})
        .catch(function(){return tryQ(i+1);});
    }
    return tryQ(0);
@@ -1888,7 +1889,7 @@ var USERS=%%USERS%%;
  function geocodePending(L,list,i){
    if(i>=list.length||!cMapOpen){_geoBusy=false;return;}
    var c=list[i];
-   geocodeContact(c).then(function(p){c.lat=p.lat;c.lon=p.lon;cacheSave();if(cMapOpen)addContactMarker(L,c);}).catch(function(){}).then(function(){setTimeout(function(){geocodePending(L,list,i+1);},600);});
+   geocodeContact(c).then(function(p){c.lat=p.lat;c.lon=p.lon;if(!c.bundesland&&p.region)c.bundesland=p.region;cacheSave();if(cMapOpen)addContactMarker(L,c);}).catch(function(){}).then(function(){setTimeout(function(){geocodePending(L,list,i+1);if(i%6===5)fillRegionFilter();},600);});
  }
  function showContactsMap(){
    var div=document.getElementById("cMap");
@@ -2394,7 +2395,7 @@ var USERS=%%USERS%%;
    var mb2=document.getElementById("mailBtn");if(mb2)mb2.href=buildMailto(c); // Outlook vorausgefüllt (Anrede + Signatur)
    var ib=document.getElementById("icsBtn");if(ib)ib.onclick=function(){icsDownload(c,c.followup);};
    document.getElementById("delBtn").onclick=function(){if(confirm("Diesen Kontakt mit gesamtem Verlauf endgültig löschen?")){removeContact(curId);renderList();show("list");}};
-   var gb=document.getElementById("geoBtn");if(gb)gb.onclick=function(){var b=this;b.textContent="Suche Standort…";geocodeContact(c).then(function(p){c.lat=p.lat;c.lon=p.lon;c.updated=Date.now();saveContact(c);openDetail(curId);}).catch(function(){b.textContent="Standort nicht gefunden";});};
+   var gb=document.getElementById("geoBtn");if(gb)gb.onclick=function(){var b=this;b.textContent="Suche Standort…";geocodeContact(c).then(function(p){c.lat=p.lat;c.lon=p.lon;if(!c.bundesland&&p.region)c.bundesland=p.region;c.updated=Date.now();saveContact(c);openDetail(curId);}).catch(function(){b.textContent="Standort nicht gefunden";});};
  }
  function contactLatLon(c){
    if(c.lat!=null&&c.lon!=null&&!isNaN(c.lat)&&!isNaN(c.lon))return {lat:+c.lat,lon:+c.lon};
@@ -3258,7 +3259,7 @@ var USERS=%%USERS%%;
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v138";
+ var APP_VER="v139";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
@@ -3326,7 +3327,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v138";
+const CACHE="vertrieb-v139";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png","./icon-32.png","./favicon.ico",
   "./vendor/leaflet.js","./vendor/leaflet.css","./vendor/msal-browser.min.js",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
