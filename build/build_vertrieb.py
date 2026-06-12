@@ -1362,22 +1362,17 @@ var USERS=%%USERS%%;
    L.push("END:VCARD");
    var vcf=L.join("\r\n");
    var fn=((displayName(c)||"Kontakt").replace(/[^0-9A-Za-zÄÖÜäöüß]+/g,"_")||"Kontakt")+".vcf";
-   function downloadVcf(){
-     try{
-       var blob=new Blob([vcf],{type:"text/vcard;charset=utf-8"}),url=URL.createObjectURL(blob);
-       var a=document.createElement("a");a.href=url;a.download=fn;a.rel="noopener";document.body.appendChild(a);a.click();a.remove();
-       setTimeout(function(){URL.revokeObjectURL(url);},20000);
-     }catch(e){try{location.href="data:text/vcard;charset=utf-8,"+encodeURIComponent(vcf);}catch(_){}}
+   var blob=new Blob([vcf],{type:"text/vcard;charset=utf-8"}),url=URL.createObjectURL(blob);
+   var isiOS=/iP(hone|ad|od)/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
+   if(isiOS){
+     // iPhone/iPad: vCard ÖFFNEN -> iOS zeigt die Kontaktkarte mit "Neuen Kontakt erstellen".
+     // (Der Teilen-Dialog bietet KEIN "Zu Kontakten hinzufügen" -> deshalb öffnen statt teilen.)
+     var a=document.createElement("a");a.href=url;a.target="_blank";a.rel="noopener";document.body.appendChild(a);a.click();a.remove();
+   } else {
+     // Desktop/Android: Datei herunterladen (.vcf) -> Doppelklick importiert in Outlook/Kontakte.
+     var a=document.createElement("a");a.href=url;a.download=fn;a.rel="noopener";document.body.appendChild(a);a.click();a.remove();
    }
-   // Am Smartphone: Teilen-Dialog mit der vCard -> "Zu Kontakten hinzufügen". Sonst Datei-Download.
-   try{
-     var file=new File([vcf],fn,{type:"text/vcard"});
-     if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
-       navigator.share({files:[file],title:displayName(c)}).catch(function(){downloadVcf();});
-       return;
-     }
-   }catch(e){}
-   downloadVcf();
+   setTimeout(function(){URL.revokeObjectURL(url);},60000);
  }
  // Einzelne Firma per KI nachschlagen und fehlende Felder ergänzen (Straße, PLZ, Tel, GF …).
  // Überschreibt NICHTS – füllt nur leere Felder. Nutzt dieselbe KI-Suche wie die Lead-Suche.
@@ -2986,7 +2981,7 @@ var USERS=%%USERS%%;
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v129";
+ var APP_VER="v130";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
@@ -3053,7 +3048,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v129";
+const CACHE="vertrieb-v130";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png","./icon-32.png","./favicon.ico",
   "./vendor/leaflet.js","./vendor/leaflet.css","./vendor/msal-browser.min.js",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
