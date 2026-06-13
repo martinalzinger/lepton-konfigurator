@@ -362,7 +362,7 @@ textarea.field{min-height:74px;resize:vertical;line-height:1.5}
       <select class="filter" id="fLand"><option value="">Alle Länder</option></select>
       <select class="filter" id="fBL"><option value="">Alle Regionen</option></select>
       <select class="filter" id="fOwner"><option value="">Alle Vertriebler</option></select>
-      <select class="filter" id="fSort"><option value="updated">Zuletzt aktiv</option><option value="name">Name A–Z</option><option value="created">Neueste</option><option value="due">Wiedervorlage</option></select>
+      <select class="filter" id="fSort"><option value="updated">Zuletzt aktiv</option><option value="name">Name A–Z</option><option value="ort">Ort A–Z</option><option value="plz">PLZ aufsteigend</option><option value="plzdesc">PLZ absteigend</option><option value="region">Region A–Z</option><option value="created">Neueste</option><option value="due">Wiedervorlage</option></select>
       <button class="btn sm" id="mapToggle" type="button"><svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.7"><path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"/><path d="M9 4v14M15 6v14"/></svg>Karte</button>
       <button class="btn sm" id="serialBtn" type="button" title="Serienmail an die gefilterte Liste"><svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.7"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>Serienmail</button>
     </div>
@@ -1924,6 +1924,9 @@ var USERS=%%USERS%%;
      if(so==="name")return displayName(a).localeCompare(displayName(b),"de");
      if(so==="created")return (b.created||0)-(a.created||0);
      if(so==="due"){var da=(a.followup&&!a.followup.done&&a.followup.due)||9e15,db=(b.followup&&!b.followup.done&&b.followup.due)||9e15;return da-db;}
+     if(so==="ort")return (a.ort||"￿").localeCompare(b.ort||"￿","de");
+     if(so==="region")return (contactBundesland(a)||"￿").localeCompare(contactBundesland(b)||"￿","de");
+     if(so==="plz"||so==="plzdesc"){var pa=String(a.plz||""),pb=String(b.plz||"");if(!pa&&!pb)return 0;if(!pa)return 1;if(!pb)return -1;var r=pa.localeCompare(pb,"de",{numeric:true});return so==="plzdesc"?-r:r;}
      return lastActivityTs(b)-lastActivityTs(a);
    });
    document.getElementById("listSub").textContent=arr.length+" von "+DB.contacts.length+" Kontakten";
@@ -3453,7 +3456,7 @@ var USERS=%%USERS%%;
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v151";
+ var APP_VER="v152";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
@@ -3521,7 +3524,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v151";
+const CACHE="vertrieb-v152";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png","./icon-32.png","./favicon.ico",
   "./vendor/leaflet.js","./vendor/leaflet.css","./vendor/msal-browser.min.js",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
