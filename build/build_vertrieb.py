@@ -501,6 +501,10 @@ create policy "cal all" on cal_events
         <button class="btn" id="impBtn" type="button"><svg viewBox="0 0 24 24"><path d="M12 21V9m0 0l-4 4m4-4l4 4M5 3h14"/></svg>Import (JSON)</button>
         <input type="file" id="impFile" accept="application/json,.json" class="hidden">
       </div>
+      <div style="margin-top:12px;border-top:1px solid var(--line);padding-top:12px">
+        <button class="btn" id="reupBtn" type="button"><svg viewBox="0 0 24 24"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14"/></svg>Alle Kontakte erneut in die Cloud hochladen</button>
+        <div id="reupMsg" style="font-size:12px;color:var(--muted);margin-top:6px">Lädt ALLE Kontakte dieses Geräts (sicher, nur hinzufügen/aktualisieren) erneut in die Cloud – falls eine Übertragung mal unterbrochen wurde.</div>
+      </div>
     </div>
     <div class="card">
       <h3>Leads importieren (CSV)</h3>
@@ -3097,6 +3101,22 @@ var USERS=%%USERS%%;
    a.download="amb-crm-"+todayStr()+".json";a.click();setTimeout(function(){URL.revokeObjectURL(a.href);},2000);
  };
  document.getElementById("impBtn").onclick=function(){document.getElementById("impFile").click();};
+ document.getElementById("reupBtn").onclick=function(){
+   var msg=document.getElementById("reupMsg");
+   if(MODE==="local"){msg.style.color="#b91c1c";msg.textContent="Nicht mit der Cloud verbunden – Re-Upload nicht möglich.";return;}
+   var all=(DB.contacts||[]).slice();
+   if(!all.length){msg.style.color="var(--muted)";msg.textContent="Keine Kontakte zum Hochladen.";return;}
+   if(!confirm(all.length+" Kontakte erneut in die Cloud hochladen? (Sicher – es wird nur hinzugefügt/aktualisiert, nichts gelöscht.)"))return;
+   var btn=this;btn.disabled=true;msg.style.color="var(--muted)";msg.textContent="Lade "+all.length+" Kontakte hoch …";
+   // in Paketen hochladen, damit auch große Bestände sicher durchlaufen
+   var i=0,B=200;
+   function step(){
+     if(i>=all.length){btn.disabled=false;msg.style.color="var(--pos)";msg.textContent="✓ "+all.length+" Kontakte in die Cloud übertragen.";return;}
+     var part=all.slice(i,i+B);i+=B;
+     sbUpsert(part).then(function(){msg.textContent="Lade hoch … "+Math.min(i,all.length)+" / "+all.length;setTimeout(step,200);},function(e){btn.disabled=false;msg.style.color="#b91c1c";msg.textContent="Fehler beim Hochladen: "+((e&&e.message)||e)+" (bei "+i+" / "+all.length+")";});
+   }
+   step();
+ };
  document.getElementById("impFile").onchange=function(e){
    var f=e.target.files[0];if(!f)return;var rd=new FileReader();
    rd.onload=function(){try{var inc=JSON.parse(rd.result);var list=inc.contacts||inc;if(!Array.isArray(list))throw 0;
@@ -3480,7 +3500,7 @@ var USERS=%%USERS%%;
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v156";
+ var APP_VER="v157";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
@@ -3548,7 +3568,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v156";
+const CACHE="vertrieb-v157";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png","./icon-32.png","./favicon.ico",
   "./vendor/leaflet.js","./vendor/leaflet.css","./vendor/msal-browser.min.js",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
