@@ -1492,8 +1492,9 @@ var USERS=%%USERS%%;
  function fullName(c){var n=[c.vorname,c.nachname].filter(Boolean).join(" ").trim();return n;}
  function displayName(c){return c.firma||fullName(c)||"(ohne Namen)";}
  // ---- Outlook/E-Mail (mailto) + Kalender (.ics) ----
- function mailGreeting(c){var nn=c.nachname||"",a=c.anrede||"";
-   if(nn){if(/frau/i.test(a))return "Sehr geehrte Frau "+nn+",";if(/herr/i.test(a))return "Sehr geehrter Herr "+nn+",";return "Guten Tag "+nn+",";}
+ function mailGreeting(c){var nn=c.nachname||"",vn=(c.vorname||"").trim(),a=c.anrede||"";
+   if(nn){if(/frau/i.test(a))return "Sehr geehrte Frau "+nn+",";if(/herr/i.test(a))return "Sehr geehrter Herr "+nn+",";return "Guten Tag "+(vn?vn+" ":"")+nn+",";}
+   if(vn)return "Guten Tag "+vn+",";
    return "Sehr geehrte Damen und Herren,";}
  function buildMailto(c){
    var who=(CUR&&CUR.n)?CUR.n:"";
@@ -3452,7 +3453,7 @@ var USERS=%%USERS%%;
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v150";
+ var APP_VER="v151";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
@@ -3520,7 +3521,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v150";
+const CACHE="vertrieb-v151";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png","./icon-32.png","./favicon.ico",
   "./vendor/leaflet.js","./vendor/leaflet.css","./vendor/msal-browser.min.js",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
