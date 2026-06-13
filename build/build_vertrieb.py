@@ -853,6 +853,11 @@ var USERS=%%USERS%%;
    var row={id:id,data:{id:id,_deleted:true,updated:Date.now()},updated_at:new Date().toISOString()};
    return fetch(sbBase(),{method:"POST",headers:sbHeaders({"Prefer":"resolution=merge-duplicates,return=minimal"}),body:JSON.stringify([row])}).then(function(r){if(!r.ok)throw new Error("sb "+r.status);});
  }
+ // Anzahl echter Kontakte in der Cloud (ohne Tombstones) -> winzige Abfrage, dient als Vollständigkeits-Check.
+ function sbContactCount(){
+   return fetch(sbBase()+"?select=id&data->>_deleted=is.null&limit=1",{headers:sbHeaders({"Prefer":"count=exact"})})
+     .then(function(r){var cr=r.headers.get("content-range")||"";var m=/\/(\d+)$/.exec(cr);return m?+m[1]:null;}).catch(function(){return null;});
+ }
  /* ---- Bilder in Supabase Storage auslagern (statt base64 im Kontakt) -> klein & skalierbar ---- */
  var IMG_BUCKET="crm-bilder";
  function isStored(s){return /^https?:\/\//.test(String(s||""));}            // schon eine URL?
@@ -1395,10 +1400,11 @@ var USERS=%%USERS%%;
      MODE="cloud";setConn(true);
      // Liegt schon ein lokaler Spiegel + Sync-Stand vor -> beim Start NUR die Änderungen laden (spart Egress massiv).
      if(DB.contacts&&DB.contacts.length&&_lastUA){
-       flush().then(pullDelta).catch(function(){
-         // Fehlschlag -> einmal voll nachladen
-         sbGet().then(function(l){DB.contacts=mergeCloud(l);cacheSave();rerenderCurrent();}).catch(function(){});
-       });
+       function fullReload(){return sbGet().then(function(l){DB.contacts=mergeCloud(l);cacheSave();rerenderCurrent();}).catch(function(){});}
+       flush().then(pullDelta).then(function(){
+         // Sicherheitsnetz: fehlen lokal Kontakte (Cloud hat mehr) -> einmal voll nachladen, damit kein Gerät unvollständig bleibt.
+         return sbContactCount().then(function(n){if(n!=null&&n>((DB.contacts&&DB.contacts.length)||0))return fullReload();});
+       }).catch(fullReload);
        return;
      }
      // Kein Cache/Stand -> einmal voll laden (Erstinbetriebnahme, danach immer inkrementell).
@@ -3315,7 +3321,7 @@ var USERS=%%USERS%%;
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v144";
+ var APP_VER="v145";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
@@ -3383,7 +3389,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v144";
+const CACHE="vertrieb-v145";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png","./icon-32.png","./favicon.ico",
   "./vendor/leaflet.js","./vendor/leaflet.css","./vendor/msal-browser.min.js",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
