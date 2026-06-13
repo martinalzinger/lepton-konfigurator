@@ -376,6 +376,14 @@ textarea.field{min-height:74px;resize:vertical;line-height:1.5}
   <section class="view" id="view-data">
     <h2 class="vh">Daten</h2>
     <div class="sub">Auswertung, Server-Verbindung, Sichern, Übertragen und Importieren.</div>
+    <div class="card" id="dataStatusCard">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px">
+        <h3 style="margin:0">Daten-Status</h3>
+        <button class="btn ghost sm" id="dataStatusRefresh" type="button">Cloud prüfen</button>
+      </div>
+      <div id="dataStatusTop" style="font-size:13px;margin-bottom:10px"></div>
+      <div id="dataStatusLands"></div>
+    </div>
     <div class="card" id="evalCard">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px">
         <h3 style="margin:0">Vertriebler-Auswertung</h3>
@@ -3072,6 +3080,7 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
    a.download="amb-crm-"+todayStr()+".json";a.click();setTimeout(function(){URL.revokeObjectURL(a.href);},2000);
  };
  document.getElementById("impBtn").onclick=function(){document.getElementById("impFile").click();};
+ document.getElementById("dataStatusRefresh").onclick=function(){var b=this;b.textContent="Prüfe …";b.disabled=true;sbAllIds().then(function(ids){_dataCloudN=(ids!=null?ids.length:null);b.textContent="Cloud prüfen";b.disabled=false;renderDataStatus();},function(){b.textContent="Cloud prüfen";b.disabled=false;});};
  document.getElementById("reupBtn").onclick=function(){
    var msg=document.getElementById("reupMsg");
    if(MODE==="local"){msg.style.color="#b91c1c";msg.textContent="Nicht mit der Cloud verbunden – Re-Upload nicht möglich.";return;}
@@ -3082,7 +3091,7 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
    // in Paketen hochladen, damit auch große Bestände sicher durchlaufen
    var i=0,B=200;
    function step(){
-     if(i>=all.length){btn.disabled=false;msg.style.color="var(--pos)";msg.textContent="✓ "+all.length+" Kontakte in die Cloud übertragen.";return;}
+     if(i>=all.length){btn.disabled=false;msg.style.color="var(--pos)";msg.textContent="✓ "+all.length+" Kontakte in die Cloud übertragen.";_dataCloudN=null;renderDataStatus();return;}
      var part=all.slice(i,i+B);i+=B;
      sbUpsert(part).then(function(){msg.textContent="Lade hoch … "+Math.min(i,all.length)+" / "+all.length;setTimeout(step,200);},function(e){btn.disabled=false;msg.style.color="#b91c1c";msg.textContent="Fehler beim Hochladen: "+((e&&e.message)||e)+" (bei "+i+" / "+all.length+")";});
    }
@@ -3355,8 +3364,26 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
    if(v==="year")return new Date(now.getFullYear(),0,1).getTime();
    return Date.now()-parseInt(v,10)*86400000;
  }
- function renderAuswertung(){
-   var body=document.getElementById("evalBody");if(!body)return;
+ /* ---------- Daten-Status: Kontakte/Leads pro Land, lokal vs. Cloud, Warteschlange ---------- */
+ var _dataCloudN=null;
+ function dataPending(){var p=0;queueRead().forEach(function(op){if(!op)return;if(op.op==="upsert")p++;else if(op.op==="delete")p++;else if(op.op==="bulk")p+=(op.contacts||[]).length;});return p;}
+ function renderDataStatus(){
+   var top=document.getElementById("dataStatusTop"),landsEl=document.getElementById("dataStatusLands");if(!top)return;
+   var cs=DB.contacts||[],leadN=0,kundeN=0,intN=0;
+   cs.forEach(function(c){if(c.status==="lead")leadN++;else if(c.status==="interessent")intN++;else if(c.status==="kunde")kundeN++;});
+   var pend=dataPending();
+   var cloudTxt="";
+   if(_dataCloudN!=null){var diff=cs.length-_dataCloudN;cloudTxt=' · Cloud: <b>'+_dataCloudN+'</b>'+(diff>0?(' <span style="color:var(--warn)">('+diff+' noch nicht hochgeladen)</span>'):(diff<0?(' <span style="color:var(--muted)">('+(-diff)+' lokal fehlen – „Aktualisieren")</span>'):' <span style="color:var(--pos)">✓ gleich</span>'));}
+   top.innerHTML='<b>'+cs.length+'</b> Kontakte · '+(leadN+intN)+' Leads · '+kundeN+' Kunden'+
+     (pend?(' · <span style="color:var(--warn)">⟳ '+pend+' werden übertragen …</span>'):' · <span style="color:var(--pos)">alles synchron</span>')+cloudTxt;
+   var byLand={};cs.forEach(function(c){var code=(c.land||"??").toUpperCase();var l=byLand[code]||(byLand[code]={n:0,leads:0,kunden:0});l.n++;if(c.status==="lead"||c.status==="interessent")l.leads++;if(c.status==="kunde")l.kunden++;});
+   var codes=Object.keys(byLand).sort(function(a,b){return byLand[b].n-byLand[a].n;});
+   landsEl.innerHTML='<table style="width:100%;border-collapse:collapse;font-size:13px"><tr style="color:var(--muted);font-size:11px;text-align:left"><th style="padding:4px 6px">Land</th><th style="padding:4px 6px;text-align:right">Kontakte</th><th style="padding:4px 6px;text-align:right">Leads</th><th style="padding:4px 6px;text-align:right">Kunden</th></tr>'+
+     codes.map(function(code){var l=byLand[code];return '<tr style="border-top:1px solid var(--line)"><td style="padding:5px 6px">'+esc(landLabel(code)||code)+'</td><td style="padding:5px 6px;text-align:right;font-family:var(--mono)">'+l.n+'</td><td style="padding:5px 6px;text-align:right;font-family:var(--mono)">'+l.leads+'</td><td style="padding:5px 6px;text-align:right;font-family:var(--mono)">'+l.kunden+'</td></tr>';}).join("")+'</table>';
+   // läuft gerade eine Übertragung -> Anzeige live mitlaufen lassen
+   if(pend&&curView==="data")setTimeout(function(){if(curView==="data")renderDataStatus();},1500);
+ }
+ function renderAuswertung(){renderDataStatus();   var body=document.getElementById("evalBody");if(!body)return;
    var from=evalFrom();
    var who={}; // name -> {anruf,mailout,...,total,betrag,kunden}
    function row(n){if(!who[n])who[n]={total:0,betrag:0,kunden:0};return who[n];}
@@ -3471,7 +3498,7 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v158";
+ var APP_VER="v159";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
