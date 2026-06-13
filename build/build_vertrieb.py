@@ -1269,10 +1269,11 @@ var USERS=%%USERS%%;
    var local={};(DB.contacts||[]).forEach(function(c){if(c)local[c.id]=c;});
    var out=[],seen={},fixes=[];
    (list||[]).forEach(function(cc){if(!cc)return;seen[cc.id]=1;if(pending[cc.id]===2||justDeleted(cc.id))return; /* lokal geloescht -> nicht zurueckholen */ var lc=local[cc.id];var keepLocal=lc&&(pending[cc.id]===1||fresh(cc.id)||(lc.updated||0)>=(cc.updated||0));if(!keepLocal&&lc&&lc.lat!=null&&cc.lat==null){cc.lat=lc.lat;cc.lon=lc.lon;} /* lokal ermittelte Koordinaten erhalten */ if(!keepLocal&&lc&&lc.bundesland&&!cc.bundesland)cc.bundesland=lc.bundesland; /* lokal ermittelte Region erhalten */ var chosen=keepLocal?lc:cc;
-     // "Erledigt" ist klebrig: hat EINE Seite die Wiedervorlage (gleiches Fälligkeitsdatum) als erledigt markiert, bleibt sie erledigt.
-     if(lc&&cc&&lc.followup&&cc.followup&&lc.followup.due===cc.followup.due&&(lc.followup.done||cc.followup.done)){
-       if(chosen.followup)chosen.followup.done=true;
-       if(!cc.followup.done&&chosen.followup){chosen.updated=now;fixes.push(chosen);} // Cloud kennt die Erledigung noch nicht -> zurückschreiben, damit alle Geräte zusammenlaufen
+     // "Erledigt" ist kugelsicher: maßgeblich ist der Zeitstempel doneAt (Maximum gewinnt, ältere Schreibversionen können ihn NICHT löschen).
+     if(lc&&cc&&lc.followup&&cc.followup&&lc.followup.due===cc.followup.due){
+       var lda=lc.followup.doneAt||(lc.followup.done?1:0),cda=cc.followup.doneAt||(cc.followup.done?1:0),da=Math.max(lda,cda);
+       if(da&&chosen.followup){chosen.followup.done=true;chosen.followup.doneAt=da;
+         if(cda<da){chosen.updated=now;fixes.push(chosen);}} // Cloud hat nicht den neuesten Erledigt-Stand -> zurückschreiben
      }
      out.push(chosen);});
    stickyPush(fixes);
@@ -1300,14 +1301,14 @@ var USERS=%%USERS%%;
      if(pending[id]===2||justDeleted(id))return; // lokal gelöscht -> nicht zurückholen
      var lc=(idx[id]!=null)?DB.contacts[idx[id]]:null;
      var keepLocal=lc&&(pending[id]===1||fresh(id)||(lc.updated||0)>=(d.updated||0));
-     // "Erledigt" ist klebrig: sobald EINE Seite (gleiches Fälligkeitsdatum) erledigt ist, wird BEIDES erledigt –
-     // auch die lokale Wiedervorlage, selbst wenn die lokale Version sonst "gewinnt" (keepLocal). Sonst blieb das
-     // andere Gerät hängen. Cloud kennt die Erledigung noch nicht -> zurückschreiben.
-     if(lc&&lc.followup&&d.followup&&lc.followup.due===d.followup.due&&(lc.followup.done||d.followup.done)){
-       var localDone=!!lc.followup.done,cloudDone=!!d.followup.done;
-       d.followup.done=true;
-       if(!localDone){lc.followup.done=true;changed=true;}        // lokale Wiedervorlage IMMER auf erledigt
-       if(!cloudDone){lc.followup.done=true;lc.updated=now;fixDelta.push(lc);} // Cloud nachziehen
+     // "Erledigt" ist kugelsicher: maßgeblich ist der Zeitstempel doneAt (Maximum gewinnt, kann nicht überschrieben werden).
+     if(lc&&lc.followup&&d.followup&&lc.followup.due===d.followup.due){
+       var lda2=lc.followup.doneAt||(lc.followup.done?1:0),dda2=d.followup.doneAt||(d.followup.done?1:0),da2=Math.max(lda2,dda2);
+       if(da2){
+         d.followup.done=true;d.followup.doneAt=da2;                                  // eingehender Datensatz auf erledigt
+         if(lda2<da2){lc.followup.done=true;lc.followup.doneAt=da2;changed=true;}       // lokal nachziehen
+         if(dda2<da2){lc.followup.done=true;lc.followup.doneAt=da2;lc.updated=now;fixDelta.push(lc);} // Cloud nachziehen
+       }
      }
      if(keepLocal)return;
      if(lc&&lc.lat!=null&&d.lat==null){d.lat=lc.lat;d.lon=lc.lon;} // lokale Koordinaten erhalten
@@ -2327,7 +2328,7 @@ var USERS=%%USERS%%;
  document.body.addEventListener("click",function(e){
    if(e.target.closest("a"))return;
    var fd=e.target.closest("[data-fudone]");
-   if(fd){e.preventDefault();e.stopPropagation();var fc=byId(fd.getAttribute("data-fudone"));if(fc&&fc.followup){fc.followup.done=true;fc.updated=Date.now();saveContact(fc);}renderDashboard();return;}
+   if(fd){e.preventDefault();e.stopPropagation();var fc=byId(fd.getAttribute("data-fudone"));if(fc&&fc.followup){fc.followup.done=true;fc.followup.doneAt=Date.now();fc.updated=Date.now();saveContact(fc);}renderDashboard();return;}
    var is=e.target.closest("[data-inboxseen]");
    if(is){e.preventDefault();e.stopPropagation();var sp=is.getAttribute("data-inboxseen").split("|");markInboxSeen(sp[0],sp[1]);renderDashboard();return;}
    var ir=e.target.closest("[data-inboxreply]");
@@ -2446,7 +2447,7 @@ var USERS=%%USERS%%;
    var eab=document.getElementById("emptyAddAct");if(eab)eab.onclick=function(){openActModal(curId);};
    document.getElementById("dStatus").onchange=function(){var cc=byId(curId)||c;cc.status=this.value;cc.updated=Date.now();saveContact(cc);openDetail(curId);};
    document.getElementById("fuSet").onclick=function(){var d=document.getElementById("fuDate").value;if(!d){alert("Bitte ein Datum wählen.");return;}var cc=byId(curId)||c;cc.followup={due:new Date(d+"T09:00").getTime(),note:document.getElementById("fuNote").value.trim(),done:false};cc.updated=Date.now();saveContact(cc);openDetail(curId);};
-   var fd=document.getElementById("fuDone");if(fd)fd.onclick=function(){var cc=byId(curId)||c;if(cc.followup)cc.followup.done=true;cc.updated=Date.now();saveContact(cc);openDetail(curId);};
+   var fd=document.getElementById("fuDone");if(fd)fd.onclick=function(){var cc=byId(curId)||c;if(cc.followup){cc.followup.done=true;cc.followup.doneAt=Date.now();}cc.updated=Date.now();saveContact(cc);openDetail(curId);};
    var mb2=document.getElementById("mailBtn");if(mb2)mb2.href=buildMailto(c); // Outlook vorausgefüllt (Anrede + Signatur)
    var ib=document.getElementById("icsBtn");if(ib)ib.onclick=function(){icsDownload(c,c.followup);};
    document.getElementById("delBtn").onclick=function(){if(confirm("Diesen Kontakt mit gesamtem Verlauf endgültig löschen?")){removeContact(curId);renderList();show("list");}};
@@ -3314,7 +3315,7 @@ var USERS=%%USERS%%;
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v143";
+ var APP_VER="v144";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
@@ -3382,7 +3383,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v143";
+const CACHE="vertrieb-v144";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png","./icon-32.png","./favicon.ico",
   "./vendor/leaflet.js","./vendor/leaflet.css","./vendor/msal-browser.min.js",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
