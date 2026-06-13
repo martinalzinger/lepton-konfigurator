@@ -2484,8 +2484,11 @@ var USERS=%%USERS%%;
      else try{localStorage.removeItem("amb_lepton_offer_return");}catch(_){}}catch(e){}
    location.href="../index.html";
  }
+ var _listScroll=0;
  function openDetail(id){
-   var c=byId(id);if(!c)return;curId=id;_detUpd=(c.updated||0);
+   var c=byId(id);if(!c)return;
+   if(curView==="list")_listScroll=window.pageYOffset||document.documentElement.scrollTop||0; // Scroll-Position der Liste merken
+   curId=id;_detUpd=(c.updated||0);
    var loc=[c.str,[c.plz,c.ort].filter(Boolean).join(" ")].filter(Boolean);
    var addr=[c.strasse,[c.plz,c.ort].filter(Boolean).join(" "),landLabel(c.land)].filter(Boolean).join(", ");
    var ll=contactLatLon(c);
@@ -2566,7 +2569,7 @@ var USERS=%%USERS%%;
    initDetailMap(c); // stabile Leaflet-Satellitenkarte statt flackerndem Google-Rahmen
    // Fehlende Angebots-PDFs automatisch im Hintergrund erzeugen (ohne Klick).
    acts.forEach(function(a){if(a.type==="angebot"&&a.config&&!a.pdf)queuePdfGen(c.id,a.id,false);});
-   document.getElementById("backBtn").onclick=function(){renderList();show("list");};
+   document.getElementById("backBtn").onclick=function(){renderList();show("list");setTimeout(function(){window.scrollTo(0,_listScroll);},0);};
    document.getElementById("editBtn").onclick=function(){openForm(curId);};
    document.getElementById("addActBtn").onclick=function(){openActModal(curId);};
    var vcb=document.getElementById("vcardBtn");if(vcb)vcb.onclick=function(){saveVCard(byId(curId)||c);};
@@ -3457,7 +3460,7 @@ var USERS=%%USERS%%;
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v153";
+ var APP_VER="v154";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
@@ -3525,7 +3528,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v153";
+const CACHE="vertrieb-v154";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png","./icon-32.png","./favicon.ico",
   "./vendor/leaflet.js","./vendor/leaflet.css","./vendor/msal-browser.min.js",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
