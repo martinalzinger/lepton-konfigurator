@@ -2955,7 +2955,7 @@ var USERS=%%USERS%%;
  };
  // CSV
  document.getElementById("csvBtn").onclick=function(){document.getElementById("csvFile").click();};
- document.getElementById("csvFile").onchange=function(e){var f=e.target.files[0];if(!f)return;var rd=new FileReader();rd.onload=function(){var n=importCSV(rd.result);alert(n+" Leads importiert.");initFilters();renderList();renderDashboard();show("list");};rd.readAsText(f);e.target.value="";};
+ document.getElementById("csvFile").onchange=function(e){var f=e.target.files[0];if(!f)return;var rd=new FileReader();rd.onload=function(){var res=importCSV(rd.result);alert(res.added+" neue Leads importiert"+(res.updated?(" · "+res.updated+" bereits vorhanden (fehlende Felder ergänzt, keine Dublette)"):"")+".");initFilters();renderList();renderDashboard();show("list");};rd.readAsText(f);e.target.value="";};
  // OneNote/Notiz -> Kontakt + Verlauf per KI
  var NOTE_ATYPES={anruf:1,mailout:1,mailin:1,besuch:1,angebot:1,notiz:1};
  function noteDateTs(s){s=String(s||"").trim();var m=s.match(/^(\d{4})-(\d{2})-(\d{2})/);if(m){var d=new Date(+m[1],+m[2]-1,+m[3],9,0,0);if(!isNaN(d))return d.getTime();}var d2=new Date(s);return isNaN(d2)?Date.now():d2.getTime();}
@@ -3142,17 +3142,22 @@ var USERS=%%USERS%%;
  var CSV_COLS={firma:"firma",company:"firma",zusatz:"firma2",anrede:"anrede",vorname:"vorname",firstname:"vorname",nachname:"nachname",lastname:"nachname",name:"nachname",strasse:"strasse","straße":"strasse",street:"strasse",plz:"plz",zip:"plz",ort:"ort",city:"ort",land:"land",country:"land",bundesland:"bundesland",state:"bundesland",region:"bundesland",tel:"tel",telefon:"tel",phone:"tel",mobil:"mobil",mobile:"mobil",mail:"mail",email:"mail","e-mail":"mail",web:"web",website:"web",url:"web",ustid:"ustid",vat:"ustid",quelle:"quelle",source:"quelle",notiz:"notiz",note:"notiz",notes:"notiz",status:"status"};
  function splitCSVLine(line,sep){var out=[],cur="",q=false;for(var i=0;i<line.length;i++){var ch=line[i];if(q){if(ch==='"'){if(line[i+1]==='"'){cur+='"';i++;}else q=false;}else cur+=ch;}else{if(ch==='"')q=true;else if(ch===sep){out.push(cur);cur="";}else cur+=ch;}}out.push(cur);return out;}
  function importCSV(text){
-   text=text.replace(/^﻿/,"");var lines=text.split(/\r?\n/).filter(function(l){return l.trim();});if(lines.length<2)return 0;
+   text=text.replace(/^﻿/,"");var lines=text.split(/\r?\n/).filter(function(l){return l.trim();});if(lines.length<2)return {added:0,updated:0};
    var sep=(lines[0].split(";").length>lines[0].split(",").length)?";":",";
    var head=splitCSVLine(lines[0],sep).map(function(h){return CSV_COLS[h.trim().toLowerCase()]||null;});
-   var n=0,added=[];
+   var n=0,upd=0,added=[],changed=[],ex=osmExisting();
+   var FILL=["anrede","vorname","nachname","strasse","plz","ort","bundesland","tel","mobil","mail","web","ustid","quelle","notiz"];
    for(var r=1;r<lines.length;r++){var cells=splitCSVLine(lines[r],sep);var rec={id:uid(),created:Date.now(),updated:Date.now(),status:"lead",land:"DE",activities:[]};var has=false;
      for(var c=0;c<head.length;c++){if(head[c]&&cells[c]!=null){var val=cells[c].trim();if(val){rec[head[c]]=val;has=true;}}}
      if(!has)continue;if(rec.land)rec.land=rec.land.toUpperCase().slice(0,2)||"DE";if(!findStatus(rec.status))rec.status="lead";
      // PLZ-Reparatur: DE-Postleitzahlen mit verlorener führender Null (Excel-Zahl) auf 5 Stellen auffüllen.
      if(rec.plz&&rec.land==="DE"&&/^\d{1,4}$/.test(rec.plz)){while(rec.plz.length<5)rec.plz="0"+rec.plz;}
-     DB.contacts.push(rec);added.push(rec);n++;}
-   bulkSave(added,false);return n;
+     // Dubletten-Schutz: gibt es die Firma (+Ort) schon -> NICHT neu anlegen, sondern fehlende Felder ergänzen.
+     var exId=rec.firma?(ex["dk:"+dedupKey(rec.firma,rec.ort)]||ex[((rec.firma||"")+"|"+(rec.ort||"")).toLowerCase()]):null;
+     if(exId){var exC=byId(exId);if(exC){var chg=false;FILL.forEach(function(k){if(rec[k]&&!String(exC[k]||"").trim()){exC[k]=rec[k];chg=true;}});if(chg){exC.updated=Date.now();changed.push(exC);}}upd++;continue;}
+     DB.contacts.push(rec);added.push(rec);if(rec.firma)ex["dk:"+dedupKey(rec.firma,rec.ort)]=rec.id;n++;}
+   var all=added.concat(changed);if(all.length)bulkSave(all,false);
+   return {added:n,updated:upd};
  }
  function findStatus(s){for(var i=0;i<STATUS.length;i++)if(STATUS[i][0]===s)return true;return false;}
  (function(){var tpl="firma;anrede;vorname;nachname;strasse;plz;ort;bundesland;land;tel;mobil;mail;web;quelle;notiz\n"+
@@ -3321,7 +3326,7 @@ var USERS=%%USERS%%;
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v146";
+ var APP_VER="v147";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
@@ -3389,7 +3394,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v146";
+const CACHE="vertrieb-v147";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png","./icon-32.png","./favicon.ico",
   "./vendor/leaflet.js","./vendor/leaflet.css","./vendor/msal-browser.min.js",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
