@@ -335,6 +335,7 @@ textarea.field{min-height:74px;resize:vertical;line-height:1.5}
       <select class="filter" id="fOwner"><option value="">Alle Vertriebler</option></select>
       <select class="filter" id="fSort"><option value="updated">Zuletzt aktiv</option><option value="name">Name A–Z</option><option value="created">Neueste</option><option value="due">Wiedervorlage</option></select>
       <button class="btn sm" id="mapToggle" type="button"><svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.7"><path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"/><path d="M9 4v14M15 6v14"/></svg>Karte</button>
+      <button class="btn sm" id="serialBtn" type="button" title="Serienmail an die gefilterte Liste"><svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.7"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>Serienmail</button>
     </div>
     <div id="cMap" style="height:70vh;min-height:380px;border:1px solid var(--line);border-radius:12px;margin-bottom:12px;display:none"></div>
     <div class="clist" id="clist"></div>
@@ -666,6 +667,26 @@ create policy "cal all" on cal_events
       <button class="btn primary block" id="calSave" type="button">Speichern</button>
       <button class="btn danger block" id="calDelete" type="button" style="display:none">Termin löschen</button>
       <button class="btn ghost block" id="calCancel" type="button">Abbrechen</button>
+    </div>
+  </div>
+</div>
+
+<!-- Serienmail an die gefilterte Liste -->
+<div class="modal-bg" id="serialModal">
+  <div class="modal">
+    <h3>Serienmail</h3>
+    <div id="serialInfo" style="font-size:13px;color:var(--muted);margin-bottom:8px"></div>
+    <div class="fg" style="margin-bottom:8px"><label>Betreff</label><input class="field" id="serBetreff" placeholder="z. B. Sternsiebanlage Lepton 5100 – Vorführung"></div>
+    <div class="fg" style="margin-bottom:6px"><label>Text</label><textarea class="field" id="serText" style="min-height:170px" placeholder="{anrede}
+
+… Ihr Text …"></textarea></div>
+    <div style="font-size:11px;color:var(--faint);margin-bottom:8px">Platzhalter: <b>{anrede}</b> (= „Sehr geehrte Frau …/Herr …"), <b>{firma}</b>, <b>{vorname}</b>, <b>{nachname}</b>, <b>{ort}</b>. Signatur + Logo werden automatisch angehängt. Jede Mail geht <b>einzeln</b> raus (kein sichtbarer Verteiler).</div>
+    <label class="chk" style="margin-bottom:8px;align-items:flex-start"><input type="checkbox" id="serConfirm" style="margin-top:3px"> <span style="font-size:12px">Ich habe die Empfänger geprüft und darf ihnen schreiben (Einwilligung bzw. Geschäftsbeziehung; UWG/DSGVO beachtet).</span></label>
+    <div id="serProg" style="font-size:13px;margin-bottom:8px;min-height:18px"></div>
+    <div class="form-actions">
+      <button class="btn primary block" id="serSend" type="button">Senden</button>
+      <button class="btn danger block" id="serStop" type="button" style="display:none">Stopp</button>
+      <button class="btn ghost block" id="serCancel" type="button">Schließen</button>
     </div>
   </div>
 </div>
@@ -1950,6 +1971,56 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
    if(cMapOpen)showContactsMap();
  };
  document.getElementById("cMap").addEventListener("click",function(e){var b=e.target.closest("[data-cid]");if(b)openDetail(b.getAttribute("data-cid"));});
+
+ /* ---------- Serienmail an die gefilterte Liste (personalisiert, gedrosselt, über M365) ---------- */
+ var serialModal=document.getElementById("serialModal"),_serBusy=false,_serStop=false;
+ function serMailValid(m){return !!m&&/.+@.+\..+/.test(m);}
+ function serialRecipients(){return (lastListArr||[]).filter(function(c){return c&&serMailValid(c.mail);});}
+ function serFill(t,c){return String(t||"").replace(/\{anrede\}/g,mailGreeting(c)).replace(/\{firma\}/g,c.firma||"").replace(/\{vorname\}/g,c.vorname||"").replace(/\{nachname\}/g,c.nachname||"").replace(/\{ort\}/g,c.ort||"").replace(/\{name\}/g,displayName(c));}
+ document.getElementById("serialBtn").onclick=function(){
+   var rec=serialRecipients(),total=(lastListArr||[]).length,noMail=total-rec.length;
+   document.getElementById("serialInfo").innerHTML='<b>'+rec.length+'</b> Empfänger mit E-Mail (von '+total+' gefilterten Kontakten).'+(noMail>0?(' <span style="color:var(--warn)">'+noMail+' ohne E-Mail werden übersprungen.</span>'):'');
+   document.getElementById("serProg").textContent="";document.getElementById("serConfirm").checked=false;
+   document.getElementById("serSend").style.display="";document.getElementById("serSend").disabled=false;document.getElementById("serStop").style.display="none";
+   serialModal.classList.add("open");
+ };
+ document.getElementById("serCancel").onclick=function(){if(_serBusy){if(!confirm("Versand läuft noch. Schließen stoppt ihn. Fortfahren?"))return;_serStop=true;}serialModal.classList.remove("open");};
+ document.getElementById("serStop").onclick=function(){_serStop=true;};
+ document.getElementById("serSend").onclick=function(){
+   var subjT=document.getElementById("serBetreff").value.trim(),bodyT=document.getElementById("serText").value.trim();
+   if(!subjT||!bodyT){alert("Bitte Betreff und Text ausfüllen.");return;}
+   if(!document.getElementById("serConfirm").checked){alert("Bitte bestätige, dass du den Empfängern schreiben darfst.");return;}
+   var rec=serialRecipients();if(!rec.length){alert("Keine Empfänger mit E-Mail in der gefilterten Liste.");return;}
+   var mins=Math.ceil(rec.length*4/60);
+   if(!confirm(rec.length+" Mails werden EINZELN über dein Outlook gesendet (gedrosselt – ca. "+mins+" Min). Jetzt starten?"))return;
+   _serStop=false;_serBusy=true;var sendBtn=this;sendBtn.style.display="none";document.getElementById("serStop").style.display="";
+   var prog=document.getElementById("serProg");
+   msMailToken(true).then(function(tok){
+     if(!tok)throw new Error("Kein Mail-Zugriff – bitte Microsoft-Login bestätigen.");
+     var i=0,sent=0,fail=0,changed=[];
+     function flushChanged(){if(changed.length){bulkSave(changed.slice(),false);changed.length=0;}}
+     function finish(){_serBusy=false;flushChanged();prog.innerHTML=(_serStop?"Gestoppt. ":"Fertig! ")+"<b>"+sent+"</b> Mails gesendet"+(fail?(", "+fail+" Fehler"):"")+".";document.getElementById("serStop").style.display="none";sendBtn.style.display="";sendBtn.disabled=false;renderList();}
+     function next(){
+       if(_serStop||i>=rec.length){finish();return;}
+       var c=rec[i];
+       prog.innerHTML="Sende "+(i+1)+" / "+rec.length+" … <b>"+esc(displayName(c))+"</b><br>✓ "+sent+" gesendet"+(fail?(", "+fail+" Fehler"):"");
+       var subj=serFill(subjT,c),full=mailBodyFinal(serFill(bodyT,c));
+       var att=[],html=null;
+       if(SIGAUTO&&SIGLOGO&&MAIL_LOGO){html=textToHtml(full)+'<br><br><img src="cid:amblogo" alt="Alzinger Maschinenbau" style="height:64px;border:0">';att.push({name:"alzinger-logo.png",contentType:"image/png",dataUri:MAIL_LOGO,inline:true,contentId:"amblogo"});}
+       graphSendMail(tok,c.mail,subj,full,att.length?att:null,html).then(function(){
+         sent++;c.activities=c.activities||[];c.activities.push({id:uid(),type:"mailout",date:Date.now(),note:"Serienmail · Betreff: "+subj,by:(CUR&&CUR.n)||"",mailTo:c.mail,mailSent:true});c.updated=Date.now();changed.push(c);
+         if(changed.length>=10)flushChanged();
+         i++;setTimeout(next,3800);
+       },function(e){
+         var m=String((e&&e.message)||e);
+         if(/429|503|throttl/i.test(m)){prog.innerHTML+=" <span style=\"color:var(--warn)\">· kurz gedrosselt, warte …</span>";setTimeout(next,15000);return;} // selber Empfänger nochmal
+         fail++;i++;setTimeout(next,3800);
+       });
+     }
+     next();
+   }).catch(function(e){_serBusy=false;prog.textContent="Fehler: "+((e&&e.message)||e);document.getElementById("serStop").style.display="none";sendBtn.style.display="";sendBtn.disabled=false;});
+ };
+ serialModal.addEventListener("click",function(e){if(e.target===serialModal&&!_serBusy)serialModal.classList.remove("open");});
 
  /* ---------- Leads ---------- */
  function renderLeads(){
@@ -3297,7 +3368,7 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v147";
+ var APP_VER="v148";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
