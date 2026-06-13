@@ -191,7 +191,7 @@ textarea.field{min-height:74px;resize:vertical;line-height:1.5}
 .detail-head{display:flex;gap:14px;align-items:flex-start;margin-bottom:6px}
 .detail-head .av{width:52px;height:52px;border-radius:12px;background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-weight:600;font-size:18px;flex:0 0 auto}
 /* Initialen-Kästchen je Status einfärben */
-.av.av-lead{background:#64748b}
+.av.av-lead{background:#eab308;color:#3d2f00}
 .av.av-interessent{background:#d97706}
 .av.av-angebot{background:#1d4ed8}
 .av.av-kunde{background:#15803d}
@@ -1904,7 +1904,7 @@ var USERS=%%USERS%%;
  var lastListArr=[],cMapOpen=false,_cmap=null,_cmarkers=null,_geoBusy=false;
  // SVG-Fahne (kein Emoji/PNG) -> rendert identisch auf Windows, Mac, iPhone.
  // Status-Farben (gleich wie die Avatar-Kästchen): lead/interessent/angebot/kunde/haendler/verloren.
- var STATUS_COL={lead:"#64748b",interessent:"#d97706",angebot:"#1d4ed8",kunde:"#15803d",haendler:"#6d28d9",verloren:"#9aa0a6"};
+ var STATUS_COL={lead:"#eab308",interessent:"#d97706",angebot:"#1d4ed8",kunde:"#15803d",haendler:"#6d28d9",verloren:"#9aa0a6"};
  function statusColor(s){return STATUS_COL[s]||STATUS_COL.lead;}
  function flagIcon(L,col){col=col||"#c00000";return L.divIcon({className:"flag-mark",html:'<svg width="22" height="27" viewBox="0 0 22 27" style="filter:drop-shadow(0 1px 1.5px rgba(0,0,0,.45))"><line x1="3" y1="1" x2="3" y2="26" stroke="#2b2b2b" stroke-width="2.2"/><path d="M3 1.5 H19 L15 6.5 L19 11.5 H3 Z" fill="'+col+'"/></svg>',iconSize:[22,27],iconAnchor:[3,26],popupAnchor:[8,-22]});}
  function addContactMarker(L,c){
@@ -3321,7 +3321,7 @@ var USERS=%%USERS%%;
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v145";
+ var APP_VER="v146";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
@@ -3389,7 +3389,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v145";
+const CACHE="vertrieb-v146";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png","./icon-32.png","./favicon.ico",
   "./vendor/leaflet.js","./vendor/leaflet.css","./vendor/msal-browser.min.js",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
