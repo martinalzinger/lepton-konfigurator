@@ -711,6 +711,13 @@ create policy "cal all" on cal_events
     </div>
     <input class="field" id="serFilter" placeholder="In der Liste suchen (Name/Firma/Ort)…" style="margin-bottom:6px;font-size:13px">
     <div id="serRecipList" style="max-height:210px;overflow:auto;border:1px solid var(--line);border-radius:8px;padding:6px;margin-bottom:10px;display:flex;flex-direction:column;gap:1px"></div>
+    <div style="border:1px solid var(--line-strong);border-radius:10px;padding:9px;margin-bottom:10px;background:#fafafa">
+      <div style="font-size:12px;font-weight:700;margin-bottom:4px">Design-Mail (HTML-Vorlage)</div>
+      <div id="serTplState" style="font-size:12px;color:var(--muted);margin-bottom:6px">Keine Vorlage – es wird der einfache Text unten gesendet.</div>
+      <button class="btn ghost sm" id="serTplLoad" type="button">HTML-Vorlage laden</button>
+      <button class="btn ghost sm" id="serTplClear" type="button" style="display:none">Entfernen</button>
+      <input type="file" id="serTplFile" accept=".html,.htm,text/html" style="display:none">
+    </div>
     <div class="fg" style="margin-bottom:8px"><label>Betreff</label><input class="field" id="serBetreff" placeholder="z. B. Sternsiebanlage Lepton 5100 – Vorführung"></div>
     <div class="fg" style="margin-bottom:6px"><label>Text</label><textarea class="field" id="serText" style="min-height:170px" placeholder="{anrede}
 
@@ -2012,6 +2019,32 @@ var USERS=%%USERS%%;
  function serMailValid(m){return !!m&&/.+@.+\..+/.test(m);}
  function serialRecipients(){return (lastListArr||[]).filter(function(c){return c&&serMailValid(c.mail);});}
  function serFill(t,c){return String(t||"").replace(/\{anrede\}/g,mailGreeting(c)).replace(/\{firma\}/g,c.firma||"").replace(/\{vorname\}/g,c.vorname||"").replace(/\{nachname\}/g,c.nachname||"").replace(/\{ort\}/g,c.ort||"").replace(/\{name\}/g,displayName(c));}
+ /* --- HTML-Design-Vorlage für die Serienmail (mit {{Anrede}} {{Nachname}} {{Abmeldelink}} …) --- */
+ var SERTPL_KEY="amb_crm_sertpl",_serTpl=null;
+ try{_serTpl=localStorage.getItem(SERTPL_KEY)||null;}catch(e){}
+ function serAnredePrefix(c){var nn=c.nachname||"",a=c.anrede||"";if(nn){if(/frau/i.test(a))return "Sehr geehrte Frau";if(/herr/i.test(a))return "Sehr geehrter Herr";return "Guten Tag";}return "Sehr geehrte Damen und Herren";}
+ function fillTpl(html,c){
+   var s=String(html||"");
+   s=s.replace(/\{\{\s*Anrede\s*\}\}\s*\{\{\s*Nachname\s*\}\}\s*,/g,esc(mailGreeting(c))); // "{{Anrede}} {{Nachname}}," -> volle Grußzeile
+   s=s.replace(/\{\{\s*Anrede\s*\}\}/g,esc(serAnredePrefix(c)));
+   s=s.replace(/\{\{\s*Nachname\s*\}\}/g,esc(c.nachname||""));
+   s=s.replace(/\{\{\s*Vorname\s*\}\}/g,esc(c.vorname||""));
+   s=s.replace(/\{\{\s*Firma\s*\}\}/g,esc(c.firma||""));
+   s=s.replace(/\{\{\s*Ort\s*\}\}/g,esc(c.ort||""));
+   s=s.replace(/\{\{\s*Abmeldelink\s*\}\}/g,"mailto:info@alzinger-maschinenbau.de?subject="+encodeURIComponent("Abmeldung – keine weiteren Infos"));
+   return s;
+ }
+ function serTplState(){
+   var st=document.getElementById("serTplState"),clr=document.getElementById("serTplClear"),txt=document.getElementById("serText");
+   if(_serTpl){st.innerHTML='<span style="color:var(--pos)">✓ Design-Vorlage geladen</span> – sie wird als Mail gesendet (das Textfeld unten wird ignoriert).';clr.style.display="";if(txt)txt.disabled=true;}
+   else{st.textContent="Keine Vorlage – es wird der einfache Text unten gesendet.";clr.style.display="none";if(txt)txt.disabled=false;}
+ }
+ document.getElementById("serTplLoad").onclick=function(){document.getElementById("serTplFile").click();};
+ document.getElementById("serTplFile").onchange=function(e){var f=e.target.files[0];if(!f)return;var rd=new FileReader();rd.onload=function(){_serTpl=String(rd.result||"");try{localStorage.setItem(SERTPL_KEY,_serTpl);}catch(_){}
+   var m=/<title>([\s\S]*?)<\/title>/i.exec(_serTpl),bf=document.getElementById("serBetreff");
+   if(m&&bf&&!bf.value.trim()){var d=document.createElement("textarea");d.innerHTML=m[1];bf.value=d.value.trim();}
+   serTplState();};rd.readAsText(f);e.target.value="";};
+ document.getElementById("serTplClear").onclick=function(){_serTpl=null;try{localStorage.removeItem(SERTPL_KEY);}catch(_){}serTplState();};
  var _serSel={}; // ausgewählte Empfänger (Kontakt-IDs)
  function serSelectedList(){return serialRecipients().filter(function(c){return _serSel[c.id];});}
  function serVisible(){var q=(document.getElementById("serFilter").value||"").toLowerCase();return serialRecipients().filter(function(c){return !q||((displayName(c)+" "+(c.firma||"")+" "+(c.ort||"")+" "+(c.mail||"")).toLowerCase().indexOf(q)>=0);});}
@@ -2025,7 +2058,7 @@ var USERS=%%USERS%%;
  }
  document.getElementById("serialBtn").onclick=function(){
    var rec=serialRecipients();_serSel={};rec.forEach(function(c){_serSel[c.id]=1;}); // standardmäßig alle ausgewählt
-   document.getElementById("serFilter").value="";serBuildList("");serUpdateInfo();
+   document.getElementById("serFilter").value="";serBuildList("");serUpdateInfo();serTplState();
    document.getElementById("serProg").textContent="";document.getElementById("serConfirm").checked=false;
    document.getElementById("serSend").style.display="";document.getElementById("serSend").disabled=false;document.getElementById("serStop").style.display="none";
    serialModal.classList.add("open");
@@ -2038,7 +2071,8 @@ var USERS=%%USERS%%;
  document.getElementById("serStop").onclick=function(){_serStop=true;};
  document.getElementById("serSend").onclick=function(){
    var subjT=document.getElementById("serBetreff").value.trim(),bodyT=document.getElementById("serText").value.trim();
-   if(!subjT||!bodyT){alert("Bitte Betreff und Text ausfüllen.");return;}
+   if(!subjT){alert("Bitte einen Betreff eingeben.");return;}
+   if(!_serTpl&&!bodyT){alert("Bitte einen Text eingeben – oder oben eine HTML-Vorlage laden.");return;}
    if(!document.getElementById("serConfirm").checked){alert("Bitte bestätige, dass du den Empfängern schreiben darfst.");return;}
    var rec=serSelectedList();if(!rec.length){alert("Bitte mindestens einen Empfänger auswählen.");return;}
    var mins=Math.ceil(rec.length*4/60);
@@ -2054,11 +2088,11 @@ var USERS=%%USERS%%;
        if(_serStop||i>=rec.length){finish();return;}
        var c=rec[i];
        prog.innerHTML="Sende "+(i+1)+" / "+rec.length+" … <b>"+esc(displayName(c))+"</b><br>✓ "+sent+" gesendet"+(fail?(", "+fail+" Fehler"):"");
-       var subj=serFill(subjT,c),full=mailBodyFinal(serFill(bodyT,c));
-       var att=[],html=null;
-       if(SIGAUTO&&SIGLOGO&&MAIL_LOGO){html=textToHtml(full)+'<br><br><img src="cid:amblogo" alt="Alzinger Maschinenbau" style="height:64px;border:0">';att.push({name:"alzinger-logo.png",contentType:"image/png",dataUri:MAIL_LOGO,inline:true,contentId:"amblogo"});}
-       graphSendMail(tok,c.mail,subj,full,att.length?att:null,html).then(function(){
-         sent++;c.activities=c.activities||[];c.activities.push({id:uid(),type:"mailout",date:Date.now(),note:"Serienmail · Betreff: "+subj,by:(CUR&&CUR.n)||"",mailTo:c.mail,mailSent:true});c.updated=Date.now();changed.push(c);
+       var subj=serFill(subjT,c),att=null,html=null,full="";
+       if(_serTpl){ html=fillTpl(_serTpl,c); } // fertige Design-Mail (mit Logo/Layout) – ohne zusätzliche Signatur
+       else { full=mailBodyFinal(serFill(bodyT,c)); if(SIGAUTO&&SIGLOGO&&MAIL_LOGO){html=textToHtml(full)+'<br><br><img src="cid:amblogo" alt="Alzinger Maschinenbau" style="height:64px;border:0">';att=[{name:"alzinger-logo.png",contentType:"image/png",dataUri:MAIL_LOGO,inline:true,contentId:"amblogo"}];} }
+       graphSendMail(tok,c.mail,subj,full,att,html).then(function(){
+         sent++;c.activities=c.activities||[];c.activities.push({id:uid(),type:"mailout",date:Date.now(),note:(_serTpl?"Serienmail (Design) · Betreff: ":"Serienmail · Betreff: ")+subj,by:(CUR&&CUR.n)||"",mailTo:c.mail,mailSent:true});c.updated=Date.now();changed.push(c);
          if(changed.length>=10)flushChanged();
          i++;setTimeout(next,3800);
        },function(e){
@@ -3418,7 +3452,7 @@ var USERS=%%USERS%%;
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v149";
+ var APP_VER="v150";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
@@ -3486,7 +3520,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v149";
+const CACHE="vertrieb-v150";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png","./icon-32.png","./favicon.ico",
   "./vendor/leaflet.js","./vendor/leaflet.css","./vendor/msal-browser.min.js",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
