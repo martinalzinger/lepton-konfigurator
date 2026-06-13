@@ -888,10 +888,28 @@ var USERS=%%USERS%%;
    var row={id:id,data:{id:id,_deleted:true,updated:Date.now()},updated_at:new Date().toISOString()};
    return fetch(sbBase(),{method:"POST",headers:sbHeaders({"Prefer":"resolution=merge-duplicates,return=minimal"}),body:JSON.stringify([row])}).then(function(r){if(!r.ok)throw new Error("sb "+r.status);});
  }
- // Anzahl echter Kontakte in der Cloud (ohne Tombstones) -> winzige Abfrage, dient als Vollständigkeits-Check.
- function sbContactCount(){
-   return fetch(sbBase()+"?select=id&data->>_deleted=is.null&limit=1",{headers:sbHeaders({"Prefer":"count=exact"})})
-     .then(function(r){var cr=r.headers.get("content-range")||"";var m=/\/(\d+)$/.exec(cr);return m?+m[1]:null;}).catch(function(){return null;});
+ // Vollständigkeits-Abgleich: ALLE IDs aus der Cloud holen (winzig) und prüfen, welche lokal fehlen.
+ function sbAllIds(){
+   var ids=[];
+   function page(off){return fetch(sbBase()+"?select=id&limit=1000&offset="+off,{cache:"no-store",headers:sbHeaders()}).then(function(r){if(!r.ok)throw new Error("sb "+r.status);return r.json();}).then(function(rows){for(var i=0;i<rows.length;i++)if(rows[i]&&rows[i].id!=null)ids.push(rows[i].id);if(rows.length>=1000)return page(off+1000);return ids;});}
+   return page(0).catch(function(){return null;});
+ }
+ // Kontakte zu bestimmten IDs nachladen (in 100er-Paketen) -> data-Objekte.
+ function sbGetByIds(ids){
+   var out=[],i=0;
+   function chunk(){if(i>=ids.length)return Promise.resolve(out);var part=ids.slice(i,i+100);i+=100;
+     return fetch(sbBase()+"?select=data&id=in.("+part.map(encodeURIComponent).join(",")+")",{cache:"no-store",headers:sbHeaders()}).then(function(r){return r.ok?r.json():[];}).then(function(rows){rows.forEach(function(x){if(x&&x.data)out.push(x.data);});return chunk();});}
+   return chunk();
+ }
+ // Fehlende Kontakte (in der Cloud, aber nicht lokal) nachladen und einarbeiten.
+ function reconcileMissing(){
+   return sbAllIds().then(function(ids){
+     if(!ids)return;
+     var have={};(DB.contacts||[]).forEach(function(c){if(c)have[c.id]=1;});
+     var missing=ids.filter(function(id){return !have[id];});
+     if(!missing.length)return;
+     return sbGetByIds(missing).then(function(rows){var real=(rows||[]).filter(function(d){return d&&!d._deleted;});if(real.length){applyDelta(rows);cacheSave();rerenderCurrent();}});
+   }).catch(function(){});
  }
  /* ---- Bilder in Supabase Storage auslagern (statt base64 im Kontakt) -> klein & skalierbar ---- */
  var IMG_BUCKET="crm-bilder";
@@ -1437,8 +1455,8 @@ var USERS=%%USERS%%;
      if(DB.contacts&&DB.contacts.length&&_lastUA){
        function fullReload(){return sbGet().then(function(l){DB.contacts=mergeCloud(l);cacheSave();rerenderCurrent();}).catch(function(){});}
        flush().then(pullDelta).then(function(){
-         // Sicherheitsnetz: fehlen lokal Kontakte (Cloud hat mehr) -> einmal voll nachladen, damit kein Gerät unvollständig bleibt.
-         return sbContactCount().then(function(n){if(n!=null&&n>((DB.contacts&&DB.contacts.length)||0))return fullReload();});
+         // Sicherheitsnetz: fehlende Kontakte gezielt nachladen, damit kein Gerät unvollständig bleibt.
+         return reconcileMissing();
        }).catch(fullReload);
        return;
      }
@@ -3462,7 +3480,7 @@ var USERS=%%USERS%%;
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v155";
+ var APP_VER="v156";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
@@ -3530,7 +3548,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v155";
+const CACHE="vertrieb-v156";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png","./icon-32.png","./favicon.ico",
   "./vendor/leaflet.js","./vendor/leaflet.css","./vendor/msal-browser.min.js",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
