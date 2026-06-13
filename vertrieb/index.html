@@ -676,6 +676,12 @@ create policy "cal all" on cal_events
   <div class="modal">
     <h3>Serienmail</h3>
     <div id="serialInfo" style="font-size:13px;color:var(--muted);margin-bottom:8px"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;gap:8px">
+      <label style="font-size:12px;font-weight:700;margin:0">Empfänger auswählen</label>
+      <span><button class="btn ghost sm" id="serAll" type="button">Alle</button> <button class="btn ghost sm" id="serNone" type="button">Keine</button></span>
+    </div>
+    <input class="field" id="serFilter" placeholder="In der Liste suchen (Name/Firma/Ort)…" style="margin-bottom:6px;font-size:13px">
+    <div id="serRecipList" style="max-height:210px;overflow:auto;border:1px solid var(--line);border-radius:8px;padding:6px;margin-bottom:10px;display:flex;flex-direction:column;gap:1px"></div>
     <div class="fg" style="margin-bottom:8px"><label>Betreff</label><input class="field" id="serBetreff" placeholder="z. B. Sternsiebanlage Lepton 5100 – Vorführung"></div>
     <div class="fg" style="margin-bottom:6px"><label>Text</label><textarea class="field" id="serText" style="min-height:170px" placeholder="{anrede}
 
@@ -1977,20 +1983,35 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
  function serMailValid(m){return !!m&&/.+@.+\..+/.test(m);}
  function serialRecipients(){return (lastListArr||[]).filter(function(c){return c&&serMailValid(c.mail);});}
  function serFill(t,c){return String(t||"").replace(/\{anrede\}/g,mailGreeting(c)).replace(/\{firma\}/g,c.firma||"").replace(/\{vorname\}/g,c.vorname||"").replace(/\{nachname\}/g,c.nachname||"").replace(/\{ort\}/g,c.ort||"").replace(/\{name\}/g,displayName(c));}
+ var _serSel={}; // ausgewählte Empfänger (Kontakt-IDs)
+ function serSelectedList(){return serialRecipients().filter(function(c){return _serSel[c.id];});}
+ function serVisible(){var q=(document.getElementById("serFilter").value||"").toLowerCase();return serialRecipients().filter(function(c){return !q||((displayName(c)+" "+(c.firma||"")+" "+(c.ort||"")+" "+(c.mail||"")).toLowerCase().indexOf(q)>=0);});}
+ function serUpdateInfo(){var rec=serialRecipients(),sel=serSelectedList().length,total=(lastListArr||[]).length,noMail=total-rec.length;document.getElementById("serialInfo").innerHTML='<b>'+sel+'</b> von '+rec.length+' Empfängern ausgewählt'+(noMail>0?(' · <span style="color:var(--warn)">'+noMail+' ohne E-Mail</span>'):'')+'.';}
+ function serBuildList(q){
+   var rows=serVisible(),box=document.getElementById("serRecipList");
+   if(!rows.length){box.innerHTML='<div style="font-size:12px;color:var(--faint);padding:6px">Keine Treffer.</div>';return;}
+   box.innerHTML=rows.slice(0,800).map(function(c){
+     return '<label style="display:flex;align-items:center;gap:8px;font-size:13px;padding:3px 4px;cursor:pointer"><input type="checkbox" class="serRcp" data-id="'+esc(c.id)+'"'+(_serSel[c.id]?' checked':'')+'><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(displayName(c))+' <span style="color:var(--muted)">· '+esc(c.mail)+'</span></span></label>';
+   }).join("")+(rows.length>800?('<div style="font-size:11px;color:var(--faint);padding:4px">… '+(rows.length-800)+' weitere – Suche eingrenzen</div>'):'');
+ }
  document.getElementById("serialBtn").onclick=function(){
-   var rec=serialRecipients(),total=(lastListArr||[]).length,noMail=total-rec.length;
-   document.getElementById("serialInfo").innerHTML='<b>'+rec.length+'</b> Empfänger mit E-Mail (von '+total+' gefilterten Kontakten).'+(noMail>0?(' <span style="color:var(--warn)">'+noMail+' ohne E-Mail werden übersprungen.</span>'):'');
+   var rec=serialRecipients();_serSel={};rec.forEach(function(c){_serSel[c.id]=1;}); // standardmäßig alle ausgewählt
+   document.getElementById("serFilter").value="";serBuildList("");serUpdateInfo();
    document.getElementById("serProg").textContent="";document.getElementById("serConfirm").checked=false;
    document.getElementById("serSend").style.display="";document.getElementById("serSend").disabled=false;document.getElementById("serStop").style.display="none";
    serialModal.classList.add("open");
  };
+ document.getElementById("serRecipList").addEventListener("change",function(e){var cb=e.target.closest(".serRcp");if(!cb)return;var id=cb.getAttribute("data-id");if(cb.checked)_serSel[id]=1;else delete _serSel[id];serUpdateInfo();});
+ document.getElementById("serFilter").addEventListener("input",function(){serBuildList(this.value);});
+ document.getElementById("serAll").onclick=function(){serVisible().forEach(function(c){_serSel[c.id]=1;});serBuildList();serUpdateInfo();};
+ document.getElementById("serNone").onclick=function(){serVisible().forEach(function(c){delete _serSel[c.id];});serBuildList();serUpdateInfo();};
  document.getElementById("serCancel").onclick=function(){if(_serBusy){if(!confirm("Versand läuft noch. Schließen stoppt ihn. Fortfahren?"))return;_serStop=true;}serialModal.classList.remove("open");};
  document.getElementById("serStop").onclick=function(){_serStop=true;};
  document.getElementById("serSend").onclick=function(){
    var subjT=document.getElementById("serBetreff").value.trim(),bodyT=document.getElementById("serText").value.trim();
    if(!subjT||!bodyT){alert("Bitte Betreff und Text ausfüllen.");return;}
    if(!document.getElementById("serConfirm").checked){alert("Bitte bestätige, dass du den Empfängern schreiben darfst.");return;}
-   var rec=serialRecipients();if(!rec.length){alert("Keine Empfänger mit E-Mail in der gefilterten Liste.");return;}
+   var rec=serSelectedList();if(!rec.length){alert("Bitte mindestens einen Empfänger auswählen.");return;}
    var mins=Math.ceil(rec.length*4/60);
    if(!confirm(rec.length+" Mails werden EINZELN über dein Outlook gesendet (gedrosselt – ca. "+mins+" Min). Jetzt starten?"))return;
    _serStop=false;_serBusy=true;var sendBtn=this;sendBtn.style.display="none";document.getElementById("serStop").style.display="";
@@ -3368,7 +3389,7 @@ var USERS=[{h:"2a0e88896d2303027849314ab026e16a096c8234cc0bb3b4eb9ffe5e1fbfd324"
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v148";
+ var APP_VER="v149";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
