@@ -121,6 +121,7 @@ select.filter{width:auto;min-width:120px;flex:0 0 auto}
 
 .clist{display:grid;gap:9px}
 .crow{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:13px 14px;cursor:pointer;display:flex;gap:12px;align-items:flex-start;transition:.12s}
+.crow.seen{background:var(--red-soft);border-color:var(--red);box-shadow:inset 3px 0 0 var(--red)}
 .crow:hover{border-color:var(--line-strong);box-shadow:0 2px 10px rgba(0,0,0,.04)}
 .crow .av{flex:0 0 auto;width:40px;height:40px;border-radius:10px;background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-weight:600;font-size:14px}
 .crow .mid{flex:1;min-width:0}
@@ -1903,7 +1904,7 @@ var USERS=%%USERS%%;
  function contactRow(c){
    var due=(c.followup&&!c.followup.done&&c.followup.due)?'<span class="due '+dueClass(c.followup.due)+'">'+dueLabel(c.followup.due)+'</span>':'';
    var sub=fullName(c);var loc=[c.strasse,[c.plz,c.ort].filter(Boolean).join(" ")].filter(Boolean).join(", ");
-   return '<div class="crow" data-id="'+c.id+'">'+
+   return '<div class="crow'+(c.id===_lastViewedId?' seen':'')+'" data-id="'+c.id+'">'+
      '<div class="av av-'+esc(c.status||"lead")+'">'+esc(initials(displayName(c)))+'</div>'+
      '<div class="mid"><div class="nm">'+esc(displayName(c))+'</div>'+
      '<div class="meta">'+
@@ -2484,10 +2485,11 @@ var USERS=%%USERS%%;
      else try{localStorage.removeItem("amb_lepton_offer_return");}catch(_){}}catch(e){}
    location.href="../index.html";
  }
- var _listScroll=0;
+ var _listScroll=0,_lastViewedId=null;
  function openDetail(id){
    var c=byId(id);if(!c)return;
    if(curView==="list")_listScroll=window.pageYOffset||document.documentElement.scrollTop||0; // Scroll-Position der Liste merken
+   _lastViewedId=id; // zuletzt geöffnete Zeile -> beim Zurück leicht hervorheben
    curId=id;_detUpd=(c.updated||0);
    var loc=[c.str,[c.plz,c.ort].filter(Boolean).join(" ")].filter(Boolean);
    var addr=[c.strasse,[c.plz,c.ort].filter(Boolean).join(" "),landLabel(c.land)].filter(Boolean).join(", ");
@@ -3065,8 +3067,8 @@ var USERS=%%USERS%%;
  document.getElementById("fab").onclick=function(){if(curView==="cal"){openCalModal(null);}else{openForm(null);}};
 
  /* ---------- Suche/Filter Listener ---------- */
- ["q"].forEach(function(id){document.getElementById(id).addEventListener("input",renderList);});
- ["fStatus","fLand","fBL","fOwner","fSort"].forEach(function(id){document.getElementById(id).addEventListener("change",function(){if(id==="fLand"){var fb=document.getElementById("fBL");if(fb)fb.value="";fillRegionFilter();}renderList();});});
+ ["q"].forEach(function(id){document.getElementById(id).addEventListener("input",function(){_lastViewedId=null;renderList();});});
+ ["fStatus","fLand","fBL","fOwner","fSort"].forEach(function(id){document.getElementById(id).addEventListener("change",function(){_lastViewedId=null;if(id==="fLand"){var fb=document.getElementById("fBL");if(fb)fb.value="";fillRegionFilter();}renderList();});});
  document.getElementById("qLead").addEventListener("input",renderLeads);
  document.getElementById("fLeadLand").addEventListener("change",renderLeads);
 
@@ -3460,7 +3462,7 @@ var USERS=%%USERS%%;
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v154";
+ var APP_VER="v155";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
@@ -3528,7 +3530,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v154";
+const CACHE="vertrieb-v155";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png","./icon-32.png","./favicon.ico",
   "./vendor/leaflet.js","./vendor/leaflet.css","./vendor/msal-browser.min.js",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
