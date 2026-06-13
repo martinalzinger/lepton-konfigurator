@@ -3500,7 +3500,7 @@ var USERS=%%USERS%%;
 
  /* ---------- Start ---------- */
  var booted=false;
- var APP_VER="v157";
+ var APP_VER="v158";
  function boot(){
    if(booted)return;booted=true;
    try{document.getElementById("appVer").textContent=APP_VER;}catch(_){}
@@ -3518,6 +3518,8 @@ var USERS=%%USERS%%;
  }
 
  // Service-Worker + AUTOMATISCHES Update: neue Version installiert sich und lädt die App selbst neu,
+ // Dauerhaften Speicher anfordern -> Browser räumt Verbindung/Cache/Kontakte nicht mehr automatisch weg (iOS/Safari-Eviction).
+ try{if(navigator.storage&&navigator.storage.persist){navigator.storage.persisted().then(function(p){if(!p)navigator.storage.persist();});}}catch(e){}
  // damit nie ein Gerät auf einer alten Version hängen bleibt (wichtig für korrekten Sync).
  var _swReg=null,_swRefreshing=false,_swHadCtrl=!!navigator.serviceWorker&&!!navigator.serviceWorker.controller;
  if("serviceWorker" in navigator){
@@ -3568,7 +3570,7 @@ MANIFEST = {
 
 SW = r'''// Eigener Service-Worker der eigenständigen Vertriebs-/CRM-Seite (Scope /vertrieb/).
 // Komplett getrennt von Konfigurator & Ersatzteilkatalog – eigener Cache "vertrieb-".
-const CACHE="vertrieb-v157";
+const CACHE="vertrieb-v158";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png","./icon-32.png","./favicon.ico",
   "./vendor/leaflet.js","./vendor/leaflet.css","./vendor/msal-browser.min.js",
   "./vendor/images/marker-icon.png","./vendor/images/marker-icon-2x.png","./vendor/images/marker-shadow.png"];
